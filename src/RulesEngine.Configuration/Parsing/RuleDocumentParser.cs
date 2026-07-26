@@ -8,7 +8,8 @@ public static class RuleDocumentParser
     public static RuleDefinition Parse(
         JsonObject document,
         SelectorParserRegistry selectorParsers,
-        AssertionParserRegistry assertionParsers)
+        AssertionParserRegistry assertionParsers,
+        ConditionParserRegistry conditionParsers)
     {
         var targetNode = document["target"]?.AsObject()
             ?? throw new RuleParsingException("Rule is missing required 'target'.");
@@ -29,6 +30,7 @@ public static class RuleDocumentParser
             Enabled = document.GetOptionalBool("enabled", true),
             Illustrative = document.GetOptionalBool("illustrative", false),
             Target = selectorParsers.Parse(targetNode),
+            When = document["when"]?.AsObject() is { } whenNode ? conditionParsers.Parse(whenNode) : null,
             Assertions = assertionsNode.Select(node => assertionParsers.Parse(node!.AsObject())).ToList()
         };
     }

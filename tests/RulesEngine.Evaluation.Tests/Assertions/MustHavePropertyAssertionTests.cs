@@ -8,7 +8,9 @@ public class MustHavePropertyAssertionTests
     private static readonly RepositoryModel EmptyModel = new(".", [], []);
 
     private static PropertyModel Property(string name) =>
-        new(name, "System.String", Accessibility.Public, HasGetter: true, HasSetter: false, SetterAccessibility: null);
+        new(name, "System.String", Accessibility.Public, HasGetter: true, HasSetter: false, SetterAccessibility: null,
+            IsRequired: false, IsInit: false, IsStatic: false, Attributes: [],
+            DeclaringType: "Contoso.Domain.Order", ProjectName: "Contoso.Domain", FilePath: "Order.cs", Line: 1, Column: 1);
 
     [Fact]
     public void Evaluate_Passes_WhenMatchingPropertyExists()

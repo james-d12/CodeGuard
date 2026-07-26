@@ -1,0 +1,37 @@
+id: CODING-FORMAT-EDITORCONFIG-PRESENT-001
+name: EditorConfig file present with required settings
+description: >
+  Solution root must contain .editorconfig with indent_style=space,
+  charset=utf-8-bom, end_of_line=crlf, indent_size=4, insert_final_newline=false,
+  dotnet_sort_system_directives_first=true.
+standard: standards/coding-standards.md#code-style-and-formatting
+severity: warning
+enforcement:
+  classification: deterministic
+tags:
+  - formatting
+  - editorconfig
+remediation: >
+  Add or update .editorconfig at the solution root with the required key=value
+  settings. Note: this rule checks the required settings when the file exists;
+  it does not itself flag a missing .editorconfig (that needs a repository-level
+  existence check, see the companion presence rule).
+illustrative: true
+
+target:
+  kind: file
+  path: ".editorconfig"
+
+assertions:
+  - must_match_content:
+      pattern: "indent_style\\s*=\\s*space"
+  - must_match_content:
+      pattern: "charset\\s*=\\s*utf-8-bom"
+  - must_match_content:
+      pattern: "end_of_line\\s*=\\s*crlf"
+  - must_match_content:
+      pattern: "indent_size\\s*=\\s*4"
+  - must_match_content:
+      pattern: "insert_final_newline\\s*=\\s*false"
+  - must_match_content:
+      pattern: "dotnet_sort_system_directives_first\\s*=\\s*true"

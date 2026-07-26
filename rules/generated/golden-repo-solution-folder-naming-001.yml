@@ -1,0 +1,22 @@
+id: GOLDEN-REPO-SOLUTION-FOLDER-NAMING-001
+name: Solution folder naming has no service-name prefix
+description: >
+  Solution folder elements in the .slnx file must not be prefixed with the
+  service name (Contoso).
+standard: standards/golden-standard.md#1-repository-structure
+severity: info
+enforcement:
+  classification: deterministic
+tags:
+  - naming
+remediation: >
+  Rename the solution folder so it doesn't start with the service name prefix.
+illustrative: true
+
+target:
+  kind: file
+  path: "*.slnx"
+
+assertions:
+  - must_not_match_content:
+      pattern: "<Folder\\s+Name=\"/Contoso"

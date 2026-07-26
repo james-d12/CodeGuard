@@ -1,0 +1,29 @@
+id: GOLDEN-ARCH-ENTITY-EVENT-RECORDS-001
+name: Entity/event data are records
+description: >
+  Entity/event data types (named *EntityData / *EventData) are declared as
+  record types. The "uses `required` on mandatory properties" clause is not
+  covered here (which properties are mandatory isn't derivable from naming
+  alone); see the schema/entity-data-shape rules for `required` property
+  checks on specific shapes.
+standard: standards/golden-standard.md#2-core-architecture-patterns
+severity: warning
+enforcement:
+  classification: deterministic
+tags:
+  - domain
+remediation: >
+  Declare the type as a `record` instead of a `class`.
+illustrative: true
+
+target:
+  kind: type
+  namespace: "Contoso.Domain.*"
+
+when:
+  must_match_name:
+    regex: "(EntityData|EventData)$"
+
+assertions:
+  - must_have_modifier:
+      modifier: "record"

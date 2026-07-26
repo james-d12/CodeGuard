@@ -1,0 +1,24 @@
+id: GOLDEN-HTTP-FRAMEWORK-HTTP-ONLY-001
+name: Outbound HTTP must use PP.Framework.Http
+description: >
+  Application code must not subclass HttpClient or reimplement a bespoke
+  SendRequest wrapper - outbound HTTP must go through PP.Framework.Http.
+standard: standards/golden-standard.md#4-application-layer-http-api-design
+severity: error
+enforcement:
+  classification: deterministic
+tags:
+  - http
+remediation: >
+  Remove the custom HttpClient subclass/wrapper and use PP.Framework.Http instead.
+illustrative: true
+
+target:
+  kind: class
+  namespace: "*"
+
+assertions:
+  - must_not_inherit_from:
+      type: "System.Net.Http.HttpClient"
+  - must_not_have_method:
+      name: "SendRequest"

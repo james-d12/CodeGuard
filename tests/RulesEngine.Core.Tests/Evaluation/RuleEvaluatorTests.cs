@@ -3,6 +3,7 @@ using RulesEngine.Core.Evaluation;
 using RulesEngine.Core.Results;
 using RulesEngine.Evaluation.Assertions;
 using RulesEngine.Evaluation.Selectors;
+using RulesEngine.RuleModel.Assertions;
 using RulesEngine.RuleModel.Rules;
 
 namespace RulesEngine.Core.Tests.Evaluation;
@@ -88,6 +89,7 @@ public class RuleEvaluatorTests
         Methods: [],
         Properties: [],
         Constructors: [],
+        Fields: [],
         ProjectName: "Contoso.Domain",
         FilePath: $"{name}.cs",
         Line: 1,
@@ -100,5 +102,98 @@ public class RuleEvaluatorTests
             [], [], new Dictionary<string, string>(), types);
         var solution = new SolutionModel("Contoso.sln", [project]);
         return new RepositoryModel(".", [solution], []);
+    }
+
+    private sealed class AlwaysFailsAssertion : IAssertion
+    {
+        public string Kind => "always_fails";
+
+        public AssertionOutcome Evaluate(object candidate, RepositoryModel model) =>
+            AssertionOutcome.Failure("always fails");
+    }
+
+    [Fact]
+    public void Evaluate_ExtractsLocation_ForFileCandidate()
+    {
+        var file = new FileModel("/repo/.editorconfig", ".editorconfig", "");
+        var model = new RepositoryModel("/repo", [], [file]);
+        var rule = new RuleDefinition
+        {
+            Id = "FILE-001",
+            Name = "File rule",
+            Target = new FileSelector("*.editorconfig"),
+            Assertions = [new AlwaysFailsAssertion()]
+        };
+
+        var result = new RuleEvaluator().Evaluate([rule], model);
+
+        var violation = Assert.Single(result.Violations);
+        Assert.Equal("/repo/.editorconfig", violation.File);
+        Assert.Equal(".editorconfig", violation.Symbol);
+    }
+
+    [Fact]
+    public void Evaluate_ExtractsLocation_ForRepositoryCandidate()
+    {
+        var model = new RepositoryModel("/repo", [], []);
+        var rule = new RuleDefinition
+        {
+            Id = "REPO-001",
+            Name = "Repository rule",
+            Target = new RepositorySelector(),
+            Assertions = [new AlwaysFailsAssertion()]
+        };
+
+        var result = new RuleEvaluator().Evaluate([rule], model);
+
+        var violation = Assert.Single(result.Violations);
+        Assert.Equal("/repo", violation.File);
+    }
+
+    [Fact]
+    public void Evaluate_ExtractsLocation_ForMethodCandidate()
+    {
+        var method = new MethodModel(
+            "Save", "System.Void", [], Accessibility.Public, MethodModifiers.None,
+            [], "Contoso.Domain.Order", "Contoso.Domain", "Order.cs", 5, 3);
+        var type = CreateEntityType("Order", EntityBaseType) with { Methods = [method] };
+        var model = BuildModel(type);
+        var rule = new RuleDefinition
+        {
+            Id = "METHOD-001",
+            Name = "Method rule",
+            Target = new MethodSelector(),
+            Assertions = [new AlwaysFailsAssertion()]
+        };
+
+        var result = new RuleEvaluator().Evaluate([rule], model);
+
+        var violation = Assert.Single(result.Violations);
+        Assert.Equal("Order.cs", violation.File);
+        Assert.Equal(5, violation.Line);
+        Assert.Equal("Contoso.Domain.Order.Save", violation.Symbol);
+    }
+
+    [Fact]
+    public void Evaluate_ExtractsLocation_ForFieldCandidate()
+    {
+        var field = new FieldModel(
+            "_id", "System.Guid", Accessibility.Private, FieldModifiers.Readonly,
+            [], "Contoso.Domain.Order", "Contoso.Domain", "Order.cs", 7, 5);
+        var type = CreateEntityType("Order", EntityBaseType) with { Fields = [field] };
+        var model = BuildModel(type);
+        var rule = new RuleDefinition
+        {
+            Id = "FIELD-001",
+            Name = "Field rule",
+            Target = new FieldSelector(),
+            Assertions = [new AlwaysFailsAssertion()]
+        };
+
+        var result = new RuleEvaluator().Evaluate([rule], model);
+
+        var violation = Assert.Single(result.Violations);
+        Assert.Equal("Order.cs", violation.File);
+        Assert.Equal(7, violation.Line);
     }
 }

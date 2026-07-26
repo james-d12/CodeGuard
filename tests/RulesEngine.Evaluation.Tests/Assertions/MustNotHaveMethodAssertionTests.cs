@@ -1,0 +1,28 @@
+using RulesEngine.Analysis.AnalysisModel;
+using RulesEngine.Evaluation.Assertions;
+
+namespace RulesEngine.Evaluation.Tests.Assertions;
+
+public class MustNotHaveMethodAssertionTests
+{
+    private static readonly RepositoryModel EmptyModel = new(".", [], []);
+
+    private static MethodModel Method(string name) =>
+        new(name, "System.Void", [], Accessibility.Public, MethodModifiers.None, [], "Contoso.Domain.Order", "Contoso.Domain", "Order.cs", 1, 1);
+
+    [Fact]
+    public void Evaluate_Passes_WhenNoMatchingMethodExists()
+    {
+        var type = TestModels.Type("Contoso.Domain.Order");
+        var outcome = new MustNotHaveMethodAssertion("Delete").Evaluate(type, EmptyModel);
+        Assert.True(outcome.Passed);
+    }
+
+    [Fact]
+    public void Evaluate_Fails_WhenMatchingMethodExists()
+    {
+        var type = TestModels.Type("Contoso.Domain.Order", methods: [Method("Delete")]);
+        var outcome = new MustNotHaveMethodAssertion("Delete").Evaluate(type, EmptyModel);
+        Assert.False(outcome.Passed);
+    }
+}

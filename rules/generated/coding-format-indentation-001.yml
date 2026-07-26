@@ -1,0 +1,21 @@
+id: CODING-FORMAT-INDENTATION-001
+name: 4-space indentation for C#
+description: >
+  C# source files use 4-space indentation, not tabs.
+standard: standards/coding-standards.md#code-style-and-formatting
+severity: info
+enforcement:
+  classification: deterministic
+tags:
+  - formatting
+remediation: >
+  Reformat the file to use 4-space indentation instead of tab characters.
+illustrative: true
+
+target:
+  kind: file
+  extension: ".cs"
+
+assertions:
+  - must_not_match_content:
+      pattern: "\\t"

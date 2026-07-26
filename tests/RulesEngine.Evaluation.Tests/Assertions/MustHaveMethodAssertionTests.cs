@@ -8,7 +8,7 @@ public class MustHaveMethodAssertionTests
     private static readonly RepositoryModel EmptyModel = new(".", [], []);
 
     private static MethodModel Method(string name) =>
-        new(name, "System.Void", [], Accessibility.Public, MethodModifiers.Static);
+        new(name, "System.Void", [], Accessibility.Public, MethodModifiers.Static, [], "Contoso.Domain.Order", "Contoso.Domain", "Order.cs", 1, 1);
 
     [Fact]
     public void Evaluate_Passes_WhenMatchingMethodExists()

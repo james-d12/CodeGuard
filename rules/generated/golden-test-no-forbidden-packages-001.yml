@@ -1,0 +1,27 @@
+id: GOLDEN-TEST-NO-FORBIDDEN-PACKAGES-001
+name: xUnit only, no FluentAssertions/Moq/NSubstitute
+description: >
+  Test projects use xUnit only; FluentAssertions, Moq, and NSubstitute are
+  forbidden - hand-crafted test doubles and xUnit's built-in Assert are required.
+standard: standards/golden-standard.md#12-testing
+severity: critical
+enforcement:
+  classification: deterministic
+tags:
+  - testing
+remediation: >
+  Remove the FluentAssertions/Moq/NSubstitute PackageReference and replace with
+  hand-crafted test doubles and xUnit's built-in Assert.
+illustrative: true
+
+target:
+  kind: project
+  name: "*.Tests"
+
+assertions:
+  - must_not_reference_package:
+      id: "FluentAssertions"
+  - must_not_reference_package:
+      id: "Moq"
+  - must_not_reference_package:
+      id: "NSubstitute"

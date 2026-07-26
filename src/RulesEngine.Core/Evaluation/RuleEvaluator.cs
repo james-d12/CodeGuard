@@ -82,6 +82,12 @@ public sealed class RuleEvaluator : IRuleEvaluator
         {
             TypeModel type => (type.FilePath, type.Line, type.Column, type.FullName, type.ProjectName),
             ProjectModel project => (project.Path, null, null, project.Name, project.Name),
+            FileModel file => (file.Path, null, null, file.RelativePath, null),
+            RepositoryModel repository => (repository.RootPath, null, null, null, null),
+            MethodModel method => (method.FilePath, method.Line, method.Column, $"{method.DeclaringType}.{method.Name}", method.ProjectName),
+            PropertyModel property => (property.FilePath, property.Line, property.Column, $"{property.DeclaringType}.{property.Name}", property.ProjectName),
+            ConstructorModel constructor => (constructor.FilePath, constructor.Line, constructor.Column, constructor.DeclaringType, constructor.ProjectName),
+            FieldModel field => (field.FilePath, field.Line, field.Column, $"{field.DeclaringType}.{field.Name}", field.ProjectName),
             _ => (null, null, null, null, null)
         };
 }

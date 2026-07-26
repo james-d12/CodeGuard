@@ -5,7 +5,13 @@ public sealed record MethodModel(
     string ReturnType,
     IReadOnlyList<ParameterModel> Parameters,
     Accessibility Accessibility,
-    MethodModifiers Modifiers);
+    MethodModifiers Modifiers,
+    IReadOnlyList<AttributeModel> Attributes,
+    string DeclaringType,
+    string ProjectName,
+    string FilePath,
+    int Line,
+    int Column);
 
 public sealed record PropertyModel(
     string Name,
@@ -13,14 +19,46 @@ public sealed record PropertyModel(
     Accessibility Accessibility,
     bool HasGetter,
     bool HasSetter,
-    Accessibility? SetterAccessibility);
+    Accessibility? SetterAccessibility,
+    bool IsRequired,
+    bool IsInit,
+    bool IsStatic,
+    IReadOnlyList<AttributeModel> Attributes,
+    string DeclaringType,
+    string ProjectName,
+    string FilePath,
+    int Line,
+    int Column);
 
 public sealed record ConstructorModel(
     Accessibility Accessibility,
-    IReadOnlyList<ParameterModel> Parameters);
+    IReadOnlyList<ParameterModel> Parameters,
+    IReadOnlyList<AttributeModel> Attributes,
+    string DeclaringType,
+    string ProjectName,
+    string FilePath,
+    int Line,
+    int Column);
 
-public sealed record ParameterModel(string Name, string Type);
+public sealed record FieldModel(
+    string Name,
+    string Type,
+    Accessibility Accessibility,
+    FieldModifiers Modifiers,
+    IReadOnlyList<AttributeModel> Attributes,
+    string DeclaringType,
+    string ProjectName,
+    string FilePath,
+    int Line,
+    int Column);
+
+public sealed record ParameterModel(
+    string Name,
+    string Type,
+    IReadOnlyList<AttributeModel> Attributes,
+    bool HasDefaultValue);
 
 public sealed record AttributeModel(
     string TypeName,
-    IReadOnlyList<string> ConstructorArgumentLiterals);
+    IReadOnlyList<string> ConstructorArgumentLiterals,
+    IReadOnlyDictionary<string, string> NamedArguments);

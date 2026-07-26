@@ -12,6 +12,7 @@ internal static class TestModels
         IReadOnlyList<MethodModel>? methods = null,
         IReadOnlyList<PropertyModel>? properties = null,
         IReadOnlyList<ConstructorModel>? constructors = null,
+        IReadOnlyList<FieldModel>? fields = null,
         string projectName = "Contoso.Domain")
     {
         var lastDot = fullName.LastIndexOf('.');
@@ -31,6 +32,7 @@ internal static class TestModels
             Methods: methods ?? [],
             Properties: properties ?? [],
             Constructors: constructors ?? [],
+            Fields: fields ?? [],
             ProjectName: projectName,
             FilePath: $"{name}.cs",
             Line: 1,

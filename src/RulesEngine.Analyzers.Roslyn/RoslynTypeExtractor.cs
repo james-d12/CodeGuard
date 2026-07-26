@@ -38,6 +38,8 @@ public static class RoslynTypeExtractor
         var location = symbol.Locations.FirstOrDefault(l => l.IsInSource);
         var lineSpan = location?.GetLineSpan();
 
+        var declaringType = symbol.ToDisplayString();
+
         return new TypeModel(
             Name: symbol.Name,
             FullName: symbol.ToDisplayString(),
@@ -52,11 +54,17 @@ public static class RoslynTypeExtractor
             Attributes: symbol.GetAttributes().Select(ToAttributeModel).ToList(),
             Methods: symbol.GetMembers().OfType<IMethodSymbol>()
                 .Where(m => m.MethodKind == MethodKind.Ordinary)
-                .Select(ToMethodModel).ToList(),
-            Properties: symbol.GetMembers().OfType<IPropertySymbol>().Select(ToPropertyModel).ToList(),
+                .Select(m => ToMethodModel(m, declaringType, projectName)).ToList(),
+            Properties: symbol.GetMembers().OfType<IPropertySymbol>()
+                .Select(p => ToPropertyModel(p, declaringType, projectName)).ToList(),
             Constructors: symbol.GetMembers().OfType<IMethodSymbol>()
                 .Where(m => m.MethodKind == MethodKind.Constructor && !m.IsImplicitlyDeclared)
-                .Select(ToConstructorModel).ToList(),
+                .Select(c => ToConstructorModel(c, declaringType, projectName)).ToList(),
+            Fields: symbol.TypeKind == Microsoft.CodeAnalysis.TypeKind.Enum
+                ? []
+                : symbol.GetMembers().OfType<IFieldSymbol>()
+                    .Where(f => !f.IsImplicitlyDeclared)
+                    .Select(f => ToFieldModel(f, declaringType, projectName)).ToList(),
             ProjectName: projectName,
             FilePath: location?.SourceTree?.FilePath ?? string.Empty,
             Line: (lineSpan?.StartLinePosition.Line ?? -1) + 1,
@@ -112,14 +120,35 @@ public static class RoslynTypeExtractor
 
     private static AttributeModel ToAttributeModel(AttributeData attribute) => new(
         TypeName: attribute.AttributeClass?.ToDisplayString() ?? "<unknown>",
-        ConstructorArgumentLiterals: attribute.ConstructorArguments.Select(a => a.Value?.ToString() ?? "null").ToList());
+        ConstructorArgumentLiterals: attribute.ConstructorArguments.Select(a => a.Value?.ToString() ?? "null").ToList(),
+        NamedArguments: attribute.NamedArguments.ToDictionary(a => a.Key, a => a.Value.Value?.ToString() ?? "null"));
 
-    private static MethodModel ToMethodModel(IMethodSymbol method) => new(
-        Name: method.Name,
-        ReturnType: method.ReturnType.ToDisplayString(),
-        Parameters: method.Parameters.Select(ToParameterModel).ToList(),
-        Accessibility: MapAccessibility(method.DeclaredAccessibility),
-        Modifiers: MapMethodModifiers(method));
+    private static (string FilePath, int Line, int Column) GetLocation(ISymbol symbol)
+    {
+        var location = symbol.Locations.FirstOrDefault(l => l.IsInSource);
+        var lineSpan = location?.GetLineSpan();
+        return (
+            location?.SourceTree?.FilePath ?? string.Empty,
+            (lineSpan?.StartLinePosition.Line ?? -1) + 1,
+            (lineSpan?.StartLinePosition.Character ?? -1) + 1);
+    }
+
+    private static MethodModel ToMethodModel(IMethodSymbol method, string declaringType, string projectName)
+    {
+        var (filePath, line, column) = GetLocation(method);
+        return new MethodModel(
+            Name: method.Name,
+            ReturnType: method.ReturnType.ToDisplayString(),
+            Parameters: method.Parameters.Select(ToParameterModel).ToList(),
+            Accessibility: MapAccessibility(method.DeclaredAccessibility),
+            Modifiers: MapMethodModifiers(method),
+            Attributes: method.GetAttributes().Select(ToAttributeModel).ToList(),
+            DeclaringType: declaringType,
+            ProjectName: projectName,
+            FilePath: filePath,
+            Line: line,
+            Column: column);
+    }
 
     private static MethodModifiers MapMethodModifiers(IMethodSymbol method)
     {
@@ -132,18 +161,69 @@ public static class RoslynTypeExtractor
         return modifiers;
     }
 
-    private static PropertyModel ToPropertyModel(IPropertySymbol property) => new(
-        Name: property.Name,
-        Type: property.Type.ToDisplayString(),
-        Accessibility: MapAccessibility(property.DeclaredAccessibility),
-        HasGetter: property.GetMethod is not null,
-        HasSetter: property.SetMethod is not null,
-        SetterAccessibility: property.SetMethod is null ? null : MapAccessibility(property.SetMethod.DeclaredAccessibility));
+    private static PropertyModel ToPropertyModel(IPropertySymbol property, string declaringType, string projectName)
+    {
+        var (filePath, line, column) = GetLocation(property);
+        return new PropertyModel(
+            Name: property.Name,
+            Type: property.Type.ToDisplayString(),
+            Accessibility: MapAccessibility(property.DeclaredAccessibility),
+            HasGetter: property.GetMethod is not null,
+            HasSetter: property.SetMethod is not null,
+            SetterAccessibility: property.SetMethod is null ? null : MapAccessibility(property.SetMethod.DeclaredAccessibility),
+            IsRequired: property.IsRequired,
+            IsInit: property.SetMethod?.IsInitOnly ?? false,
+            IsStatic: property.IsStatic,
+            Attributes: property.GetAttributes().Select(ToAttributeModel).ToList(),
+            DeclaringType: declaringType,
+            ProjectName: projectName,
+            FilePath: filePath,
+            Line: line,
+            Column: column);
+    }
 
-    private static ConstructorModel ToConstructorModel(IMethodSymbol constructor) => new(
-        Accessibility: MapAccessibility(constructor.DeclaredAccessibility),
-        Parameters: constructor.Parameters.Select(ToParameterModel).ToList());
+    private static ConstructorModel ToConstructorModel(IMethodSymbol constructor, string declaringType, string projectName)
+    {
+        var (filePath, line, column) = GetLocation(constructor);
+        return new ConstructorModel(
+            Accessibility: MapAccessibility(constructor.DeclaredAccessibility),
+            Parameters: constructor.Parameters.Select(ToParameterModel).ToList(),
+            Attributes: constructor.GetAttributes().Select(ToAttributeModel).ToList(),
+            DeclaringType: declaringType,
+            ProjectName: projectName,
+            FilePath: filePath,
+            Line: line,
+            Column: column);
+    }
 
-    private static ParameterModel ToParameterModel(IParameterSymbol parameter) =>
-        new(parameter.Name, parameter.Type.ToDisplayString());
+    private static FieldModel ToFieldModel(IFieldSymbol field, string declaringType, string projectName)
+    {
+        var (filePath, line, column) = GetLocation(field);
+        return new FieldModel(
+            Name: field.Name,
+            Type: field.Type.ToDisplayString(),
+            Accessibility: MapAccessibility(field.DeclaredAccessibility),
+            Modifiers: MapFieldModifiers(field),
+            Attributes: field.GetAttributes().Select(ToAttributeModel).ToList(),
+            DeclaringType: declaringType,
+            ProjectName: projectName,
+            FilePath: filePath,
+            Line: line,
+            Column: column);
+    }
+
+    private static FieldModifiers MapFieldModifiers(IFieldSymbol field)
+    {
+        var modifiers = FieldModifiers.None;
+        if (field.IsConst) modifiers |= FieldModifiers.Const;
+        if (field.IsStatic) modifiers |= FieldModifiers.Static;
+        if (field.IsReadOnly) modifiers |= FieldModifiers.Readonly;
+        return modifiers;
+    }
+
+    private static ParameterModel ToParameterModel(IParameterSymbol parameter) => new(
+        Name: parameter.Name,
+        Type: parameter.Type.ToDisplayString(),
+        Attributes: parameter.GetAttributes().Select(ToAttributeModel).ToList(),
+        HasDefaultValue: parameter.HasExplicitDefaultValue);
 }

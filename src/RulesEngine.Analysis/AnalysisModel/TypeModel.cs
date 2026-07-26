@@ -13,6 +13,7 @@ public sealed record TypeModel(
     IReadOnlyList<MethodModel> Methods,
     IReadOnlyList<PropertyModel> Properties,
     IReadOnlyList<ConstructorModel> Constructors,
+    IReadOnlyList<FieldModel> Fields,
     string ProjectName,
     string FilePath,
     int Line,

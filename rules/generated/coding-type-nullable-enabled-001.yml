@@ -1,0 +1,23 @@
+id: CODING-TYPE-NULLABLE-ENABLED-001
+name: Nullable reference types enabled
+description: >
+  <Nullable>enable</Nullable> required in all projects.
+standard: standards/coding-standards.md#type-design
+severity: error
+enforcement:
+  classification: deterministic
+tags:
+  - nullability
+  - csproj
+remediation: >
+  Add <Nullable>enable</Nullable> to the project's .csproj.
+illustrative: true
+
+target:
+  kind: project
+  name: "*"
+
+assertions:
+  - must_have_msbuild_property:
+      name: "Nullable"
+      value: "enable"

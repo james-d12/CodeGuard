@@ -1,0 +1,22 @@
+id: GOLDEN-CICD-NO-DOCKERFILE-IN-PRODUCT-REPO-001
+name: Product repos must not contain a Dockerfile
+description: >
+  Dockerfile ownership belongs to shared pipeline templates; presence in a
+  product repo is a violation.
+standard: standards/golden-standard.md#13-cicd-and-deployment
+severity: error
+enforcement:
+  classification: deterministic
+tags:
+  - cicd
+remediation: >
+  Remove the Dockerfile from the repository; container build steps belong in
+  the shared pipeline templates.
+illustrative: true
+
+target:
+  kind: repository
+
+assertions:
+  - must_not_have_file:
+      path: "Dockerfile"

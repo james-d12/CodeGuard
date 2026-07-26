@@ -34,6 +34,7 @@ public class ClassInNamespaceSelectorTests
         Methods: [],
         Properties: [],
         Constructors: [],
+        Fields: [],
         ProjectName: "Contoso.Domain",
         FilePath: "Order.cs",
         Line: 1,

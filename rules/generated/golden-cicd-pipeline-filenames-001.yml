@@ -1,0 +1,23 @@
+id: GOLDEN-CICD-PIPELINE-FILENAMES-001
+name: Pipeline file naming convention
+description: >
+  azure-pipelines.yaml (full CI/CD) and azure-pipelines-pr.yaml (build
+  validation only) must both exist at repo root.
+standard: standards/golden-standard.md#13-cicd-and-deployment
+severity: warning
+enforcement:
+  classification: deterministic
+tags:
+  - cicd
+remediation: >
+  Add the missing pipeline file at the repository root.
+illustrative: true
+
+target:
+  kind: repository
+
+assertions:
+  - must_have_file:
+      path: "azure-pipelines.yaml"
+  - must_have_file:
+      path: "azure-pipelines-pr.yaml"

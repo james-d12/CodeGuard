@@ -1,0 +1,26 @@
+id: SKILL-REPORTING-SCHEMAS-NO-REFS-001
+name: Reporting.Schemas has zero NuGet/project references
+description: >
+  *.Reporting.Schemas projects carry pure data contracts and must have zero
+  PackageReference and zero ProjectReference entries.
+standard: .github/skills/reporting/pps-reporting-model-contracts/SKILL.md
+severity: error
+enforcement:
+  classification: deterministic
+tags:
+  - reporting
+  - schemas
+remediation: >
+  Remove all PackageReference and ProjectReference entries from the
+  *.Reporting.Schemas project.
+illustrative: true
+
+target:
+  kind: project
+  name: "*.Reporting.Schemas"
+
+assertions:
+  - must_not_reference_package:
+      id: "*"
+  - must_not_reference_project:
+      name: "*"

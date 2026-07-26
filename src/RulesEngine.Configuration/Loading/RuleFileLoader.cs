@@ -7,14 +7,20 @@ namespace RulesEngine.Configuration.Loading;
 public sealed class RuleFileLoader(
     SelectorParserRegistry selectorParsers,
     AssertionParserRegistry assertionParsers,
+    ConditionParserRegistry conditionParsers,
     RuleSchemaValidator schemaValidator)
 {
     private static readonly string[] RuleFileExtensions = [".yml", ".yaml"];
 
-    public static RuleFileLoader CreateDefault() => new(
-        DefaultParsers.CreateSelectorRegistry(),
-        DefaultParsers.CreateAssertionRegistry(),
-        RuleSchemaValidator.CreateDefault());
+    public static RuleFileLoader CreateDefault()
+    {
+        var assertionParsers = DefaultParsers.CreateAssertionRegistry();
+        return new(
+            DefaultParsers.CreateSelectorRegistry(),
+            assertionParsers,
+            DefaultParsers.CreateConditionRegistry(assertionParsers),
+            RuleSchemaValidator.CreateDefault());
+    }
 
     public IReadOnlyList<RuleDefinition> LoadFromDirectory(string directoryPath) =>
         LoadFromDirectories([directoryPath]);
@@ -64,6 +70,6 @@ public sealed class RuleFileLoader(
 
         schemaValidator.Validate(document, filePath);
 
-        return RuleDocumentParser.Parse(document.AsObject(), selectorParsers, assertionParsers);
+        return RuleDocumentParser.Parse(document.AsObject(), selectorParsers, assertionParsers, conditionParsers);
     }
 }

@@ -30,3 +30,12 @@ public enum MethodModifiers
     Override = 8,
     Async = 16
 }
+
+[Flags]
+public enum FieldModifiers
+{
+    None = 0,
+    Static = 1,
+    Const = 2,
+    Readonly = 4
+}

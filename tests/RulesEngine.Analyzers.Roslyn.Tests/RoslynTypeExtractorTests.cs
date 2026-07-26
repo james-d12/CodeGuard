@@ -188,4 +188,97 @@ public class RoslynTypeExtractorTests
 
         Assert.Contains(types, t => t.FullName == "Contoso.Domain.Order.OrderLine");
     }
+
+    [Fact]
+    public void ExtractTypes_MapsFieldsAndExcludesBackingFieldsAndEnumMembers()
+    {
+        var type = ExtractSingle("""
+            namespace Contoso.Domain;
+            public class Order
+            {
+                public const int MaxItems = 10;
+                private readonly string _name = "";
+                public string Name { get; set; } = "";
+            }
+            """, "Contoso.Domain.Order");
+
+        Assert.Equal(2, type.Fields.Count);
+        Assert.Contains(type.Fields, f => f.Name == "MaxItems" && f.Modifiers.HasFlag(FieldModifiers.Const));
+        Assert.Contains(type.Fields, f => f.Name == "_name" && f.Modifiers.HasFlag(FieldModifiers.Readonly));
+        Assert.DoesNotContain(type.Fields, f => f.Name.Contains("Name") && f.Name != "_name");
+
+        var enumType = ExtractSingle("""
+            namespace Contoso.Domain;
+            public enum Status { Active, Inactive }
+            """, "Contoso.Domain.Status");
+        Assert.Empty(enumType.Fields);
+    }
+
+    [Fact]
+    public void ExtractTypes_PopulatesDeclaringTypeAndProjectNameOnMembers()
+    {
+        var type = ExtractSingle("""
+            namespace Contoso.Domain;
+            public class Order
+            {
+                private Order() { }
+                public string Name { get; set; } = "";
+                public void Save() { }
+                private readonly string _tag = "";
+            }
+            """, "Contoso.Domain.Order");
+
+        Assert.All(type.Methods, m => Assert.Equal("Contoso.Domain.Order", m.DeclaringType));
+        Assert.All(type.Methods, m => Assert.Equal("Contoso.Domain", m.ProjectName));
+        Assert.All(type.Properties, p => Assert.Equal("Contoso.Domain.Order", p.DeclaringType));
+        Assert.All(type.Constructors, c => Assert.Equal("Contoso.Domain.Order", c.DeclaringType));
+        Assert.All(type.Fields, f => Assert.Equal("Contoso.Domain.Order", f.DeclaringType));
+        Assert.True(type.Methods.Single().Line > 0);
+    }
+
+    [Fact]
+    public void ExtractTypes_MapsPropertyModifierFlags()
+    {
+        var type = ExtractSingle("""
+            namespace Contoso.Domain;
+            public class Order
+            {
+                public required string Id { get; init; }
+                public static string Tag { get; set; } = "";
+            }
+            """, "Contoso.Domain.Order");
+
+        var id = type.Properties.Single(p => p.Name == "Id");
+        Assert.True(id.IsRequired);
+        Assert.True(id.IsInit);
+
+        var tag = type.Properties.Single(p => p.Name == "Tag");
+        Assert.True(tag.IsStatic);
+    }
+
+    [Fact]
+    public void ExtractTypes_MapsAttributeNamedArgumentsAndParameterMetadata()
+    {
+        var type = ExtractSingle("""
+            namespace Contoso.Domain;
+            public class RangeAttribute : System.Attribute
+            {
+                public int Min { get; set; }
+            }
+            public class Order
+            {
+                [Range(Min = 1)]
+                public void Save(string name, int quantity = 1) { }
+            }
+            """, "Contoso.Domain.Order");
+
+        var method = type.Methods.Single(m => m.Name == "Save");
+        var attribute = Assert.Single(method.Attributes);
+        Assert.Equal("1", attribute.NamedArguments["Min"]);
+
+        var quantity = method.Parameters.Single(p => p.Name == "quantity");
+        Assert.True(quantity.HasDefaultValue);
+        var name = method.Parameters.Single(p => p.Name == "name");
+        Assert.False(name.HasDefaultValue);
+    }
 }

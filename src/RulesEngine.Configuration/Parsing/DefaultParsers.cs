@@ -12,7 +12,15 @@ public static class DefaultParsers
         new TypeSelectorParser(),
         new ProjectSelectorParser(),
         new InheritsFromSelectorParser(),
-        new ImplementsSelectorParser()
+        new ImplementsSelectorParser(),
+        new RecordSelectorParser(),
+        new EnumSelectorParser(),
+        new FileSelectorParser(),
+        new RepositorySelectorParser(),
+        new MethodSelectorParser(),
+        new PropertySelectorParser(),
+        new ConstructorSelectorParser(),
+        new FieldSelectorParser()
     ]);
 
     public static AssertionParserRegistry CreateAssertionRegistry() => new(
@@ -28,6 +36,28 @@ public static class DefaultParsers
         new MustNotReferencePackageAssertionParser(),
         new MustReferenceProjectAssertionParser(),
         new MustNotReferenceProjectAssertionParser(),
-        new MustNotDependOnAssertionParser()
+        new MustNotDependOnAssertionParser(),
+        new MustHaveMsBuildPropertyAssertionParser(),
+        new MustHaveFileAssertionParser(),
+        new MustNotHaveFileAssertionParser(),
+        new MustHaveDirectoryAssertionParser(),
+        new MustMatchContentAssertionParser(),
+        new MustNotMatchContentAssertionParser(),
+        new MustHaveJsonFieldAssertionParser(),
+        new MustNotHaveJsonFieldAssertionParser(),
+        new MustNotHaveMethodAssertionParser(),
+        new MustNotHavePropertyAssertionParser(),
+        new MustNotInheritFromAssertionParser(),
+        new MustNotImplementAssertionParser(),
+        new MustHaveParameterCountAssertionParser(),
+        new MustMatchFilenameAssertionParser(),
+        new MustMatchNameAssertionParser(),
+        new MustHaveModifierAssertionParser(),
+        new MustNotHaveModifierAssertionParser(),
+        new MustHaveAttributeAssertionParser(),
+        new MustNotHaveAttributeAssertionParser()
     ]);
+
+    public static ConditionParserRegistry CreateConditionRegistry(AssertionParserRegistry assertionParsers) =>
+        new(assertionParsers);
 }

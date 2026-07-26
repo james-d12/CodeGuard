@@ -9,10 +9,15 @@ public class RuleFileLoaderTests : IDisposable
 {
     private readonly string _directory = Directory.CreateTempSubdirectory("rulesengine-tests-").FullName;
 
-    private static RuleFileLoader CreateLoader() => new(
-        DefaultParsers.CreateSelectorRegistry(),
-        DefaultParsers.CreateAssertionRegistry(),
-        RuleSchemaValidator.CreateDefault());
+    private static RuleFileLoader CreateLoader()
+    {
+        var assertionParsers = DefaultParsers.CreateAssertionRegistry();
+        return new(
+            DefaultParsers.CreateSelectorRegistry(),
+            assertionParsers,
+            DefaultParsers.CreateConditionRegistry(assertionParsers),
+            RuleSchemaValidator.CreateDefault());
+    }
 
     [Fact]
     public void LoadFromFile_ValidRule_ParsesAllFields()
@@ -46,6 +51,29 @@ public class RuleFileLoaderTests : IDisposable
         Assert.Equal(["ddd", "domain"], rule.Tags);
         Assert.True(rule.Illustrative);
         Assert.Single(rule.Assertions);
+    }
+
+    [Fact]
+    public void LoadFromFile_WithWhenBlock_ParsesConditionTree()
+    {
+        var file = WriteRuleFile("with-when.yml", """
+            id: DDD-ENTITY-004
+            name: Some conditional rule
+            target:
+              kind: class
+              namespace: "Contoso.Domain.Entities"
+            when:
+              not:
+                must_inherit_from:
+                  type: "Contoso.Domain.Aggregate"
+            assertions:
+              - must_inherit_from:
+                  type: "Contoso.Domain.Entity<TId>"
+            """);
+
+        var rule = CreateLoader().LoadFromFile(file);
+
+        Assert.NotNull(rule.When);
     }
 
     [Fact]

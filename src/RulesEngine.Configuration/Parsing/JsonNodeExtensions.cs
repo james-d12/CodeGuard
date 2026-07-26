@@ -14,6 +14,12 @@ internal static class JsonNodeExtensions
     public static bool GetOptionalBool(this JsonObject node, string property, bool defaultValue) =>
         node[property]?.GetValue<bool>() ?? defaultValue;
 
+    public static int? GetOptionalInt(this JsonObject node, string property) =>
+        node[property]?.GetValue<int>();
+
+    public static bool? GetOptionalBoolNullable(this JsonObject node, string property) =>
+        node[property]?.GetValue<bool>();
+
     public static IReadOnlyList<string> GetStringArray(this JsonObject node, string property) =>
         node[property]?.AsArray().Select(n => n!.GetValue<string>()).ToList() ?? [];
 }

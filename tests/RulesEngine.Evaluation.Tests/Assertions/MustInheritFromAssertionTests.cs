@@ -43,6 +43,7 @@ public class MustInheritFromAssertionTests
         Methods: [],
         Properties: [],
         Constructors: [],
+        Fields: [],
         ProjectName: "Contoso.Domain",
         FilePath: "LegacyThing.cs",
         Line: 1,

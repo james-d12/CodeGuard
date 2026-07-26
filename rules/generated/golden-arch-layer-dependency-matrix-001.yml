@@ -1,0 +1,29 @@
+id: GOLDEN-ARCH-LAYER-DEPENDENCY-MATRIX-001
+name: Domain layer has zero infrastructure/persistence dependencies
+description: >
+  Domain has zero infra deps; Application depends only on Domain interfaces;
+  API never directly references Domain/Persistence; Persistence implements
+  Domain interfaces. Approximated here against the Domain-project clause only
+  (zero references to Infrastructure/Persistence project); the other three
+  clauses of the full layer matrix would need their own rules targeting
+  *.Application/*.Api/*.Persistence project names respectively.
+standard: standards/golden-standard.md#2-core-architecture-patterns
+severity: critical
+enforcement:
+  classification: deterministic
+tags:
+  - architecture
+remediation: >
+  Remove the disallowed ProjectReference from the Domain project — Domain
+  must not depend on Infrastructure or Persistence.
+illustrative: true
+
+target:
+  kind: project
+  name: "*.Domain"
+
+assertions:
+  - must_not_reference_project:
+      name: "*.Infrastructure"
+  - must_not_reference_project:
+      name: "*.Persistence"

@@ -34,7 +34,8 @@ public class MustNotDependOnAssertionTests
     public void Evaluate_Fails_WhenAMethodSignatureReferencesForbiddenNamespace()
     {
         var method = new MethodModel(
-            "Save", "Contoso.Infrastructure.SaveResult", [], Accessibility.Public, MethodModifiers.None);
+            "Save", "Contoso.Infrastructure.SaveResult", [], Accessibility.Public, MethodModifiers.None,
+            [], "Contoso.Domain.Order", "Contoso.Domain", "Order.cs", 1, 1);
         var type = TestModels.Type("Contoso.Domain.Order", methods: [method]);
         var project = TestModels.Project("Contoso.Domain", types: [type]);
         var model = TestModels.Repository(project);
