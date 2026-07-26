@@ -1,0 +1,24 @@
+id: DDD-AGGREGATE-002
+name: Aggregate roots must expose a Create factory method
+description: >
+  Aggregate roots must be constructed through a static Create factory method
+  rather than directly via their constructor.
+standard: DDD-002
+severity: warning
+enforcement:
+  classification: deterministic
+tags:
+  - ddd
+  - domain
+  - aggregate
+remediation: >
+  Add a public static Create method that returns a fully-constructed aggregate.
+illustrative: true
+
+target:
+  kind: implements
+  interface: "Contoso.Domain.IAggregateRoot"
+
+assertions:
+  - must_have_method:
+      name: "Create"

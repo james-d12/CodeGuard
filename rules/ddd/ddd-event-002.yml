@@ -1,0 +1,24 @@
+id: DDD-EVENT-002
+name: Domain events must be defined in a Domain project
+description: >
+  Types implementing IDomainEvent must be declared in a project whose name
+  matches *.Domain, not in an Application or Infrastructure project.
+standard: DDD-003
+severity: error
+enforcement:
+  classification: deterministic
+tags:
+  - ddd
+  - domain
+  - event
+remediation: >
+  Move the domain event type into the corresponding *.Domain project.
+illustrative: true
+
+target:
+  kind: implements
+  interface: "Contoso.Domain.IDomainEvent"
+
+assertions:
+  - must_be_in_project:
+      pattern: "*.Domain"

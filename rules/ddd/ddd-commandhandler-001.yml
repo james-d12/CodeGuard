@@ -1,0 +1,24 @@
+id: APP-COMMANDHANDLER-001
+name: Command handlers must implement ICommandHandler
+description: >
+  Types in the Application.Handlers namespace must implement
+  Contoso.Application.ICommandHandler<TCommand> for the command they handle.
+standard: CQRS-001
+severity: error
+enforcement:
+  classification: deterministic
+tags:
+  - cqrs
+  - application
+  - command-handler
+remediation: >
+  Implement Contoso.Application.ICommandHandler<TCommand> for the handled command type.
+illustrative: true
+
+target:
+  kind: class
+  namespace: "Contoso.Application.Handlers"
+
+assertions:
+  - must_implement:
+      interface: "Contoso.Application.ICommandHandler<*>"

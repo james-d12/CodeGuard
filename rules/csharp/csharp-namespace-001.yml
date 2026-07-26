@@ -1,0 +1,22 @@
+id: CSHARP-NAMESPACE-001
+name: All types must live under the Contoso namespace root
+description: >
+  Every type in the codebase must be declared under the Contoso.* namespace root.
+standard: CSHARP-001
+severity: warning
+enforcement:
+  classification: deterministic
+tags:
+  - csharp
+  - namespace
+remediation: >
+  Move the type into a namespace rooted at Contoso.
+illustrative: true
+
+target:
+  kind: type
+  namespace: "*"
+
+assertions:
+  - must_be_in_namespace:
+      pattern: "Contoso.*"

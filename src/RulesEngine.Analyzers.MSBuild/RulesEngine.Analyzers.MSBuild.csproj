@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>RulesEngine.Analyzers.MSBuild</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Buildalyzer" Version="9.0.0" />
+    <PackageReference Include="Buildalyzer.Workspaces" Version="9.0.0" />
+    <PackageReference Include="Microsoft.Build.Locator" Version="1.11.2" />
+    <!-- Pinned to match RulesEngine.Analyzers.Roslyn's Microsoft.CodeAnalysis.CSharp version -
+         Buildalyzer.Workspaces depends on Microsoft.CodeAnalysis.Workspaces.Common 4.10.0, and
+         mixing Roslyn generations in the same process throws a runtime TypeLoadException. -->
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.10.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Required by Microsoft.Build.Locator: any Microsoft.Build*/NuGet.* package that ends up
+         in this project's resolved graph (here, transitively via Buildalyzer) must exclude
+         runtime assets so the locator's redirected assemblies are used instead, or MSBuild
+         throws MSBL001 at build time / a FileNotFoundException at run time. Versions match
+         what Buildalyzer 9.0.0 currently resolves - bump alongside a Buildalyzer upgrade. -->
+    <PackageReference Include="Microsoft.Build" Version="17.14.28" ExcludeAssets="runtime" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Build.Framework" Version="17.14.28" ExcludeAssets="runtime" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Build.Tasks.Core" Version="17.14.28" ExcludeAssets="runtime" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="17.14.28" ExcludeAssets="runtime" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.NET.StringTools" Version="17.14.28" ExcludeAssets="runtime" PrivateAssets="all" />
+    <PackageReference Include="NuGet.Frameworks" Version="6.9.1" ExcludeAssets="runtime" PrivateAssets="all" />
+    <PackageReference Include="NuGet.Common" Version="6.9.1" ExcludeAssets="runtime" PrivateAssets="all" />
+    <PackageReference Include="NuGet.Configuration" Version="6.9.1" ExcludeAssets="runtime" PrivateAssets="all" />
+    <PackageReference Include="NuGet.Packaging" Version="6.9.1" ExcludeAssets="runtime" PrivateAssets="all" />
+    <PackageReference Include="NuGet.ProjectModel" Version="6.9.1" ExcludeAssets="runtime" PrivateAssets="all" />
+    <PackageReference Include="NuGet.Protocol" Version="6.9.1" ExcludeAssets="runtime" PrivateAssets="all" />
+    <PackageReference Include="NuGet.Versioning" Version="6.9.1" ExcludeAssets="runtime" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RulesEngine.Analysis\RulesEngine.Analysis.csproj" />
+    <ProjectReference Include="..\RulesEngine.Analyzers.Roslyn\RulesEngine.Analyzers.Roslyn.csproj" />
+  </ItemGroup>
+
+</Project>

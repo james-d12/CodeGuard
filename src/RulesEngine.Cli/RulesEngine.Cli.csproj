@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <RootNamespace>RulesEngine.Cli</RootNamespace>
+        <AssemblyName>rules-engine</AssemblyName>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\RulesEngine.Core\RulesEngine.Core.csproj" />
+        <ProjectReference Include="..\RulesEngine.RuleModel\RulesEngine.RuleModel.csproj" />
+        <ProjectReference Include="..\RulesEngine.Analysis\RulesEngine.Analysis.csproj" />
+        <ProjectReference Include="..\RulesEngine.Evaluation\RulesEngine.Evaluation.csproj" />
+        <ProjectReference Include="..\RulesEngine.Reporting\RulesEngine.Reporting.csproj" />
+        <ProjectReference Include="..\RulesEngine.Configuration\RulesEngine.Configuration.csproj" />
+        <ProjectReference Include="..\RulesEngine.Analyzers.MSBuild\RulesEngine.Analyzers.MSBuild.csproj" />
+        <ProjectReference Include="..\RulesEngine.Analyzers.Repository\RulesEngine.Analyzers.Repository.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="System.CommandLine" Version="3.0.0-preview.6.26359.118" />
+    </ItemGroup>
+
+</Project>

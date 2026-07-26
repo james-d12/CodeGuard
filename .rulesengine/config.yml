@@ -1,0 +1,14 @@
+# Configures where RuleEngine discovers rules, skills, agents, and source in this repo.
+# Missing paths are skipped silently - .github/skills and .github/agents don't exist yet
+# in this repo, and that's fine.
+repository:
+  rules:
+    - "rules"
+  skills:
+    - ".github/skills"
+  agents:
+    - ".github/agents"
+  source:
+    - "RuleEngine"
+  tests:
+    - "tests"

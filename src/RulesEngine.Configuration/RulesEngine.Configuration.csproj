@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>RulesEngine.Configuration</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="JsonSchema.Net" Version="9.3.0" />
+    <PackageReference Include="YamlDotNet" Version="18.1.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RulesEngine.Analysis\RulesEngine.Analysis.csproj" />
+    <ProjectReference Include="..\RulesEngine.RuleModel\RulesEngine.RuleModel.csproj" />
+    <ProjectReference Include="..\RulesEngine.Evaluation\RulesEngine.Evaluation.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\rules\schema\rule.schema.json" Link="Validation\Schemas\rule.schema.json" />
+  </ItemGroup>
+
+</Project>

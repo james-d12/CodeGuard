@@ -1,0 +1,24 @@
+id: ARCH-DEPENDENCY-002
+name: Domain projects must not depend on the Infrastructure namespace
+description: >
+  Even without a direct project reference, Domain types must not reference any
+  type in an Infrastructure namespace via base types, interfaces, or member signatures.
+standard: ARCH-001
+severity: critical
+enforcement:
+  classification: deterministic
+tags:
+  - architecture
+  - ddd
+  - layering
+remediation: >
+  Remove the reference to the Infrastructure type; depend on a Domain-defined abstraction instead.
+illustrative: true
+
+target:
+  kind: project
+  name: "*.Domain"
+
+assertions:
+  - must_not_depend_on:
+      type: "Contoso.Infrastructure.*"

@@ -1,0 +1,23 @@
+id: DDD-ENTITY-001
+name: Domain entities must inherit from Entity
+description: >
+  All domain entities must inherit from the approved Entity<TId> base class.
+standard: DDD-001
+severity: error
+enforcement:
+  classification: deterministic
+tags:
+  - ddd
+  - domain
+  - entity
+remediation: >
+  Inherit from Contoso.Domain.Entity<TId>.
+illustrative: true
+
+target:
+  kind: class
+  namespace: "Contoso.Domain.Entities"
+
+assertions:
+  - must_inherit_from:
+      type: "Contoso.Domain.Entity<*>"
