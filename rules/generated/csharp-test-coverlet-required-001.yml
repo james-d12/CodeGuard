@@ -1,0 +1,23 @@
+id: CSHARP-TEST-COVERLET-REQUIRED-001
+name: coverlet.msbuild mandatory in test projects
+description: >
+  Every test project must reference coverlet.msbuild so coverage is collected
+  during the standard build/test pipeline.
+standard: standards/golden-standard.md#12-testing
+severity: warning
+enforcement:
+  classification: deterministic
+tags:
+  - testing
+  - coverage
+remediation: >
+  Add a PackageReference to coverlet.msbuild in the test project's .csproj.
+illustrative: true
+
+target:
+  kind: project
+  name: "*.Tests"
+
+assertions:
+  - must_reference_package:
+      id: "coverlet.msbuild"

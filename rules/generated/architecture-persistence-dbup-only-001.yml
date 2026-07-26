@@ -1,0 +1,27 @@
+id: ARCHITECTURE-PERSISTENCE-DBUP-ONLY-001
+name: Reporting persistence uses PP.Framework.SPP.Reporting.DbUp
+description: >
+  Reporting.Persistence projects must use PP.Framework.SPP.Reporting.DbUp, not
+  bare DbUp packages or EF Core Migrations.
+standard: standards/golden-standard.md#3-data-persistence
+severity: error
+enforcement:
+  classification: deterministic
+tags:
+  - persistence
+remediation: >
+  Remove the bare dbup-core/dbup-sqlserver/EF Core PackageReference and use
+  PP.Framework.SPP.Reporting.DbUp instead.
+illustrative: true
+
+target:
+  kind: project
+  name: "*.Reporting.Persistence"
+
+assertions:
+  - must_not_reference_package:
+      id: "dbup-core"
+  - must_not_reference_package:
+      id: "dbup-sqlserver"
+  - must_not_reference_package:
+      id: "Microsoft.EntityFrameworkCore*"

@@ -1,0 +1,30 @@
+id: CSHARP-TEST-NO-MOCKING-FRAMEWORKS-001
+name: xUnit only, no mocking frameworks in tests
+description: >
+  Test projects must use xUnit and must not reference Moq, NSubstitute, or
+  FluentAssertions - hand-crafted test doubles and plain xUnit assertions are
+  required instead.
+standard: standards/coding-standards.md#testing-standards
+severity: critical
+enforcement:
+  classification: deterministic
+tags:
+  - testing
+remediation: >
+  Replace mocking-framework/FluentAssertions usage with hand-crafted test doubles
+  (see the Doubles/ folder convention) and xUnit's built-in Assert.
+illustrative: true
+
+target:
+  kind: project
+  name: "*.Tests"
+
+assertions:
+  - must_reference_package:
+      id: "xunit"
+  - must_not_reference_package:
+      id: "Moq"
+  - must_not_reference_package:
+      id: "NSubstitute"
+  - must_not_reference_package:
+      id: "FluentAssertions"
