@@ -4,7 +4,7 @@ namespace RulesEngine.Evaluation.Tests.Assertions;
 
 public class MustMatchFilenameAssertionTests
 {
-    private static readonly RulesEngine.Analysis.AnalysisModel.RepositoryModel EmptyModel = new(".", [], [], [], [], [], [], [], [], []);
+    private static readonly Analysis.AnalysisModel.RepositoryModel EmptyModel = new(".", [], [], [], [], [], [], [], [], []);
 
     [Fact]
     public void Evaluate_Passes_WhenTypeNameMatchesFilename()

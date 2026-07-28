@@ -19,6 +19,8 @@ public static class ListRulesCommand
     {
         var pathOption = CommonOptions.CreatePathOption();
         var configOption = CommonOptions.CreateConfigOption();
+        var rulesSourceOption = CommonOptions.CreateRulesSourceOption();
+        var branchOption = CommonOptions.CreateBranchOption();
 
         var formatOption = new Option<string>("--format")
         {
@@ -45,6 +47,8 @@ public static class ListRulesCommand
         var command = new Command("list-rules", "List rules discovered from the configured rule directories");
         command.Add(pathOption);
         command.Add(configOption);
+        command.Add(rulesSourceOption);
+        command.Add(branchOption);
         command.Add(formatOption);
         command.Add(tagOption);
         command.Add(standardOption);
@@ -54,7 +58,9 @@ public static class ListRulesCommand
         {
             var context = CliRepositoryContext.Resolve(
                 parseResult.GetValue(pathOption),
-                parseResult.GetValue(configOption));
+                parseResult.GetValue(configOption),
+                parseResult.GetValue(rulesSourceOption),
+                parseResult.GetValue(branchOption));
 
             var rules = context.LoadRules().AsEnumerable();
 
@@ -81,7 +87,7 @@ public static class ListRulesCommand
             if (parseResult.GetValue(formatOption) == "json")
             {
                 var summaries = ruleList.Select(RuleSummary.From);
-                System.Console.WriteLine(JsonSerializer.Serialize(summaries, JsonOptions));
+                Console.WriteLine(JsonSerializer.Serialize(summaries, JsonOptions));
             }
             else
             {
@@ -98,15 +104,15 @@ public static class ListRulesCommand
     {
         if (rules.Count == 0)
         {
-            System.Console.WriteLine("No rules found.");
+            Console.WriteLine("No rules found.");
             return;
         }
 
-        System.Console.WriteLine($"{"ID",-24}{"SEVERITY",-10}{"STANDARD",-14}{"ENFORCEMENT",-24}{"ENABLED",-9}TAGS");
+        Console.WriteLine($"{"ID",-24}{"SEVERITY",-10}{"STANDARD",-14}{"ENFORCEMENT",-24}{"ENABLED",-9}TAGS");
         foreach (var rule in rules)
         {
             var tags = string.Join(",", rule.Tags);
-            System.Console.WriteLine(
+            Console.WriteLine(
                 $"{rule.Id,-24}{rule.Severity,-10}{rule.Standard ?? "-",-14}{rule.Enforcement.Classification,-24}{rule.Enabled,-9}{tags}");
         }
     }

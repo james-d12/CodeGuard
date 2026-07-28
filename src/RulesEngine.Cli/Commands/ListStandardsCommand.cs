@@ -16,6 +16,8 @@ public static class ListStandardsCommand
     {
         var pathOption = CommonOptions.CreatePathOption();
         var configOption = CommonOptions.CreateConfigOption();
+        var rulesSourceOption = CommonOptions.CreateRulesSourceOption();
+        var branchOption = CommonOptions.CreateBranchOption();
 
         var formatOption = new Option<string>("--format")
         {
@@ -27,13 +29,17 @@ public static class ListStandardsCommand
         var command = new Command("list-standards", "List standards referenced by the configured rules");
         command.Add(pathOption);
         command.Add(configOption);
+        command.Add(rulesSourceOption);
+        command.Add(branchOption);
         command.Add(formatOption);
 
         command.SetAction((parseResult, cancellationToken) =>
         {
             var context = CliRepositoryContext.Resolve(
                 parseResult.GetValue(pathOption),
-                parseResult.GetValue(configOption));
+                parseResult.GetValue(configOption),
+                parseResult.GetValue(rulesSourceOption),
+                parseResult.GetValue(branchOption));
 
             var standards = context.LoadRules()
                 .Where(r => r.Standard is not null)
@@ -44,7 +50,7 @@ public static class ListStandardsCommand
 
             if (parseResult.GetValue(formatOption) == "json")
             {
-                System.Console.WriteLine(JsonSerializer.Serialize(standards, JsonOptions));
+                Console.WriteLine(JsonSerializer.Serialize(standards, JsonOptions));
             }
             else
             {
@@ -61,14 +67,14 @@ public static class ListStandardsCommand
     {
         if (standards.Count == 0)
         {
-            System.Console.WriteLine("No standards found.");
+            Console.WriteLine("No standards found.");
             return;
         }
 
-        System.Console.WriteLine($"{"STANDARD",-20}{"RULE COUNT",-12}RULE IDS");
+        Console.WriteLine($"{"STANDARD",-20}{"RULE COUNT",-12}RULE IDS");
         foreach (var standard in standards)
         {
-            System.Console.WriteLine($"{standard.Standard,-20}{standard.RuleCount,-12}{string.Join(", ", standard.RuleIds)}");
+            Console.WriteLine($"{standard.Standard,-20}{standard.RuleCount,-12}{string.Join(", ", standard.RuleIds)}");
         }
     }
 

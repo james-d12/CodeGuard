@@ -1,8 +1,13 @@
 # Setup Command Plan — configuring where the CLI reads rules from
 
-> Status: **proposed, for review**. No code has been written against this plan yet — it's a design
-> doc only, following the same review-before-build pattern as `docs/done/RULE_COVERAGE_PLAN.md`
-> before Stage A/B were implemented.
+> Status: **done**. Implemented as designed below: `GlobalSettings`/`GlobalSettingsPaths`/
+> `GlobalSettingsStore` under `src/RulesEngine.Configuration/GlobalConfig/` (namespace
+> `RulesEngine.Configuration.GlobalConfig` — not `GlobalSettings`, to avoid a type/namespace name
+> collision), `GitRuleSourceSync`/`RuleSourceResolver`/`SetupCommand` under `src/RulesEngine.Cli/`,
+> the precedence change in `CliRepositoryContext.Resolve`, and `--rules-source`/`--branch` added to
+> every command via `CommonOptions`. Covered by `tests/RulesEngine.Configuration.Tests/GlobalConfig/`
+> and the new `tests/RulesEngine.Cli.Tests/` project (git-sync tests run against a throwaway local
+> `git init` repo). Kept for design rationale.
 
 ## Context
 

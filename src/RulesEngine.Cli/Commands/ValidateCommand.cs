@@ -19,6 +19,8 @@ public static class ValidateCommand
     {
         var pathOption = CommonOptions.CreatePathOption();
         var configOption = CommonOptions.CreateConfigOption();
+        var rulesSourceOption = CommonOptions.CreateRulesSourceOption();
+        var branchOption = CommonOptions.CreateBranchOption();
 
         var formatOption = new Option<string>("--format")
         {
@@ -59,6 +61,8 @@ public static class ValidateCommand
         var command = new Command("validate", "Validate the repository against configured rules");
         command.Add(pathOption);
         command.Add(configOption);
+        command.Add(rulesSourceOption);
+        command.Add(branchOption);
         command.Add(formatOption);
         command.Add(outputOption);
         command.Add(ruleOption);
@@ -70,7 +74,9 @@ public static class ValidateCommand
         {
             var context = CliRepositoryContext.Resolve(
                 parseResult.GetValue(pathOption),
-                parseResult.GetValue(configOption));
+                parseResult.GetValue(configOption),
+                parseResult.GetValue(rulesSourceOption),
+                parseResult.GetValue(branchOption));
 
             var rules = context.LoadRules();
             var selectedRuleIds = parseResult.GetValue(ruleOption) ?? [];
@@ -98,7 +104,7 @@ public static class ValidateCommand
             var reporter = CreateReporter(parseResult.GetValue(formatOption)!);
             var outputPath = parseResult.GetValue(outputOption);
 
-            TextWriter writer = outputPath is null ? System.Console.Out : new StreamWriter(outputPath);
+            TextWriter writer = outputPath is null ? Console.Out : new StreamWriter(outputPath);
             try
             {
                 await reporter.WriteAsync(result, writer, cancellationToken);

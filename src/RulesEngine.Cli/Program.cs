@@ -13,5 +13,6 @@ rootCommand.Subcommands.Add(ValidateCommand.Build());
 rootCommand.Subcommands.Add(ListRulesCommand.Build());
 rootCommand.Subcommands.Add(ExplainRuleCommand.Build());
 rootCommand.Subcommands.Add(ListStandardsCommand.Build());
+rootCommand.Subcommands.Add(SetupCommand.Build());
 
 return await rootCommand.Parse(args).InvokeAsync();

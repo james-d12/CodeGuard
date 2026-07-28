@@ -10,6 +10,8 @@ public static class ExplainRuleCommand
     {
         var pathOption = CommonOptions.CreatePathOption();
         var configOption = CommonOptions.CreateConfigOption();
+        var rulesSourceOption = CommonOptions.CreateRulesSourceOption();
+        var branchOption = CommonOptions.CreateBranchOption();
         var ruleIdArgument = new Argument<string>("ruleId")
         {
             Description = "The rule ID to explain, e.g. DDD-ENTITY-001."
@@ -18,13 +20,17 @@ public static class ExplainRuleCommand
         var command = new Command("explain-rule", "Print full metadata and source YAML for a single rule");
         command.Add(pathOption);
         command.Add(configOption);
+        command.Add(rulesSourceOption);
+        command.Add(branchOption);
         command.Add(ruleIdArgument);
 
         command.SetAction((parseResult, cancellationToken) =>
         {
             var context = CliRepositoryContext.Resolve(
                 parseResult.GetValue(pathOption),
-                parseResult.GetValue(configOption));
+                parseResult.GetValue(configOption),
+                parseResult.GetValue(rulesSourceOption),
+                parseResult.GetValue(branchOption));
 
             var ruleId = parseResult.GetValue(ruleIdArgument)!;
             var entries = context.LoadRulesWithSource();
@@ -32,16 +38,16 @@ public static class ExplainRuleCommand
 
             if (entry.Rule is null)
             {
-                System.Console.Error.WriteLine($"Rule '{ruleId}' was not found under {string.Join(", ", context.Layout.RulesPaths)}.");
+                Console.Error.WriteLine($"Rule '{ruleId}' was not found under {string.Join(", ", context.Layout.RulesPaths)}.");
                 return Task.FromResult(1);
             }
 
             PrintSummary(entry.Rule);
-            System.Console.WriteLine();
-            System.Console.WriteLine($"Source: {entry.SourceFile}");
-            System.Console.WriteLine();
-            System.Console.WriteLine("--- Raw YAML ---");
-            System.Console.WriteLine(File.ReadAllText(entry.SourceFile));
+            Console.WriteLine();
+            Console.WriteLine($"Source: {entry.SourceFile}");
+            Console.WriteLine();
+            Console.WriteLine("--- Raw YAML ---");
+            Console.WriteLine(File.ReadAllText(entry.SourceFile));
 
             return Task.FromResult(0);
         });
@@ -51,34 +57,34 @@ public static class ExplainRuleCommand
 
     private static void PrintSummary(RuleDefinition rule)
     {
-        System.Console.WriteLine($"Id:            {rule.Id}");
-        System.Console.WriteLine($"Name:          {rule.Name}");
+        Console.WriteLine($"Id:            {rule.Id}");
+        Console.WriteLine($"Name:          {rule.Name}");
         if (rule.Description is not null)
         {
-            System.Console.WriteLine($"Description:   {rule.Description.Trim()}");
+            Console.WriteLine($"Description:   {rule.Description.Trim()}");
         }
-        System.Console.WriteLine($"Standard:      {rule.Standard ?? "-"}");
-        System.Console.WriteLine($"Severity:      {rule.Severity}");
-        System.Console.WriteLine($"Enforcement:   {rule.Enforcement.Classification}");
-        System.Console.WriteLine($"Tags:          {(rule.Tags.Count == 0 ? "-" : string.Join(", ", rule.Tags))}");
-        System.Console.WriteLine($"Enabled:       {rule.Enabled}");
-        System.Console.WriteLine($"Illustrative:  {rule.Illustrative}");
+        Console.WriteLine($"Standard:      {rule.Standard ?? "-"}");
+        Console.WriteLine($"Severity:      {rule.Severity}");
+        Console.WriteLine($"Enforcement:   {rule.Enforcement.Classification}");
+        Console.WriteLine($"Tags:          {(rule.Tags.Count == 0 ? "-" : string.Join(", ", rule.Tags))}");
+        Console.WriteLine($"Enabled:       {rule.Enabled}");
+        Console.WriteLine($"Illustrative:  {rule.Illustrative}");
         if (rule.Analyzer is not null)
         {
-            System.Console.WriteLine($"Analyzer:      {rule.Analyzer.Name}");
+            Console.WriteLine($"Analyzer:      {rule.Analyzer.Name}");
         }
         else
         {
-            System.Console.WriteLine($"Target kind:   {rule.Target!.Kind}");
-            System.Console.WriteLine($"Assertions:    {string.Join(", ", rule.Assertions!.Select(a => a.Kind))}");
+            Console.WriteLine($"Target kind:   {rule.Target!.Kind}");
+            Console.WriteLine($"Assertions:    {string.Join(", ", rule.Assertions!.Select(a => a.Kind))}");
         }
         if (rule.Remediation is not null)
         {
-            System.Console.WriteLine($"Remediation:   {rule.Remediation.Trim()}");
+            Console.WriteLine($"Remediation:   {rule.Remediation.Trim()}");
         }
         if (rule.Documentation.Count > 0)
         {
-            System.Console.WriteLine($"Documentation: {string.Join(", ", rule.Documentation)}");
+            Console.WriteLine($"Documentation: {string.Join(", ", rule.Documentation)}");
         }
     }
 }
