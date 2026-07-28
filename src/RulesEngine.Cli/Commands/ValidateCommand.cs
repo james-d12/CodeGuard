@@ -37,6 +37,11 @@ public static class ValidateCommand
             Description = "Restrict evaluation to these rule IDs (repeatable). Default: all discovered rules."
         };
 
+        var solutionOption = new Option<string[]>("--solution")
+        {
+            Description = "Restrict analysis to these .sln file(s) (repeatable). Default: every .sln found recursively under --path."
+        };
+
         var severityThresholdOption = new Option<string>("--severity-threshold")
         {
             Description = "Drop violations below this severity from the report.",
@@ -57,6 +62,7 @@ public static class ValidateCommand
         command.Add(formatOption);
         command.Add(outputOption);
         command.Add(ruleOption);
+        command.Add(solutionOption);
         command.Add(severityThresholdOption);
         command.Add(failOnOption);
 
@@ -74,13 +80,13 @@ public static class ValidateCommand
                 rules = rules.Where(r => selectedSet.Contains(r.Id)).ToList();
             }
 
-            // Known limitation: if solutionPath is this tool's own currently-running solution,
-            // Buildalyzer's design-time "Clean" step can delete shared output files (such as its own
-            // logger assembly) still needed by this process, causing analysis of one of the projects
-            // to fail. This doesn't affect validating any other repository.
-            var solutionPath = Directory.GetFiles(context.RepoRoot, "*.sln").Single();
+            // Known limitation: if one of the resolved solutions is this tool's own currently-running
+            // solution, Buildalyzer's design-time "Clean" step can delete shared output files (such as
+            // its own logger assembly) still needed by this process, causing analysis of one of the
+            // projects to fail. This doesn't affect validating any other repository.
+            var solutionPaths = SolutionFileLocator.Resolve(context.RepoRoot, parseResult.GetValue(solutionOption) ?? []);
 
-            var builder = new AnalysisModelBuilder([new RepositoryFileProvider(), new MsBuildAnalysisProvider(solutionPath)]);
+            var builder = new AnalysisModelBuilder([new RepositoryFileProvider(), new MsBuildAnalysisProvider(solutionPaths)]);
             var model = await builder.BuildAsync(context.RepoRoot, cancellationToken);
 
             var evaluator = new RuleEvaluator();

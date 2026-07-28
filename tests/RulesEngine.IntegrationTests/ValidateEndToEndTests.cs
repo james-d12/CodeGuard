@@ -15,7 +15,7 @@ public class ValidateEndToEndTests
         var solutionPath = GetFixtureSolutionPath();
         var rulesDirectory = GetRepoRulesDirectory();
 
-        var builder = new AnalysisModelBuilder([new MsBuildAnalysisProvider(solutionPath)]);
+        var builder = new AnalysisModelBuilder([new MsBuildAnalysisProvider([solutionPath])]);
         var model = await builder.BuildAsync(Path.GetDirectoryName(solutionPath)!);
 
         var rules = RuleFileLoader.CreateDefault().LoadFromDirectory(rulesDirectory);

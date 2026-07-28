@@ -63,7 +63,7 @@ public class ValidateJsonAndSarifOutputTests
         var rulesDirectory = GetRepoRulesDirectory();
 
         var builder = new AnalysisModelBuilder(
-            [new RepositoryFileProvider(), new MsBuildAnalysisProvider(solutionPath)]);
+            [new RepositoryFileProvider(), new MsBuildAnalysisProvider([solutionPath])]);
         var model = await builder.BuildAsync(Path.GetDirectoryName(solutionPath)!);
 
         var rules = RuleFileLoader.CreateDefault().LoadFromDirectory(rulesDirectory);

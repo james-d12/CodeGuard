@@ -7,46 +7,59 @@ using RulesEngine.Analyzers.Roslyn;
 
 namespace RulesEngine.Analyzers.MSBuild;
 
-public sealed class MsBuildAnalysisProvider(string solutionPath) : IAnalysisProvider
+public sealed class MsBuildAnalysisProvider(IReadOnlyList<string> solutionPaths) : IAnalysisProvider
 {
     public string Name => "MSBuild";
 
     public async Task ContributeAsync(AnalysisModelBuilderContext context, CancellationToken cancellationToken)
     {
-#pragma warning disable CS0618 // AnalyzerManager(string) is obsolete in favor of an internal IOPath overload
-        var manager = new AnalyzerManager(solutionPath);
-#pragma warning restore CS0618
         using var workspace = new AdhocWorkspace();
 
-        var projectModels = new List<ProjectModel>();
-        foreach (var projectAnalyzer in manager.Projects.Values)
+        // A project referenced by more than one solution is only built/added once, attributed to
+        // whichever solution is processed first, so shared projects don't get double-reported.
+        var analyzedProjectPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var solutionPath in solutionPaths)
         {
-            var results = projectAnalyzer.Build();
-            var result = results.FirstOrDefault(r => r.Succeeded) ?? results.First();
+#pragma warning disable CS0618 // AnalyzerManager(string) is obsolete in favor of an internal IOPath overload
+            var manager = new AnalyzerManager(solutionPath);
+#pragma warning restore CS0618
 
-            var (types, syntaxFacts, diagnostics) = await ExtractTypesAsync(result, workspace, cancellationToken);
-            context.AddCallSites(syntaxFacts.CallSites);
-            context.AddSwitches(syntaxFacts.Switches);
-            context.AddThrowSites(syntaxFacts.ThrowSites);
-            context.AddMutationSites(syntaxFacts.MutationSites);
-            context.AddTryBlocks(syntaxFacts.TryBlocks);
-            context.AddMethodBodyShapes(syntaxFacts.MethodBodyShapes);
-            context.AddDiagnostics(diagnostics);
+            var projectModels = new List<ProjectModel>();
+            foreach (var (projectPath, projectAnalyzer) in manager.Projects)
+            {
+                if (!analyzedProjectPaths.Add(projectPath))
+                {
+                    continue;
+                }
 
-            projectModels.Add(new ProjectModel(
-                Name: Path.GetFileNameWithoutExtension(result.ProjectFilePath),
-                Path: result.ProjectFilePath,
-                TargetFramework: result.TargetFramework ?? string.Empty,
-                Sdk: "Microsoft.NET.Sdk",
-                ProjectReferences: result.ProjectReferences.Select(p => Path.GetFileNameWithoutExtension(p)).ToList(),
-                PackageReferences: result.PackageReferences
-                    .Select(p => new PackageReferenceModel(p.Key, p.Value.GetValueOrDefault("Version") ?? string.Empty))
-                    .ToList(),
-                Properties: result.Properties,
-                Types: types));
+                var results = projectAnalyzer.Build();
+                var result = results.FirstOrDefault(r => r.Succeeded) ?? results.First();
+
+                var (types, syntaxFacts, diagnostics) = await ExtractTypesAsync(result, workspace, cancellationToken);
+                context.AddCallSites(syntaxFacts.CallSites);
+                context.AddSwitches(syntaxFacts.Switches);
+                context.AddThrowSites(syntaxFacts.ThrowSites);
+                context.AddMutationSites(syntaxFacts.MutationSites);
+                context.AddTryBlocks(syntaxFacts.TryBlocks);
+                context.AddMethodBodyShapes(syntaxFacts.MethodBodyShapes);
+                context.AddDiagnostics(diagnostics);
+
+                projectModels.Add(new ProjectModel(
+                    Name: Path.GetFileNameWithoutExtension(result.ProjectFilePath),
+                    Path: result.ProjectFilePath,
+                    TargetFramework: result.TargetFramework ?? string.Empty,
+                    Sdk: "Microsoft.NET.Sdk",
+                    ProjectReferences: result.ProjectReferences.Select(p => Path.GetFileNameWithoutExtension(p)).ToList(),
+                    PackageReferences: result.PackageReferences
+                        .Select(p => new PackageReferenceModel(p.Key, p.Value.GetValueOrDefault("Version") ?? string.Empty))
+                        .ToList(),
+                    Properties: result.Properties,
+                    Types: types));
+            }
+
+            context.AddSolution(new SolutionModel(solutionPath, projectModels));
         }
-
-        context.AddSolution(new SolutionModel(solutionPath, projectModels));
     }
 
     private static async Task<(IReadOnlyList<TypeModel> Types, ExtractedSyntaxFacts SyntaxFacts, IReadOnlyList<DiagnosticModel> Diagnostics)> ExtractTypesAsync(
