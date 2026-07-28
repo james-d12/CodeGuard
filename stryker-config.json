@@ -1,0 +1,12 @@
+{
+  "stryker-config": {
+    "solution": "RuleEngine.sln",
+    "mutate": ["**/*.cs", "!src/RulesEngine.Cli/**/*.cs"],
+    "reporters": ["progress", "html", "json"],
+    "thresholds": {
+      "high": 80,
+      "low": 60,
+      "break": 0
+    }
+  }
+}
