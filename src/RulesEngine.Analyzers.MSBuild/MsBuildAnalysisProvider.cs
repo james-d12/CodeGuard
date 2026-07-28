@@ -24,7 +24,14 @@ public sealed class MsBuildAnalysisProvider(string solutionPath) : IAnalysisProv
             var results = projectAnalyzer.Build();
             var result = results.FirstOrDefault(r => r.Succeeded) ?? results.First();
 
-            var types = await ExtractTypesAsync(result, workspace, cancellationToken);
+            var (types, syntaxFacts, diagnostics) = await ExtractTypesAsync(result, workspace, cancellationToken);
+            context.AddCallSites(syntaxFacts.CallSites);
+            context.AddSwitches(syntaxFacts.Switches);
+            context.AddThrowSites(syntaxFacts.ThrowSites);
+            context.AddMutationSites(syntaxFacts.MutationSites);
+            context.AddTryBlocks(syntaxFacts.TryBlocks);
+            context.AddMethodBodyShapes(syntaxFacts.MethodBodyShapes);
+            context.AddDiagnostics(diagnostics);
 
             projectModels.Add(new ProjectModel(
                 Name: Path.GetFileNameWithoutExtension(result.ProjectFilePath),
@@ -42,7 +49,7 @@ public sealed class MsBuildAnalysisProvider(string solutionPath) : IAnalysisProv
         context.AddSolution(new SolutionModel(solutionPath, projectModels));
     }
 
-    private static async Task<IReadOnlyList<TypeModel>> ExtractTypesAsync(
+    private static async Task<(IReadOnlyList<TypeModel> Types, ExtractedSyntaxFacts SyntaxFacts, IReadOnlyList<DiagnosticModel> Diagnostics)> ExtractTypesAsync(
         IAnalyzerResult result,
         AdhocWorkspace workspace,
         CancellationToken cancellationToken)
@@ -52,9 +59,13 @@ public sealed class MsBuildAnalysisProvider(string solutionPath) : IAnalysisProv
 
         if (compilation is not Microsoft.CodeAnalysis.CSharp.CSharpCompilation csharpCompilation)
         {
-            return [];
+            return ([], new ExtractedSyntaxFacts([], [], [], [], [], []), []);
         }
 
-        return RoslynTypeExtractor.ExtractTypes(csharpCompilation, Path.GetFileNameWithoutExtension(result.ProjectFilePath));
+        var projectName = Path.GetFileNameWithoutExtension(result.ProjectFilePath);
+        var types = RoslynTypeExtractor.ExtractTypes(csharpCompilation, projectName);
+        var syntaxFacts = RoslynSyntaxFactExtractor.Extract(csharpCompilation, projectName);
+        var diagnostics = RoslynDiagnosticExtractor.Extract(csharpCompilation, projectName);
+        return (types, syntaxFacts, diagnostics);
     }
 }

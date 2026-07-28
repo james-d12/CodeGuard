@@ -1,0 +1,26 @@
+id: SKILL-APPLICATION-NO-MANUAL-VALIDATION-FILTER-001
+name: No manual validation filter re-implementing built-in validation
+description: >
+  Custom IEndpointFilter implementations must not call
+  Validator.TryValidateObject - use built-in Minimal API validation instead.
+standard: .github/skills/application/pps-application-endpoint-mapping/SKILL.md
+severity: warning
+enforcement:
+  classification: deterministic
+tags:
+  - validation
+remediation: >
+  Delete the custom IEndpointFilter and rely on builder.Services.AddValidation()
+  instead.
+illustrative: true
+
+target:
+  kind: implements
+  interface: "*IEndpointFilter"
+
+assertions:
+  - must_not_exist:
+      selector:
+        kind: call_site
+        containing_type: "${FullName}"
+        invoked_member: "TryValidateObject"

@@ -11,7 +11,7 @@ public class MustHaveDirectoryAssertionTests : IDisposable
     public void Evaluate_Passes_WhenDirectoryExists()
     {
         Directory.CreateDirectory(Path.Combine(_root, "src"));
-        var model = new RepositoryModel(_root, [], []);
+        var model = new RepositoryModel(_root, [], [], [], [], [], [], [], [], []);
 
         var outcome = new MustHaveDirectoryAssertion("src").Evaluate(model, model);
 
@@ -21,7 +21,7 @@ public class MustHaveDirectoryAssertionTests : IDisposable
     [Fact]
     public void Evaluate_Fails_WhenDirectoryDoesNotExist()
     {
-        var model = new RepositoryModel(_root, [], []);
+        var model = new RepositoryModel(_root, [], [], [], [], [], [], [], [], []);
 
         var outcome = new MustHaveDirectoryAssertion("src").Evaluate(model, model);
 

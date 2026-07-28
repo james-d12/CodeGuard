@@ -1,0 +1,16 @@
+# Config for validating repos other than RuleEngine itself.
+# Unlike config.yml (which resolves "rules" relative to RuleEngine's own checkout for
+# self-validation/dogfooding), this points at RuleEngine's rule set via an absolute path so it
+# still resolves correctly no matter what --path target repo is being validated.
+# skills/agents/source/tests stay relative - they're discovered within the target repo.
+repository:
+  rules:
+    - "/home/james/Dev/RuleEngine/rules"
+  skills:
+    - ".github/skills"
+  agents:
+    - ".github/agents"
+  source:
+    - "RuleEngine"
+  tests:
+    - "tests"

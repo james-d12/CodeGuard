@@ -4,7 +4,11 @@
   "title": "RuleEngine rule definition",
   "type": "object",
   "additionalProperties": false,
-  "required": ["id", "name", "target", "assertions"],
+  "required": ["id", "name"],
+  "oneOf": [
+    { "required": ["target", "assertions"] },
+    { "required": ["analyzer"] }
+  ],
   "properties": {
     "id": { "type": "string", "minLength": 1 },
     "name": { "type": "string", "minLength": 1 },
@@ -40,6 +44,13 @@
       }
     },
     "when": { "$ref": "#/$defs/whenNode" },
+    "analyzer": {
+      "type": "object",
+      "required": ["kind"],
+      "properties": {
+        "kind": { "type": "string", "minLength": 1 }
+      }
+    },
     "assertions": {
       "type": "array",
       "minItems": 1,

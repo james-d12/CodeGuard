@@ -1,0 +1,23 @@
+id: SKILL-DOMAIN-NO-BUSINESS-EXCEPTIONS-001
+name: Domain code never throws for business outcomes
+description: >
+  Domain code must never throw exceptions for business/validation outcomes;
+  the only permitted throw is the guard-clause-position ArgumentOutOfRangeException
+  in the exhaustive switch default of CreateEventData. Approximated as "throw
+  must be the leading statement of its method" rather than verifying it's
+  specifically that one sanctioned ArgumentOutOfRangeException call.
+standard: .github/skills/domain/pps-domain-entity-framework/SKILL.md
+severity: critical
+enforcement:
+  classification: deterministic
+tags:
+  - domain
+  - exceptions
+remediation: >
+  Return a DomainEntityOperationResult failure outcome instead of throwing.
+illustrative: true
+
+analyzer:
+  kind: no-exceptions
+  namespace: "Contoso.Domain.*"
+  allow_guard_clause: true

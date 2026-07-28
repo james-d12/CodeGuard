@@ -5,7 +5,7 @@ namespace RulesEngine.Evaluation.Tests.Assertions;
 
 public class MustHaveModifierAssertionTests
 {
-    private static readonly RepositoryModel EmptyModel = new(".", [], []);
+    private static readonly RepositoryModel EmptyModel = new(".", [], [], [], [], [], [], [], [], []);
 
     [Fact]
     public void Evaluate_Passes_WhenTypeHasSealedModifier()

@@ -1,0 +1,29 @@
+id: SKILL-REPORTING-EVENT-HANDLER-PROCESSOR-CALL-001
+name: Reporting event handler calls processor directly
+description: >
+  Handlers must call the shared processor's ProcessAsync directly, not
+  construct a bespoke *PersistenceProcessorInput wrapper class per handler.
+  Doesn't cover the "shared MapEventRoute extension defined once and reused"
+  cardinality clause.
+standard: .github/skills/reporting/pps-reporting-event-handler/SKILL.md
+severity: warning
+enforcement:
+  classification: deterministic
+tags:
+  - reporting
+  - eventhandler
+remediation: >
+  Call the shared processor's ProcessAsync method instead of constructing a
+  handler-specific input wrapper.
+illustrative: true
+
+target:
+  kind: repository
+
+assertions:
+  - must_not_exist:
+      selector:
+        kind: call_site
+        site_kind: object_creation
+        invoked_member: "*PersistenceProcessorInput"
+        project: "*.Reporting*"

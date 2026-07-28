@@ -11,11 +11,13 @@ public class RuleFileLoaderTests : IDisposable
 
     private static RuleFileLoader CreateLoader()
     {
-        var assertionParsers = DefaultParsers.CreateAssertionRegistry();
+        var selectorParsers = DefaultParsers.CreateSelectorRegistry();
+        var assertionParsers = DefaultParsers.CreateAssertionRegistry(selectorParsers);
         return new(
-            DefaultParsers.CreateSelectorRegistry(),
+            selectorParsers,
             assertionParsers,
             DefaultParsers.CreateConditionRegistry(assertionParsers),
+            DefaultAnalyzers.CreateRegistry(),
             RuleSchemaValidator.CreateDefault());
     }
 
@@ -50,7 +52,7 @@ public class RuleFileLoaderTests : IDisposable
         Assert.Equal(EnforcementClassification.Deterministic, rule.Enforcement.Classification);
         Assert.Equal(["ddd", "domain"], rule.Tags);
         Assert.True(rule.Illustrative);
-        Assert.Single(rule.Assertions);
+        Assert.Single(rule.Assertions!);
     }
 
     [Fact]
@@ -74,6 +76,82 @@ public class RuleFileLoaderTests : IDisposable
         var rule = CreateLoader().LoadFromFile(file);
 
         Assert.NotNull(rule.When);
+    }
+
+    [Fact]
+    public void LoadFromFile_WithMustExist_ParsesNestedSelector()
+    {
+        var file = WriteRuleFile("with-must-exist.yml", """
+            id: DDD-ENTITY-005
+            name: Some cardinality rule
+            target:
+              kind: class
+              namespace: "Contoso.Domain.Exceptions"
+            assertions:
+              - must_exist:
+                  selector:
+                    kind: constructor
+                    declaring_type: "${FullName}"
+                    parameter_types: []
+            """);
+
+        var rule = CreateLoader().LoadFromFile(file);
+
+        var assertion = Assert.Single(rule.Assertions!);
+        Assert.Equal("must_exist", assertion.Kind);
+    }
+
+    [Fact]
+    public void LoadFromFile_WithAnalyzer_ParsesAnalyzer()
+    {
+        var file = WriteRuleFile("with-analyzer.yml", """
+            id: DDD-ENTITY-006
+            name: Some analyzer-backed rule
+            analyzer:
+              kind: exhaustive-switch
+            """);
+
+        var rule = CreateLoader().LoadFromFile(file);
+
+        Assert.NotNull(rule.Analyzer);
+        Assert.Equal("exhaustive-switch", rule.Analyzer!.Name);
+        Assert.Null(rule.Target);
+        Assert.Null(rule.Assertions);
+    }
+
+    [Fact]
+    public void LoadFromFile_WithUnknownAnalyzer_ThrowsRuleParsingException()
+    {
+        var file = WriteRuleFile("with-unknown-analyzer.yml", """
+            id: DDD-ENTITY-007
+            name: Some analyzer-backed rule
+            analyzer:
+              kind: does-not-exist
+            """);
+
+        var exception = Assert.Throws<RuleParsingException>(() => CreateLoader().LoadFromFile(file));
+        Assert.Contains("does-not-exist", exception.Message);
+    }
+
+    [Fact]
+    public void LoadFromFile_WithAnalyzerAndTarget_ThrowsSchemaValidationException()
+    {
+        // Schema-level oneOf(target+assertions, analyzer) rejects this before the parser's own
+        // mutual-exclusivity check would ever run.
+        var file = WriteRuleFile("with-analyzer-and-target.yml", """
+            id: DDD-ENTITY-008
+            name: Some rule
+            analyzer:
+              kind: exhaustive-switch
+            target:
+              kind: class
+              namespace: "Contoso.Domain.Entities"
+            assertions:
+              - must_inherit_from:
+                  type: "Contoso.Domain.Entity<TId>"
+            """);
+
+        Assert.Throws<RuleSchemaValidationException>(() => CreateLoader().LoadFromFile(file));
     }
 
     [Fact]

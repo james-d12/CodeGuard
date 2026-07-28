@@ -144,6 +144,84 @@
 | `skill.utils.fpe-cancellation-and-batching` | call-site/parameter-flow analysis (CancellationToken propagation, loop detection) |
 
 
+## Stage B — final classification after Wave 4 (rule authoring complete)
+
+> Added after Wave 4 of `docs/STAGE_B_PROGRESS.md` authored `rules/generated/*.yml` for this bucket.
+> Of the 60 rules above, **50 shipped** as rule files (2 as a split pair, so 51 files), **3 stay
+> unenforced** (the `RoslynDiagnosticPassthroughAnalyzer`-targeted IDE0005/IDE0011/IDE0161 rules —
+> the compiler's `GetDiagnostics()` never produces IDE-analyzer diagnostics, only compiler ones, so
+> a rule referencing those IDs would silently always pass; see "Known gaps" in
+> `docs/STAGE_B_PROGRESS.md`), and **7 are genuine gaps** where no combination of existing
+> selectors/assertions/analyzers could express the check honestly (each would need a new engine
+> fact not modeled — loop detection, named-argument capture, cross-class call-site comparison,
+> assignment-RHS-value tracking, or ordered-call-sequence comparison). All analyzer `kind`/param
+> names below are the **final, post-genericity-pass** names — see `docs/STAGE_B_PROGRESS.md`'s
+> "Post-Wave-3 genericity pass" table if a name here doesn't match an older mental model.
+
+| Rule ID | Rule file | Notes |
+|---|---|---|
+| `coding.api.versioned-routes` | `coding-api-versioned-routes-001.yml` | `call_site` (target) + `must_match_argument` |
+| `coding.api.xml-docs-present` | `coding-api-xml-docs-present-001.yml` | `analyzer: roslyn-diagnostic-passthrough` (CS1591) |
+| `coding.async.no-blocking-calls` | `coding-async-no-blocking-calls-001.yml` | `must_not_exist` x2 (`Result`, `Wait`) |
+| `coding.config.strongly-typed-options` | `coding-config-strongly-typed-options-001.yml` | `must_exist` (`ValidateOnStart`), presence-only approximation |
+| `coding.di.constructor-injection-only` | `coding-di-constructor-injection-only-001.yml` | `must_not_exist` x2 (`GetService`, `GetRequiredService`) |
+| `coding.errors.custom-exception-shape` | `coding-errors-custom-exception-shape-001.yml` | `when: must_match_name` + `must_inherit_from` + `must_exist` x3 constructor shapes via `${FullName}` placeholder |
+| `coding.format.braces-required` | **not shipped** | uncoverable — see note above |
+| `coding.format.using-directives` | **not shipped** | uncoverable — see note above |
+| `coding.http.httpclientfactory` | `coding-http-httpclientfactory-001.yml` | `must_not_exist` (`new HttpClient()`) |
+| `coding.lang.file-scoped-namespaces` | **not shipped** | uncoverable — see note above |
+| `coding.perf.no-blocking-count` | `coding-perf-no-blocking-count-001.yml` | `must_not_exist` x3 (`Count`+`enclosing_comparison: ">"`, `Result`, `Wait`) |
+| `coding.telemetry.no-obsolete-instrumentation` | `coding-telemetry-no-obsolete-instrumentation-001.yml` | `must_not_exist` (`AddFrameworkInstrumentation`) |
+| `coding.test.doubles-folder` | **gap** | needs per-project directory check + conditional-usage detection; `must_have_directory` only checks one fixed repo-root path |
+| `coding.type.member-ordering` | `coding-type-member-ordering-001.yml` | `analyzer: member-ordering` (default order) |
+| `golden.api.versioned-path` | `golden-api-versioned-path-001.yml` | `call_site` (target) + `must_match_argument` |
+| `golden.config.hierarchy-order` | **gap** | needs ordered-call-sequence comparison (no "call A's Line < call B's Line" assertion exists) |
+| `golden.eventhandler.route-constants` | `golden-eventhandler-route-constants-001.yml` | `call_site` (`Map*`, `argument_index:0`, `argument_is_literal:true`) + `must_not_exist` |
+| `golden.observability.health-endpoints` | `golden-observability-health-endpoints-001.yml` | `must_exist` (`MapHealthChecks`), presence-only |
+| `golden.observability.no-console-writeline` | `golden-observability-no-console-writeline-001.yml` | `must_not_exist` x2 (`Console.WriteLine`, `Console.Write`) |
+| `golden.persistence.repository-base-class` | `golden-persistence-repository-base-class-001.yml` + `-002.yml` | split: `-001` = `must_inherit_from`; `-002` = `analyzer: no-pure-delegation-override` |
+| `skill.apphost.no-hardcoded-secrets` | `skill-apphost-no-hardcoded-secrets-001.yml` | `must_not_match_content` (file scan, not call-site) |
+| `skill.application.di-pattern` | `skill-application-di-pattern-001.yml` | `must_exist` (`ValidateOnStart`), doesn't cover TimeProvider cardinality |
+| `skill.application.loggermessage-partials` | `skill-application-loggermessage-partials-001.yml` | `must_not_exist` x3 (`LogInformation`/`LogWarning`/`LogError`) |
+| `skill.application.no-idgen-in-handler` | `skill-application-no-idgen-in-handler-001.yml` | `must_not_exist` (`GenerateDeterministicId`) |
+| `skill.application.no-manual-validation-filter` | `skill-application-no-manual-validation-filter-001.yml` | `implements` (target) + `must_not_exist` via `containing_type: "${FullName}"` |
+| `skill.application.no-raw-httpclient` | `skill-application-no-raw-httpclient-001.yml` | `must_not_exist` (`new HttpClient()`) |
+| `skill.application.single-catch-block` | `skill-application-single-catch-block-001.yml` | `analyzer: catch-clause-count` |
+| `skill.application.startup-bootstrap` | `skill-application-startup-bootstrap-001.yml` | `must_not_exist` + `must_exist` (WebApplication vs SppWebApplication) |
+| `skill.application.timeprovider-required` | `skill-application-timeprovider-required-001.yml` | `must_not_exist` (`DateTime.UtcNow`) |
+| `skill.application.validation-net10-addvalidation` | `skill-application-validation-net10-addvalidation-001.yml` | `must_exist` (`AddValidation`) |
+| `skill.client-config.typename-consistency` | `skill-client-config-typename-consistency-001.yml` | `analyzer: const-yaml-value-consistency` |
+| `skill.compliance.standards-compliance-checks` | **not shipped** | composite meta-rule already covered by the union of other individual rules — not a standalone check |
+| `skill.domain.deterministic-entity-id` | `skill-domain-deterministic-entity-id-001.yml` | `must_not_exist` (`Guid.NewGuid()`) |
+| `skill.domain.event-mapping-exhaustive` | `skill-domain-event-mapping-exhaustive-001.yml` | `analyzer: exhaustive-switch` |
+| `skill.domain.immutable-mutation` | `skill-domain-immutable-mutation-001.yml` | `analyzer: immutable-mutation` |
+| `skill.domain.no-business-exceptions` | `skill-domain-no-business-exceptions-001.yml` | `analyzer: no-exceptions` (`allow_guard_clause: true`) |
+| `skill.domain.value-object-shape` | `skill-domain-value-object-shape-001.yml` | `must_have_modifier: sealed` only; tuple-factory/no-ID clauses not covered |
+| `skill.eventhandler.bootstrap-required` | `skill-eventhandler-bootstrap-required-001.yml` | `must_not_exist` + `must_exist` (WebApplication vs SppWebApplication) |
+| `skill.eventhandler.error-contract` | **gap** | needs response-path/control-flow analysis, not modeled |
+| `skill.eventhandler.http-client-resilience` | `skill-eventhandler-http-client-resilience-001.yml` | `must_not_exist` (`new HttpClient()`) |
+| `skill.eventhandler.no-raw-httpclient-outbound` | `skill-eventhandler-no-raw-httpclient-outbound-001.yml` | `must_not_exist` (`new HttpClient()`), narrower project scope than the resilience rule |
+| `skill.eventhandler.unit-test-status-coverage` | `skill-eventhandler-unit-test-status-coverage-001.yml` | `must_exist` x9, one per non-success status code, via `method` selector's `name` filter |
+| `skill.instrumentation.no-raw-otel-sdk` | `skill-instrumentation-no-raw-otel-sdk-001.yml` | `must_not_exist` x3 (`Meter`, `ActivitySource`, `WithTracing`) |
+| `skill.observability.no-client-key-metric-tag` | `skill-observability-no-client-key-metric-tag-001.yml` | `must_not_match_content` (file scan — named-argument values aren't captured by `CallSiteModel`) |
+| `skill.persistence.document-attributes` | `skill-persistence-document-attributes-001.yml` | `when: must_match_name` + `must_have_attribute` (JsonIgnore) |
+| `skill.persistence.factory-attributes` | `skill-persistence-factory-attributes-001.yml` | `must_have_attribute` (ExcludeFromCodeCoverage) |
+| `skill.persistence.partition-key-builder-class` | `skill-persistence-partition-key-builder-class-001.yml` | `analyzer: companion-type-cardinality` |
+| `skill.persistence.registration-singleton-timeouts` | `skill-persistence-registration-singleton-timeouts-001.yml` | `must_exist` x2 (`WithRequestTimeout`, `WithThrottlingRetryOptions`), presence-only |
+| `skill.persistence.repository-shape` | `skill-persistence-repository-shape-001.yml` | `must_have_modifier: sealed` + `must_inherit_from` |
+| `skill.persistence.same-partition-key-shape` | **gap** | needs cross-class call-site argument comparison, not modeled |
+| `skill.persistence.sql-dbnull-binding` | **gap** | needs assignment-RHS-value tracking; `MutationSiteModel` doesn't capture the assigned value |
+| `skill.reporting.datetime-surrogates` | `skill-reporting-datetime-surrogates-001.yml` | `must_have_modifier: static` only; value-format/null-return clauses not covered |
+| `skill.reporting.dbup-bootstrap` | `skill-reporting-dbup-bootstrap-001.yml` | `analyzer: project-convention` |
+| `skill.reporting.event-handler-processor-call` | `skill-reporting-event-handler-processor-call-001.yml` | `must_not_exist` (`*PersistenceProcessorInput` construction) |
+| `skill.reporting.eventid-reservation-blocks` | `skill-reporting-eventid-reservation-blocks-001.yml` | `analyzer: duplicate-attribute-argument` |
+| `skill.reporting.handler-shape` | `skill-reporting-handler-shape-001.yml` | `must_have_modifier` x2 (sealed, partial) + `must_have_method` (HandleAsync) |
+| `skill.reporting.pagination-shape` | `skill-reporting-pagination-shape-001.yml` | `when: must_match_name` + `must_have_property` x3 (Page, PageSize, TotalRecords) |
+| `skill.reporting.persistence-processor-base` | `skill-reporting-persistence-processor-base-001.yml` | `must_inherit_from` |
+| `skill.reporting.sql-repository-conventions` | `skill-reporting-sql-repository-conventions-001.yml` | `must_exist` (LogDebug) + `must_not_exist` (IsDBNull sync) |
+| `skill.utils.fpe-cancellation-and-batching` | **gap** | needs parameter-type-aware assertion (no "has a CancellationToken parameter" check exists) + loop detection |
+
+
 ## Out of scope (18)
 
 | Rule ID | Notes |

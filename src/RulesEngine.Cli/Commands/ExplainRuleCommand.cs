@@ -63,8 +63,15 @@ public static class ExplainRuleCommand
         System.Console.WriteLine($"Tags:          {(rule.Tags.Count == 0 ? "-" : string.Join(", ", rule.Tags))}");
         System.Console.WriteLine($"Enabled:       {rule.Enabled}");
         System.Console.WriteLine($"Illustrative:  {rule.Illustrative}");
-        System.Console.WriteLine($"Target kind:   {rule.Target.Kind}");
-        System.Console.WriteLine($"Assertions:    {string.Join(", ", rule.Assertions.Select(a => a.Kind))}");
+        if (rule.Analyzer is not null)
+        {
+            System.Console.WriteLine($"Analyzer:      {rule.Analyzer.Name}");
+        }
+        else
+        {
+            System.Console.WriteLine($"Target kind:   {rule.Target!.Kind}");
+            System.Console.WriteLine($"Assertions:    {string.Join(", ", rule.Assertions!.Select(a => a.Kind))}");
+        }
         if (rule.Remediation is not null)
         {
             System.Console.WriteLine($"Remediation:   {rule.Remediation.Trim()}");

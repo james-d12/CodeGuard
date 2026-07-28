@@ -6,10 +6,10 @@ namespace RulesEngine.Configuration.Tests;
 
 public class ConditionParserRegistryTests
 {
-    private static readonly RepositoryModel EmptyModel = new(".", [], []);
+    private static readonly RepositoryModel EmptyModel = new(".", [], [], [], [], [], [], [], [], []);
 
     private readonly ConditionParserRegistry _parser =
-        DefaultParsers.CreateConditionRegistry(DefaultParsers.CreateAssertionRegistry());
+        DefaultParsers.CreateConditionRegistry(DefaultParsers.CreateAssertionRegistry(DefaultParsers.CreateSelectorRegistry()));
 
     private static JsonObject Node(string json) => JsonNode.Parse(json)!.AsObject();
 

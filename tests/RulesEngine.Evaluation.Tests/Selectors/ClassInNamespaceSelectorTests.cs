@@ -46,6 +46,6 @@ public class ClassInNamespaceSelectorTests
             "Contoso.Domain", "Contoso.Domain.csproj", "net10.0", "Microsoft.NET.Sdk",
             [], [], new Dictionary<string, string>(), types);
         var solution = new SolutionModel("Contoso.sln", [project]);
-        return new RepositoryModel(".", [solution], []);
+        return new RepositoryModel(".", [solution], [], [], [], [], [], [], [], []);
     }
 }

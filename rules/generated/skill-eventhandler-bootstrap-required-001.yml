@@ -1,0 +1,34 @@
+id: SKILL-EVENTHANDLER-BOOTSTRAP-REQUIRED-001
+name: EventHandler mandatory SppWebApplication bootstrap
+description: >
+  EventHandler Program.cs must bootstrap via
+  SppWebApplication.CreateBuilder(...)/BuildApp(...), never the raw
+  WebApplication.CreateBuilder(args)/builder.Build().
+standard: .github/skills/eventhandler/pps-eventhandler-bootstrap/SKILL.md
+severity: critical
+enforcement:
+  classification: deterministic
+tags:
+  - eventhandler
+  - startup
+remediation: >
+  Replace WebApplication.CreateBuilder(args)/builder.Build() with
+  SppWebApplication.CreateBuilder(...)/.BuildApp(...).
+illustrative: true
+
+target:
+  kind: repository
+
+assertions:
+  - must_not_exist:
+      selector:
+        kind: call_site
+        invoked_member: "CreateBuilder"
+        target_type: "WebApplication"
+        project: "*.EventHandler*"
+  - must_exist:
+      selector:
+        kind: call_site
+        invoked_member: "CreateBuilder"
+        target_type: "SppWebApplication"
+        project: "*.EventHandler*"

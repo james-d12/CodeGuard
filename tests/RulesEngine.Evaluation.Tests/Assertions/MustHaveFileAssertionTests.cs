@@ -5,7 +5,7 @@ namespace RulesEngine.Evaluation.Tests.Assertions;
 
 public class MustHaveFileAssertionTests
 {
-    private static RepositoryModel BuildModel(params FileModel[] files) => new(".", [], files);
+    private static RepositoryModel BuildModel(params FileModel[] files) => new(".", [], files, [], [], [], [], [], [], []);
 
     [Fact]
     public void Evaluate_Passes_WhenMatchingFileExists()

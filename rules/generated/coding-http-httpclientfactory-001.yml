@@ -1,0 +1,25 @@
+id: CODING-HTTP-HTTPCLIENTFACTORY-001
+name: Use IHttpClientFactory
+description: >
+  No `new HttpClient()` instantiation outside DI/factory registration - use
+  IHttpClientFactory to reuse HttpClient instances and configure timeouts.
+standard: standards/coding-standards.md#performance-guidelines
+severity: warning
+enforcement:
+  classification: deterministic
+tags:
+  - http
+remediation: >
+  Inject IHttpClientFactory (or a typed client) instead of constructing
+  HttpClient directly.
+illustrative: true
+
+target:
+  kind: repository
+
+assertions:
+  - must_not_exist:
+      selector:
+        kind: call_site
+        site_kind: object_creation
+        invoked_member: "HttpClient"

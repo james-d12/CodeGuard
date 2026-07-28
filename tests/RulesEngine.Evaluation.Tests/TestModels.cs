@@ -54,5 +54,26 @@ internal static class TestModels
         types ?? []);
 
     public static RepositoryModel Repository(params ProjectModel[] projects) =>
-        new(".", [new SolutionModel("Contoso.sln", projects)], []);
+        new(".", [new SolutionModel("Contoso.sln", projects)], [], [], [], [], [], [], [], []);
+
+    public static RepositoryModel RepositoryWithFacts(
+        IReadOnlyList<ProjectModel>? projects = null,
+        IReadOnlyList<FileModel>? files = null,
+        IReadOnlyList<CallSiteModel>? callSites = null,
+        IReadOnlyList<SwitchModel>? switches = null,
+        IReadOnlyList<ThrowSiteModel>? throwSites = null,
+        IReadOnlyList<MutationSiteModel>? mutationSites = null,
+        IReadOnlyList<TryBlockModel>? tryBlocks = null,
+        IReadOnlyList<MethodBodyShapeModel>? methodBodyShapes = null,
+        IReadOnlyList<DiagnosticModel>? diagnostics = null) => new(
+        ".",
+        [new SolutionModel("Contoso.sln", projects ?? [])],
+        files ?? [],
+        callSites ?? [],
+        switches ?? [],
+        throwSites ?? [],
+        mutationSites ?? [],
+        tryBlocks ?? [],
+        methodBodyShapes ?? [],
+        diagnostics ?? []);
 }

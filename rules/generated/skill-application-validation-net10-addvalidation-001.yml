@@ -1,0 +1,27 @@
+id: SKILL-APPLICATION-VALIDATION-NET10-ADDVALIDATION-001
+name: AddValidation() required, no custom validation filters
+description: >
+  builder.Services.AddValidation() must be called. Doesn't cover the "forbid
+  422 for standard validation failures" or "forbid constraint annotations
+  beyond [Required]" clauses (response-status and attribute-set analysis
+  this rule doesn't perform) - the "no custom IEndpointFilter reimplementing
+  TryValidateObject" clause is covered separately by
+  SKILL-APPLICATION-NO-MANUAL-VALIDATION-FILTER-001.
+standard: .github/skills/application/pps-application-validation/SKILL.md
+severity: error
+enforcement:
+  classification: deterministic
+tags:
+  - validation
+remediation: >
+  Call builder.Services.AddValidation() during startup configuration.
+illustrative: true
+
+target:
+  kind: repository
+
+assertions:
+  - must_exist:
+      selector:
+        kind: call_site
+        invoked_member: "AddValidation"

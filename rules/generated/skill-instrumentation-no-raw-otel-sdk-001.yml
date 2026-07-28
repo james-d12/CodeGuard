@@ -1,0 +1,36 @@
+id: SKILL-INSTRUMENTATION-NO-RAW-OTEL-SDK-001
+name: No raw OpenTelemetry SDK wiring
+description: >
+  Forbids raw OpenTelemetry SDK wiring (new Meter(...), new
+  ActivitySource(...), .AddOpenTelemetry().WithTracing(...)) - use framework
+  extensions instead. Doesn't exclude PP.Framework.Instrumentation itself
+  (which legitimately wires the SDK once, centrally).
+standard: .github/skills/utils/pps-instrumentation/SKILL.md
+severity: error
+enforcement:
+  classification: deterministic
+tags:
+  - telemetry
+remediation: >
+  Replace the raw SDK call with the framework's instrumentation extension
+  method.
+illustrative: true
+
+target:
+  kind: repository
+
+assertions:
+  - must_not_exist:
+      selector:
+        kind: call_site
+        site_kind: object_creation
+        invoked_member: "Meter"
+  - must_not_exist:
+      selector:
+        kind: call_site
+        site_kind: object_creation
+        invoked_member: "ActivitySource"
+  - must_not_exist:
+      selector:
+        kind: call_site
+        invoked_member: "WithTracing"

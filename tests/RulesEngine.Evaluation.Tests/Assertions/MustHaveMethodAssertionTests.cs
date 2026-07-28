@@ -5,7 +5,7 @@ namespace RulesEngine.Evaluation.Tests.Assertions;
 
 public class MustHaveMethodAssertionTests
 {
-    private static readonly RepositoryModel EmptyModel = new(".", [], []);
+    private static readonly RepositoryModel EmptyModel = new(".", [], [], [], [], [], [], [], [], []);
 
     private static MethodModel Method(string name) =>
         new(name, "System.Void", [], Accessibility.Public, MethodModifiers.Static, [], "Contoso.Domain.Order", "Contoso.Domain", "Order.cs", 1, 1);

@@ -53,4 +53,19 @@ public class MethodSelectorTests
         var method = Assert.Single(candidates);
         Assert.Equal("Validate", method.Name);
     }
+
+    [Fact]
+    public void SelectCandidates_FiltersByName()
+    {
+        var matching = Method("Returns400", "Contoso.Application.Tests", "Contoso.Application.Tests");
+        var other = Method("Returns404", "Contoso.Application.Tests", "Contoso.Application.Tests");
+        var type = TestModels.Type("Contoso.Application.Tests.HandlerTests", methods: [matching, other]);
+        var project = TestModels.Project("Contoso.Application.Tests", types: [type]);
+        var model = TestModels.Repository(project);
+
+        var candidates = new MethodSelector(namePattern: "*Returns400*").SelectCandidates(model).Cast<MethodModel>().ToList();
+
+        var method = Assert.Single(candidates);
+        Assert.Equal("Returns400", method.Name);
+    }
 }

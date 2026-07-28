@@ -1,5 +1,9 @@
 using System.Text.Json.Nodes;
+using RulesEngine.RuleModel.Analyzers;
+using RulesEngine.RuleModel.Assertions;
+using RulesEngine.RuleModel.Conditions;
 using RulesEngine.RuleModel.Rules;
+using RulesEngine.RuleModel.Selectors;
 
 namespace RulesEngine.Configuration.Parsing;
 
@@ -9,12 +13,34 @@ public static class RuleDocumentParser
         JsonObject document,
         SelectorParserRegistry selectorParsers,
         AssertionParserRegistry assertionParsers,
-        ConditionParserRegistry conditionParsers)
+        ConditionParserRegistry conditionParsers,
+        AnalyzerParserRegistry analyzerParsers)
     {
-        var targetNode = document["target"]?.AsObject()
-            ?? throw new RuleParsingException("Rule is missing required 'target'.");
-        var assertionsNode = document["assertions"]?.AsArray()
-            ?? throw new RuleParsingException("Rule is missing required 'assertions'.");
+        ICustomAnalyzer? analyzer = null;
+        ITargetSelector? target = null;
+        IConditionNode? when = null;
+        IReadOnlyList<IAssertion>? assertions = null;
+
+        if (document["analyzer"]?.AsObject() is { } analyzerNode)
+        {
+            if (document["target"] is not null || document["assertions"] is not null)
+            {
+                throw new RuleParsingException("A rule cannot specify both 'analyzer' and 'target'/'assertions'.");
+            }
+
+            analyzer = analyzerParsers.Parse(analyzerNode);
+        }
+        else
+        {
+            var targetNode = document["target"]?.AsObject()
+                ?? throw new RuleParsingException("Rule is missing required 'target'.");
+            var assertionsNode = document["assertions"]?.AsArray()
+                ?? throw new RuleParsingException("Rule is missing required 'assertions'.");
+
+            target = selectorParsers.Parse(targetNode);
+            when = document["when"]?.AsObject() is { } whenNode ? conditionParsers.Parse(whenNode) : null;
+            assertions = assertionsNode.Select(node => assertionParsers.Parse(node!.AsObject())).ToList();
+        }
 
         return new RuleDefinition
         {
@@ -29,9 +55,10 @@ public static class RuleDocumentParser
             Documentation = document.GetStringArray("documentation"),
             Enabled = document.GetOptionalBool("enabled", true),
             Illustrative = document.GetOptionalBool("illustrative", false),
-            Target = selectorParsers.Parse(targetNode),
-            When = document["when"]?.AsObject() is { } whenNode ? conditionParsers.Parse(whenNode) : null,
-            Assertions = assertionsNode.Select(node => assertionParsers.Parse(node!.AsObject())).ToList()
+            Target = target,
+            When = when,
+            Assertions = assertions,
+            Analyzer = analyzer
         };
     }
 

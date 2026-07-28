@@ -1,3 +1,4 @@
+using RulesEngine.RuleModel.Analyzers;
 using RulesEngine.RuleModel.Assertions;
 using RulesEngine.RuleModel.Conditions;
 using RulesEngine.RuleModel.Selectors;
@@ -18,9 +19,10 @@ public sealed class RuleDefinition
     public bool Enabled { get; init; } = true;
     public bool Illustrative { get; init; }
 
-    public required ITargetSelector Target { get; init; }
+    public ITargetSelector? Target { get; init; }
     public IConditionNode? When { get; init; }
-    public required IReadOnlyList<IAssertion> Assertions { get; init; }
+    public IReadOnlyList<IAssertion>? Assertions { get; init; }
+    public ICustomAnalyzer? Analyzer { get; init; }
 }
 
 public enum Severity

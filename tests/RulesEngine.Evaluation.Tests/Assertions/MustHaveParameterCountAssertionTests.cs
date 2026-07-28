@@ -5,7 +5,7 @@ namespace RulesEngine.Evaluation.Tests.Assertions;
 
 public class MustHaveParameterCountAssertionTests
 {
-    private static readonly RepositoryModel EmptyModel = new(".", [], []);
+    private static readonly RepositoryModel EmptyModel = new(".", [], [], [], [], [], [], [], [], []);
 
     private static MethodModel MethodWithParameters(int count) => new(
         "Create", "System.Void",

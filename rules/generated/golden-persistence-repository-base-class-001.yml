@@ -1,0 +1,27 @@
+id: GOLDEN-PERSISTENCE-REPOSITORY-BASE-CLASS-001
+name: Repositories extend DomainEntityRepository<>
+description: >
+  Repository classes must extend DomainEntityRepository<> from
+  PP.Framework.DDD.v2. This covers the inheritance clause only - the
+  "no wrapper methods that just delegate to the base class" clause is
+  GOLDEN-PERSISTENCE-REPOSITORY-BASE-CLASS-002 (a custom analyzer, since
+  delegation detection needs method-body inspection); the "interface lives
+  only in Domain" clause isn't covered by either.
+standard: standards/golden-standard.md#3-data-persistence
+severity: critical
+enforcement:
+  classification: deterministic
+tags:
+  - persistence
+remediation: >
+  Derive the repository class from DomainEntityRepository<TEntity, TId> instead
+  of implementing its own base.
+illustrative: true
+
+target:
+  kind: class
+  namespace: "Contoso.Persistence.Repositories"
+
+assertions:
+  - must_inherit_from:
+      type: "DomainEntityRepository<*>"

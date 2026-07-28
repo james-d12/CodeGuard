@@ -5,7 +5,7 @@ namespace RulesEngine.Evaluation.Tests.Assertions;
 
 public class MustNotHaveAttributeAssertionTests
 {
-    private static readonly RepositoryModel EmptyModel = new(".", [], []);
+    private static readonly RepositoryModel EmptyModel = new(".", [], [], [], [], [], [], [], [], []);
 
     private static AttributeModel Obsolete() => new(
         "System.ObsoleteAttribute", [], new Dictionary<string, string>());

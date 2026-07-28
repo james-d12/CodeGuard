@@ -5,7 +5,7 @@ namespace RulesEngine.Evaluation.Tests.Assertions;
 
 public class MustHavePropertyAssertionTests
 {
-    private static readonly RepositoryModel EmptyModel = new(".", [], []);
+    private static readonly RepositoryModel EmptyModel = new(".", [], [], [], [], [], [], [], [], []);
 
     private static PropertyModel Property(string name) =>
         new(name, "System.String", Accessibility.Public, HasGetter: true, HasSetter: false, SetterAccessibility: null,

@@ -1,0 +1,34 @@
+id: CODING-PERF-NO-BLOCKING-COUNT-001
+name: Prefer Any() over Count() > 0; avoid blocking calls
+description: >
+  Avoid Task.Result/.Wait() (blocking on async work); use .Any() instead of
+  .Count() > 0 (allocates and walks the whole sequence just to test
+  emptiness).
+standard: standards/coding-standards.md#performance-guidelines
+severity: info
+enforcement:
+  classification: deterministic
+tags:
+  - performance
+remediation: >
+  Replace `.Count() > 0` with `.Any()`; replace `.Result`/`.Wait()` with
+  `await`.
+illustrative: true
+
+target:
+  kind: repository
+
+assertions:
+  - must_not_exist:
+      selector:
+        kind: call_site
+        invoked_member: "Count"
+        enclosing_comparison: ">"
+  - must_not_exist:
+      selector:
+        kind: call_site
+        invoked_member: "Result"
+  - must_not_exist:
+      selector:
+        kind: call_site
+        invoked_member: "Wait"

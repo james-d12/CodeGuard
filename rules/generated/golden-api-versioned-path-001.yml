@@ -1,0 +1,24 @@
+id: GOLDEN-API-VERSIONED-PATH-001
+name: Routes versioned /api/v{version}/{resource}
+description: >
+  Routes follow /api/v{version}/{resource}. Doesn't cover the "RFC 7807
+  ProblemDetails for all errors" clause (that needs response-path analysis
+  this engine doesn't perform).
+standard: standards/golden-standard.md#4-application-layer-http-api-design
+severity: warning
+enforcement:
+  classification: deterministic
+tags:
+  - api
+remediation: >
+  Change the route template to /api/v{n}/{resource}.
+illustrative: true
+
+target:
+  kind: call_site
+  invoked_member: "Map*"
+
+assertions:
+  - must_match_argument:
+      index: 0
+      pattern: "^/api/v[0-9]+/"

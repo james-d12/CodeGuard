@@ -5,7 +5,7 @@ namespace RulesEngine.Evaluation.Tests.Selectors;
 
 public class FileSelectorTests
 {
-    private static RepositoryModel BuildModel(params FileModel[] files) => new(".", [], files);
+    private static RepositoryModel BuildModel(params FileModel[] files) => new(".", [], files, [], [], [], [], [], [], []);
 
     [Fact]
     public void SelectCandidates_FiltersByPathPattern()

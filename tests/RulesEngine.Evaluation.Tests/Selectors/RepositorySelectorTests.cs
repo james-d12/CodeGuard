@@ -8,7 +8,7 @@ public class RepositorySelectorTests
     [Fact]
     public void SelectCandidates_ReturnsTheRepositoryModelItselfAsSingleCandidate()
     {
-        var model = new RepositoryModel("/repo", [], []);
+        var model = new RepositoryModel("/repo", [], [], [], [], [], [], [], [], []);
 
         var candidates = new RepositorySelector().SelectCandidates(model).ToList();
 

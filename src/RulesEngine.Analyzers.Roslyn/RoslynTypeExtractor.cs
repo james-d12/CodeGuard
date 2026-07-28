@@ -209,7 +209,8 @@ public static class RoslynTypeExtractor
             ProjectName: projectName,
             FilePath: filePath,
             Line: line,
-            Column: column);
+            Column: column,
+            ConstantValue: field.HasConstantValue ? field.ConstantValue?.ToString() : null);
     }
 
     private static FieldModifiers MapFieldModifiers(IFieldSymbol field)

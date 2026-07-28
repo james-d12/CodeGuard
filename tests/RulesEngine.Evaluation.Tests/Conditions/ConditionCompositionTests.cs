@@ -5,7 +5,7 @@ namespace RulesEngine.Evaluation.Tests.Conditions;
 
 public class ConditionCompositionTests
 {
-    private static readonly RepositoryModel EmptyModel = new(".", [], []);
+    private static readonly RepositoryModel EmptyModel = new(".", [], [], [], [], [], [], [], [], []);
 
     private sealed class FixedCondition(bool result) : IConditionNode
     {

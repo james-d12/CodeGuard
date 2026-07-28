@@ -7,6 +7,7 @@ public sealed class MethodSelector(
     string namespacePattern = "*",
     string projectPattern = "*",
     string declaringTypePattern = "*",
+    string namePattern = "*",
     Accessibility? accessibility = null,
     bool? isAsync = null,
     bool? isStatic = null) : ITargetSelector
@@ -21,6 +22,7 @@ public sealed class MethodSelector(
             .SelectMany(type => type.Methods)
             .Where(method => GlobMatcher.IsMatch(method.ProjectName, projectPattern))
             .Where(method => GlobMatcher.IsMatch(method.DeclaringType, declaringTypePattern))
+            .Where(method => GlobMatcher.IsMatch(method.Name, namePattern))
             .Where(method => accessibility is null || method.Accessibility == accessibility)
             .Where(method => isAsync is null || method.Modifiers.HasFlag(MethodModifiers.Async) == isAsync)
             .Where(method => isStatic is null || method.Modifiers.HasFlag(MethodModifiers.Static) == isStatic)

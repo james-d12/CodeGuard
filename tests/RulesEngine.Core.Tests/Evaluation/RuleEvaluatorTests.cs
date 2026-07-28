@@ -3,6 +3,7 @@ using RulesEngine.Core.Evaluation;
 using RulesEngine.Core.Results;
 using RulesEngine.Evaluation.Assertions;
 using RulesEngine.Evaluation.Selectors;
+using RulesEngine.RuleModel.Analyzers;
 using RulesEngine.RuleModel.Assertions;
 using RulesEngine.RuleModel.Rules;
 
@@ -101,7 +102,7 @@ public class RuleEvaluatorTests
             "Contoso.Domain", "Contoso.Domain.csproj", "net10.0", "Microsoft.NET.Sdk",
             [], [], new Dictionary<string, string>(), types);
         var solution = new SolutionModel("Contoso.sln", [project]);
-        return new RepositoryModel(".", [solution], []);
+        return new RepositoryModel(".", [solution], [], [], [], [], [], [], [], []);
     }
 
     private sealed class AlwaysFailsAssertion : IAssertion
@@ -116,7 +117,7 @@ public class RuleEvaluatorTests
     public void Evaluate_ExtractsLocation_ForFileCandidate()
     {
         var file = new FileModel("/repo/.editorconfig", ".editorconfig", "");
-        var model = new RepositoryModel("/repo", [], [file]);
+        var model = new RepositoryModel("/repo", [], [file], [], [], [], [], [], [], []);
         var rule = new RuleDefinition
         {
             Id = "FILE-001",
@@ -135,7 +136,7 @@ public class RuleEvaluatorTests
     [Fact]
     public void Evaluate_ExtractsLocation_ForRepositoryCandidate()
     {
-        var model = new RepositoryModel("/repo", [], []);
+        var model = new RepositoryModel("/repo", [], [], [], [], [], [], [], [], []);
         var rule = new RuleDefinition
         {
             Id = "REPO-001",
@@ -195,5 +196,39 @@ public class RuleEvaluatorTests
         var violation = Assert.Single(result.Violations);
         Assert.Equal("Order.cs", violation.File);
         Assert.Equal(7, violation.Line);
+    }
+
+    private sealed class StubAnalyzer(string name, params AnalyzerViolation[] violations) : ICustomAnalyzer
+    {
+        public string Name => name;
+        public IEnumerable<AnalyzerViolation> Analyze(RepositoryModel model) => violations;
+    }
+
+    [Fact]
+    public void Evaluate_RunsAnalyzerBranch_WhenRuleHasAnalyzer()
+    {
+        var model = new RepositoryModel(".", [], [], [], [], [], [], [], [], []);
+        var analyzer = new StubAnalyzer("stub-analyzer", new AnalyzerViolation("bad shape", "Foo.cs", 3, 1));
+        var rule = new RuleDefinition { Id = "ANALYZER-001", Name = "Analyzer rule", Analyzer = analyzer };
+
+        var result = new RuleEvaluator().Evaluate([rule], model);
+
+        Assert.Equal(ValidationStatus.Failed, result.Status);
+        var violation = Assert.Single(result.Violations);
+        Assert.Equal("Foo.cs", violation.File);
+        Assert.Equal(3, violation.Line);
+    }
+
+    [Fact]
+    public void Evaluate_AnalyzerRule_PassesWhenNoViolationsProduced()
+    {
+        var model = new RepositoryModel(".", [], [], [], [], [], [], [], [], []);
+        var analyzer = new StubAnalyzer("stub-analyzer");
+        var rule = new RuleDefinition { Id = "ANALYZER-002", Name = "Analyzer rule", Analyzer = analyzer };
+
+        var result = new RuleEvaluator().Evaluate([rule], model);
+
+        Assert.Equal(ValidationStatus.Passed, result.Status);
+        Assert.Equal(1, result.RulesPassed);
     }
 }

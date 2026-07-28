@@ -8,17 +8,20 @@ public sealed class RuleFileLoader(
     SelectorParserRegistry selectorParsers,
     AssertionParserRegistry assertionParsers,
     ConditionParserRegistry conditionParsers,
+    AnalyzerParserRegistry analyzerParsers,
     RuleSchemaValidator schemaValidator)
 {
     private static readonly string[] RuleFileExtensions = [".yml", ".yaml"];
 
     public static RuleFileLoader CreateDefault()
     {
-        var assertionParsers = DefaultParsers.CreateAssertionRegistry();
+        var selectorParsers = DefaultParsers.CreateSelectorRegistry();
+        var assertionParsers = DefaultParsers.CreateAssertionRegistry(selectorParsers);
         return new(
-            DefaultParsers.CreateSelectorRegistry(),
+            selectorParsers,
             assertionParsers,
             DefaultParsers.CreateConditionRegistry(assertionParsers),
+            DefaultAnalyzers.CreateRegistry(),
             RuleSchemaValidator.CreateDefault());
     }
 
@@ -70,6 +73,6 @@ public sealed class RuleFileLoader(
 
         schemaValidator.Validate(document, filePath);
 
-        return RuleDocumentParser.Parse(document.AsObject(), selectorParsers, assertionParsers, conditionParsers);
+        return RuleDocumentParser.Parse(document.AsObject(), selectorParsers, assertionParsers, conditionParsers, analyzerParsers);
     }
 }

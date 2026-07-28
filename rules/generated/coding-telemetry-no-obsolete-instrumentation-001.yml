@@ -1,0 +1,23 @@
+id: CODING-TELEMETRY-NO-OBSOLETE-INSTRUMENTATION-001
+name: No obsolete AddFrameworkInstrumentation call
+description: >
+  Do not use the obsolete AddFrameworkInstrumentation API.
+standard: standards/coding-standards.md#logging-and-telemetry
+severity: warning
+enforcement:
+  classification: deterministic
+tags:
+  - telemetry
+remediation: >
+  Replace the AddFrameworkInstrumentation call with its documented
+  replacement API.
+illustrative: true
+
+target:
+  kind: repository
+
+assertions:
+  - must_not_exist:
+      selector:
+        kind: call_site
+        invoked_member: "AddFrameworkInstrumentation"

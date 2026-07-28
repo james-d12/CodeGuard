@@ -13,6 +13,7 @@ public sealed class MethodSelectorParser : ISelectorParser
         node.GetOptionalString("namespace") ?? "*",
         node.GetOptionalString("project") ?? "*",
         node.GetOptionalString("declaring_type") ?? "*",
+        node.GetOptionalString("name") ?? "*",
         node.GetOptionalString("accessibility") is { } accessibility ? EnumParsing.ParseSnakeCase<Accessibility>(accessibility) : null,
         node.GetOptionalBoolNullable("is_async"),
         node.GetOptionalBoolNullable("is_static"));

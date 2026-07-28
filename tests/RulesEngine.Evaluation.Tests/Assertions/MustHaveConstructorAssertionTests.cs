@@ -5,7 +5,7 @@ namespace RulesEngine.Evaluation.Tests.Assertions;
 
 public class MustHaveConstructorAssertionTests
 {
-    private static readonly RepositoryModel EmptyModel = new(".", [], []);
+    private static readonly RepositoryModel EmptyModel = new(".", [], [], [], [], [], [], [], [], []);
 
     private static ConstructorModel Constructor(Accessibility accessibility) =>
         new(accessibility, [], [], "Contoso.Domain.Order", "Contoso.Domain", "Order.cs", 1, 1);

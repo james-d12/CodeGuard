@@ -1,0 +1,29 @@
+id: SKILL-APPLICATION-NO-IDGEN-IN-HANDLER-001
+name: ID derivation only in domain Create
+description: >
+  Idempotency-key/deterministic-ID derivation must not occur in the
+  application layer - only in domain Create(...). Approximated as
+  "GenerateDeterministicId not called anywhere in *.Application" rather than
+  scoping specifically to Handlers/ and Mappers/ folders (folder-level
+  scoping isn't modeled).
+standard: .github/skills/application/pps-application-handler/SKILL.md
+severity: critical
+enforcement:
+  classification: deterministic
+tags:
+  - application
+  - domain
+remediation: >
+  Move the ID derivation into the entity's domain Create(...) method instead
+  of the handler/mapper.
+illustrative: true
+
+target:
+  kind: repository
+
+assertions:
+  - must_not_exist:
+      selector:
+        kind: call_site
+        invoked_member: "GenerateDeterministicId"
+        project: "*.Application*"

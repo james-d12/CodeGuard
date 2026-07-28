@@ -1,8 +1,8 @@
 # Rule Coverage Plan — extending the engine to support every deterministic rule in rules.generated.json
 
-> Status: **planned, not started**. This is a design/implementation plan, not yet executed. Picking
-> this up: start with Stage A in full (build + ship), then Stage B. See "Verification" at the end for
-> gating between stages.
+> Status: **done**. Both Stage A and Stage B (scoped below) have shipped — see
+> `docs/done/RULE_COVERAGE_STAGE_A_RULES.md` and `docs/done/STAGE_B_PROGRESS.md`. Kept for
+> historical design rationale.
 
 ## Context
 

@@ -50,7 +50,8 @@ public sealed record FieldModel(
     string ProjectName,
     string FilePath,
     int Line,
-    int Column);
+    int Column,
+    string? ConstantValue = null);
 
 public sealed record ParameterModel(
     string Name,

@@ -1,0 +1,27 @@
+id: GOLDEN-EVENTHANDLER-ROUTE-CONSTANTS-001
+name: Event route strings are named constants
+description: >
+  Event route strings must be public static class constants, not inlined
+  string literals passed directly to Map* endpoint-registration calls.
+standard: standards/golden-standard.md#6-project-layers-detailed-responsibilities
+severity: info
+enforcement:
+  classification: deterministic
+tags:
+  - eventhandler
+remediation: >
+  Extract the route string into a public static class constant and pass that
+  constant to Map*, instead of an inline literal.
+illustrative: true
+
+target:
+  kind: repository
+
+assertions:
+  - must_not_exist:
+      selector:
+        kind: call_site
+        invoked_member: "Map*"
+        project: "*.EventHandler*"
+        argument_index: 0
+        argument_is_literal: true

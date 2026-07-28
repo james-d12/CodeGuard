@@ -1,0 +1,20 @@
+id: CODING-TYPE-MEMBER-ORDERING-001
+name: Class member ordering
+description: >
+  Members must be declared fields, then constructors, then properties, then
+  methods. Approximated at the group level (this engine doesn't distinguish
+  const-vs-private fields or public-vs-private methods as separate groups the
+  way the full standard does).
+standard: standards/coding-standards.md#type-design
+severity: info
+enforcement:
+  classification: deterministic
+tags:
+  - structure
+remediation: >
+  Reorder members so fields precede constructors, constructors precede
+  properties, and properties precede methods.
+illustrative: true
+
+analyzer:
+  kind: member-ordering
