@@ -120,8 +120,14 @@ public static class RoslynTypeExtractor
 
     private static AttributeModel ToAttributeModel(AttributeData attribute) => new(
         TypeName: attribute.AttributeClass?.ToDisplayString() ?? "<unknown>",
-        ConstructorArgumentLiterals: attribute.ConstructorArguments.Select(a => a.Value?.ToString() ?? "null").ToList(),
-        NamedArguments: attribute.NamedArguments.ToDictionary(a => a.Key, a => a.Value.Value?.ToString() ?? "null"));
+        ConstructorArgumentLiterals: attribute.ConstructorArguments.Select(TypedConstantToString).ToList(),
+        NamedArguments: attribute.NamedArguments.ToDictionary(a => a.Key, a => TypedConstantToString(a.Value)));
+
+    private static string TypedConstantToString(TypedConstant constant) => constant.Kind switch
+    {
+        TypedConstantKind.Array => $"[{string.Join(", ", constant.Values.Select(TypedConstantToString))}]",
+        _ => constant.Value?.ToString() ?? "null"
+    };
 
     private static (string FilePath, int Line, int Column) GetLocation(ISymbol symbol)
     {

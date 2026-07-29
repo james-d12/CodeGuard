@@ -18,13 +18,10 @@ the code alone.
 
 ## Where things stand
 
-**All 8 PRs of the plan are done**, including the optional PR8 fast-follow. All 81 tests pass
-across 6 test projects. The solution builds with 0 errors (there are 14 pre-existing `NU1903`
-NuGet-advisory warnings from `Buildalyzer`'s transitive `System.Security.Cryptography.Xml`
-dependency — unrelated to any code here, not a regression, not worth chasing for a dev-tooling
-CLI). Nothing has been committed to git yet, and there is no git remote configured — everything is
-sitting in the working tree (this repo has no commit history at all; `git log` reports no commits
-exist).
+**All 8 PRs of the plan are done**, including the optional PR8 fast-follow. All tests pass across
+6 test projects. The solution builds with 0 errors and 0 warnings (Buildalyzer, which used to pull
+in a transitive `System.Security.Cryptography.Xml` dependency triggering 14 `NU1903` advisory
+warnings, has since been removed — see the updated gotcha #2 and #6 below).
 
 **PR8 — CI workflow.** `.github/workflows/ci.yml` runs `dotnet restore` / `build` / `test` on
 `ubuntu-latest` for pushes/PRs to `main` plus manual `workflow_dispatch`. A `global.json` pinning
@@ -90,7 +87,7 @@ RuleEngine/
   RulesEngine.Configuration/     # YAML rule loading/parsing/validation + repository discovery (see below)
   RulesEngine.Reporting/         # IViolationReporter + Console/Json/Sarif reporters (Console/, Json/, Sarif/)
   RulesEngine.Analyzers.Roslyn/  # RoslynTypeExtractor: CSharpCompilation -> IReadOnlyList<TypeModel>
-  RulesEngine.Analyzers.MSBuild/ # MsBuildAnalysisProvider: Buildalyzer -> ProjectModel (+ Types via Roslyn)
+  RulesEngine.Analyzers.MSBuild/ # MsBuildAnalysisProvider: MSBuildWorkspace + Microsoft.Build.Evaluation -> ProjectModel (+ Types via Roslyn)
   RulesEngine.Analyzers.Repository/ # RepositoryFileProvider: walks the filesystem -> FileModel (no Roslyn/MSBuild)
 
 tests/
@@ -103,7 +100,7 @@ tests/
   RulesEngine.IntegrationTests/      (3 tests)  — full pipeline against a real fixture solution, incl.
                                                     JSON/SARIF reporter output shape
     Fixtures/SimpleDomainSolution/   — real 3-project .sln (Contoso.Domain/Application/Infrastructure)
-                                        used ONLY by Buildalyzer at test-time, not built by the main solution
+                                        used ONLY by MsBuildAnalysisProvider at test-time, not built by the main solution
 ```
 
 ### Dependency direction between the core projects
@@ -118,7 +115,7 @@ RulesEngine.Analysis  (no dependencies — pure model + provider abstraction)
   |
   |-- RulesEngine.Analyzers.Roslyn   (depends on Analysis only; pure Roslyn, no MSBuild)
   |     ^
-  |     |-- RulesEngine.Analyzers.MSBuild (depends on Analysis + Analyzers.Roslyn + Buildalyzer)
+  |     |-- RulesEngine.Analyzers.MSBuild (depends on Analysis + Analyzers.Roslyn + Microsoft.CodeAnalysis.Workspaces.MSBuild)
   |
   |-- RulesEngine.Analyzers.Repository (depends on Analysis only; pure filesystem walk, no Roslyn/MSBuild)
 
@@ -209,19 +206,23 @@ All under `rules/`, all illustrative (`Contoso.*` namespace, `illustrative: true
    and `InheritsFromSelector` both use `GlobMatcher.IsMatch`, not `==`, specifically for this
    reason. If you add another base-type/interface-matching primitive, use `GlobMatcher` too.
 
-2. **Package version pins are load-bearing, not arbitrary.** In `RulesEngine.Analyzers.Roslyn.csproj`
-   and `RulesEngine.Analyzers.MSBuild.csproj`:
-   - `Microsoft.CodeAnalysis.CSharp` / `Microsoft.CodeAnalysis.CSharp.Workspaces` are pinned to
-     **4.10.0** everywhere (not "latest", which resolves to 5.6.0). Buildalyzer.Workspaces
-     depends on `Microsoft.CodeAnalysis.Workspaces.Common` 4.10.0; mixing Roslyn generations in
-     the same process throws a runtime `TypeLoadException`. Confirmed via a spike — don't
-     "helpfully" bump just one of these without bumping both in lockstep.
-   - `RulesEngine.Analyzers.MSBuild.csproj` has ~12 `PackageReference`s to `Microsoft.Build*`/
-     `NuGet.*` packages with `ExcludeAssets="runtime" PrivateAssets="all"`, at specific versions
-     (17.14.28 / 6.9.1). These are required by `Microsoft.Build.Locator`'s own build-time check
-     (`MSBL001`) — without them the build fails outright. If you bump `Buildalyzer`, you may need
-     to bump these version numbers to match whatever it now resolves transitively (the build
-     will fail loudly with the exact required version if they drift).
+2. **Package version pins are load-bearing, not arbitrary.** `Buildalyzer`/`Buildalyzer.Workspaces`
+   were removed in favor of `Microsoft.CodeAnalysis.Workspaces.MSBuild` (`MSBuildWorkspace`) plus a
+   small supplementary `Microsoft.Build.Evaluation.Project` evaluation per project (for
+   `PackageReferences`/raw MSBuild `Properties`, which `MSBuildWorkspace` doesn't expose) — see
+   `MsBuildAnalysisProvider.cs`. This removed the need to pin `Microsoft.CodeAnalysis.CSharp(.Workspaces)`
+   to 4.10.0 (previously required because `Buildalyzer.Workspaces` depended on
+   `Microsoft.CodeAnalysis.Workspaces.Common` 4.10.0, and mixing Roslyn generations in one process
+   throws `TypeLoadException`) — `RulesEngine.Analyzers.Roslyn.csproj` and
+   `RulesEngine.Analyzers.MSBuild.csproj` now use **5.6.0** (latest), matched by
+   `Microsoft.CodeAnalysis.Workspaces.MSBuild` 5.6.0. Keep all three in the same Roslyn generation
+   if you bump one.
+   - `RulesEngine.Analyzers.MSBuild.csproj` still has `Microsoft.Build`/`Microsoft.Build.Framework`
+     `PackageReference`s with `ExcludeAssets="runtime" PrivateAssets="all"` at `17.11.48`, required
+     by `Microsoft.Build.Locator`'s own build-time check (`MSBL001`) — much shorter list than
+     Buildalyzer needed (~12 entries), since `Microsoft.CodeAnalysis.Workspaces.MSBuild`'s own
+     dependency graph is far shallower. If `MSBL001` fires after a version bump, add/adjust exactly
+     the package + version it names — don't guess in advance.
 
 3. **JsonSchema.Net schemas must be parsed once per process.** It throws
    `JsonSchemaException: "Overwriting registered schemas is not permitted"` if you call
@@ -243,26 +244,34 @@ All under `rules/`, all illustrative (`Contoso.*` namespace, `illustrative: true
    `SelectorParserRegistry`/`AssertionParserRegistry`, there's no intermediate DTO layer. Keep
    this consistent if you extend the schema.
 
-6. **Known limitation — CLI self-analysis.** `rules-engine validate` run against **this tool's
-   own currently-running solution** (`RuleEngine.sln`) reliably crashes with
-   `System.InvalidOperationException: Sequence contains no elements` inside
-   `MsBuildAnalysisProvider.ContributeAsync`. Root cause: Buildalyzer's default design-time build
-   runs `Clean;Build`; when Buildalyzer's "common output directory" happens to be this CLI's own
-   `bin/` folder (because we're analyzing our own containing solution), an earlier project's
-   `Clean` step deletes `Buildalyzer.Logger.dll`, which a later project's spawned MSBuild process
-   then can't find, and its build produces zero results.
-   - **I tried** overriding to `projectAnalyzer.Build("Build")` (skip `Clean`) as a workaround.
-     **This is a dead end — do not reintroduce it.** It avoids the crash but silently makes
-     `RoslynTypeExtractor` return **zero types for every project** (confirmed by direct
-     measurement), which is a silent false-negative "everything passes" — worse than a crash for
-     a policy-enforcement tool. The default `Clean;Build` is required for correct compilation
-     data and must stay.
-   - This does **not** affect validating any other repository — proven by
-     `RulesEngine.IntegrationTests` (a real, separate 3-project solution analyzed correctly, real
-     violations detected). If you want the CLI to reliably self-validate, you'll need a real fix
-     (e.g. redirect Buildalyzer's design-time build output to an isolated temp directory via a
-     global MSBuild property, distinct from wherever the running host assembly lives) — this
-     was not solved, just documented, in `RuleEngine/RulesEngine.Cli/Program.cs`.
+6. **Known limitation — CLI self-analysis (partially resolved).** `rules-engine validate` run
+   against **this tool's own currently-running solution** (`RuleEngine.sln`) used to reliably crash
+   with `System.InvalidOperationException: Sequence contains no elements` inside
+   `MsBuildAnalysisProvider.ContributeAsync`, because Buildalyzer's default design-time build ran
+   `Clean;Build`, and when Buildalyzer's "common output directory" happened to be this CLI's own
+   `bin/` folder, an earlier project's `Clean` step deleted `Buildalyzer.Logger.dll`, which a later
+   project's spawned MSBuild process then couldn't find.
+   - **This specific crash is fixed** by the Buildalyzer→`MSBuildWorkspace` migration (see gotcha
+     #2) — confirmed empirically by running `rules-engine validate` against `RuleEngine.sln` after
+     the swap. `MSBuildWorkspace`'s design-time build runs in a separate out-of-process BuildHost
+     and does no `Clean;Build` sequencing across projects, so this class of shared-output-directory
+     collision no longer occurs.
+   - **However, self-analysis still doesn't complete end-to-end.** It now gets much further — past
+     type extraction — and crashes in `NoPureDelegationOverrideAnalyzer.Analyze`
+     (`src/RulesEngine.Evaluation/Analyzers/NoPureDelegationOverrideAnalyzer.cs`):
+     `model.Solutions.SelectMany(...).SelectMany(p => p.Types).ToDictionary(t => t.FullName)`
+     assumes a type's `FullName` is unique across the *entire* repository, but every test project in
+     this solution gets an SDK-generated `AutoGeneratedProgram` stub type with an identical name, so
+     with 6+ test projects the dictionary throws `ArgumentException: An item with the same key has
+     already been added`. This is a **pre-existing bug unrelated to MSBuild/Buildalyzer** — it was
+     simply never reached before because the Buildalyzer crash always happened first. Not yet fixed;
+     the fix direction is to key by something that includes the project (e.g. `(ProjectName,
+     FullName)`) rather than `FullName` alone — any other analyzer/selector doing a bare
+     `.ToDictionary(t => t.FullName)` across `model.Solutions.SelectMany(s => s.Projects)` likely has
+     the same latent bug.
+   - Still does **not** affect validating any other repository without this same-name collision —
+     proven by `RulesEngine.IntegrationTests` (a real, separate 3-project solution analyzed
+     correctly, real violations detected).
 
 7. **`dotnet sln add` auto-adds transitively referenced projects** in this SDK version — you'll
    see "Project X added to the solution" for projects you didn't explicitly pass, when they're
@@ -280,7 +289,8 @@ All under `rules/`, all illustrative (`Contoso.*` namespace, `illustrative: true
    note/error.
 
 9. **MSBuildLocator must be registered exactly once per process, via a single choke point.**
-   `RulesEngine.IntegrationTests` has two test classes that each need Buildalyzer/MSBuild.
+   `RulesEngine.IntegrationTests` has two test classes that each need MSBuild (via
+   `MSBuildWorkspace` and `Microsoft.Build.Evaluation.Project`).
    Originally each had its own `static` constructor guarded by
    `if (!MSBuildLocator.IsRegistered) MSBuildLocator.RegisterDefaults();` — this is **not** safe
    with two classes in one assembly, because xUnit runs test classes in the same assembly in
@@ -324,5 +334,6 @@ All under `rules/`, all illustrative (`Contoso.*` namespace, `illustrative: true
   lifecycle states, the Selector/Predicate/Assertion/Diagnostic split, a custom-analyzer escape
   hatch, rule fixture testing) — a deliberately separate, larger initiative the user chose not to
   start yet. See "Where things stand" above.
-- A fix for the CLI self-analysis known limitation (gotcha #6) — documented but not solved, and
-  explicitly out of scope for PR7.
+- A fix for the remaining CLI self-analysis known limitation (gotcha #6) — the original
+  Buildalyzer-crash cause is resolved, but `NoPureDelegationOverrideAnalyzer`'s
+  `FullName`-uniqueness assumption still blocks full self-validation; documented but not solved.

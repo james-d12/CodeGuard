@@ -5,10 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Pinned to match Buildalyzer.Workspaces' Microsoft.CodeAnalysis.Workspaces.Common
-         dependency (see RulesEngine.Analyzers.MSBuild) - mixing Roslyn generations in the
-         same process throws a TypeLoadException at runtime. -->
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.10.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.6.0" />
   </ItemGroup>
 
   <ItemGroup>
