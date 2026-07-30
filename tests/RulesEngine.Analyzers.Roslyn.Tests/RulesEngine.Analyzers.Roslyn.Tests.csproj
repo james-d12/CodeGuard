@@ -22,7 +22,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\RulesEngine.Analysis\RulesEngine.Analysis.csproj" />
     <ProjectReference Include="..\..\src\RulesEngine.Analyzers.Roslyn\RulesEngine.Analyzers.Roslyn.csproj" />
   </ItemGroup>
 

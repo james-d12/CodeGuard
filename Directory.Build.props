@@ -5,11 +5,9 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <LangVersion>latest</LangVersion>
+        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     </PropertyGroup>
 
-    <!-- Packaging defaults: nothing is packable by default so `dotnet pack` on the solution -->
-    <!-- doesn't publish internal library projects as their own NuGet packages. RulesEngine.Cli -->
-    <!-- opts back in explicitly. -->
     <PropertyGroup>
         <IsPackable>false</IsPackable>
         <Authors>james</Authors>

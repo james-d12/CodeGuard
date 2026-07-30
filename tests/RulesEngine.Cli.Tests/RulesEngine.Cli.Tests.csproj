@@ -23,7 +23,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\RulesEngine.Cli\RulesEngine.Cli.csproj" />
-    <ProjectReference Include="..\..\src\RulesEngine.Configuration\RulesEngine.Configuration.csproj" />
   </ItemGroup>
 
 </Project>
