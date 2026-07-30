@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ruleengine.internal/schemas/rule.schema.json",
+  "title": "RuleEngine rule definition",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "name"],
+  "oneOf": [
+    { "required": ["target", "assertions"] },
+    { "required": ["analyzer"] }
+  ],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "name": { "type": "string", "minLength": 1 },
+    "description": { "type": "string" },
+    "severity": { "type": "string", "enum": ["info", "warning", "error", "critical"] },
+    "enforcement": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "classification": {
+          "type": "string",
+          "enum": [
+            "deterministic",
+            "partially_deterministic",
+            "ai_review",
+            "human_review",
+            "not_currently_enforceable"
+          ]
+        }
+      }
+    },
+    "tags": { "type": "array", "items": { "type": "string" } },
+    "remediation": { "type": "string" },
+    "documentation": { "type": "array", "items": { "type": "string" } },
+    "enabled": { "type": "boolean" },
+    "illustrative": { "type": "boolean" },
+    "target": {
+      "type": "object",
+      "required": ["kind"],
+      "properties": {
+        "kind": { "type": "string", "minLength": 1 }
+      }
+    },
+    "when": { "$ref": "#/$defs/whenNode" },
+    "analyzer": {
+      "type": "object",
+      "required": ["kind"],
+      "properties": {
+        "kind": { "type": "string", "minLength": 1 }
+      }
+    },
+    "assertions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "minProperties": 1,
+        "maxProperties": 1,
+        "additionalProperties": true
+      }
+    }
+  },
+  "$defs": {
+    "whenNode": {
+      "type": "object",
+      "minProperties": 1,
+      "maxProperties": 1,
+      "properties": {
+        "and": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/whenNode" } },
+        "or": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/whenNode" } },
+        "not": { "$ref": "#/$defs/whenNode" }
+      },
+      "additionalProperties": true
+    }
+  }
+}
