@@ -2,7 +2,7 @@ using RulesEngine.Core.Results;
 
 namespace RulesEngine.Reporting.Console;
 
-public sealed class ConsoleViolationReporter : IViolationReporter
+public sealed class ConsoleViolationReporter(bool useColor = false) : IViolationReporter
 {
     public string Format => "console";
 
@@ -14,7 +14,13 @@ public sealed class ConsoleViolationReporter : IViolationReporter
                 ? violation.Project ?? violation.Symbol ?? "<unknown>"
                 : $"{violation.File}({violation.Line ?? 0},{violation.Column ?? 0})";
 
-            await writer.WriteLineAsync($"[{violation.Severity}] {violation.RuleId}: {violation.Message} ({location})");
+            var severityTag = $"[{violation.Severity}]";
+            if (useColor)
+            {
+                severityTag = AnsiSeverityColors.Colorize(violation.Severity, severityTag);
+            }
+
+            await writer.WriteLineAsync($"{severityTag} {violation.RuleId}: {violation.Message} ({location})");
 
             if (violation.Remediation is not null)
             {

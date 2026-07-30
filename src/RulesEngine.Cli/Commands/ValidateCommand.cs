@@ -7,6 +7,7 @@ using RulesEngine.Core.Evaluation;
 using RulesEngine.Core.Results;
 using RulesEngine.Reporting;
 using RulesEngine.Reporting.Console;
+using RulesEngine.Reporting.Html;
 using RulesEngine.Reporting.Json;
 using RulesEngine.Reporting.Sarif;
 using RulesEngine.RuleModel.Rules;
@@ -24,14 +25,26 @@ public static class ValidateCommand
 
         var formatOption = new Option<string>("--format")
         {
-            Description = "Output format: console, json, or sarif.",
+            Description = "Output format: console, json, sarif, or html.",
             DefaultValueFactory = _ => "console"
         };
-        formatOption.AcceptOnlyFromAmong("console", "json", "sarif");
+        formatOption.AcceptOnlyFromAmong("console", "json", "sarif", "html");
 
         var outputOption = new Option<string?>("--output")
         {
-            Description = "File to write the report to (default: stdout)."
+            Description = "File (or directory) to write the report to (default: stdout). If a directory " +
+                "(existing, or ending in a path separator), a default filename based on --format is used, " +
+                "e.g. validation-report.html."
+        };
+
+        var colorOption = new Option<bool>("--color")
+        {
+            Description = "Force ANSI color in console output, even when redirected. Ignored when --output is set."
+        };
+
+        var noColorOption = new Option<bool>("--no-color")
+        {
+            Description = "Disable ANSI color in console output, even in an interactive terminal."
         };
 
         var ruleOption = new Option<string[]>("--rule")
@@ -65,6 +78,8 @@ public static class ValidateCommand
         command.Add(branchOption);
         command.Add(formatOption);
         command.Add(outputOption);
+        command.Add(colorOption);
+        command.Add(noColorOption);
         command.Add(ruleOption);
         command.Add(solutionOption);
         command.Add(severityThresholdOption);
@@ -108,8 +123,26 @@ public static class ValidateCommand
             var severityThreshold = ParseSeverity(parseResult.GetValue(severityThresholdOption)!);
             result = ApplySeverityThreshold(result, severityThreshold);
 
-            var reporter = CreateReporter(parseResult.GetValue(formatOption)!);
-            var outputPath = parseResult.GetValue(outputOption);
+            var rawOutput = parseResult.GetValue(outputOption);
+            var outputPath = ReportOutputPathResolver.Resolve(
+                rawOutput, parseResult.GetValue(formatOption)!, rawOutput is not null && Directory.Exists(rawOutput));
+            if (outputPath is not null)
+            {
+                var outputDirectory = Path.GetDirectoryName(Path.GetFullPath(outputPath));
+                if (!string.IsNullOrEmpty(outputDirectory))
+                {
+                    Directory.CreateDirectory(outputDirectory);
+                }
+            }
+
+            var useColor = ColorSupport.ShouldUseColor(
+                parseResult.GetValue(colorOption),
+                parseResult.GetValue(noColorOption),
+                writingToFile: outputPath is not null,
+                consoleOutputRedirected: Console.IsOutputRedirected,
+                noColorEnvVar: Environment.GetEnvironmentVariable("NO_COLOR"));
+
+            var reporter = CreateReporter(parseResult.GetValue(formatOption)!, useColor);
 
             TextWriter writer = outputPath is null ? Console.Out : new StreamWriter(outputPath);
             try
@@ -151,11 +184,12 @@ public static class ValidateCommand
         };
     }
 
-    private static IViolationReporter CreateReporter(string format) => format switch
+    private static IViolationReporter CreateReporter(string format, bool useColor) => format switch
     {
         "json" => new JsonViolationReporter(),
         "sarif" => new SarifViolationReporter(),
-        _ => new ConsoleViolationReporter()
+        "html" => new HtmlViolationReporter(),
+        _ => new ConsoleViolationReporter(useColor)
     };
 
     private static Severity ParseSeverity(string value) => value switch

@@ -55,4 +55,49 @@ public class ConsoleViolationReporterTests
         Assert.Contains("Status: Passed", output);
         Assert.DoesNotContain("[Error]", output);
     }
+
+    [Fact]
+    public async Task WriteAsync_WithColorEnabled_WrapsSeverityTagInAnsiCodes()
+    {
+        var result = SingleErrorResult();
+
+        var writer = new StringWriter();
+        await new ConsoleViolationReporter(useColor: true).WriteAsync(result, writer);
+        var output = writer.ToString();
+
+        Assert.Contains("[31m[Error][0m", output, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task WriteAsync_WithColorDisabled_ContainsNoAnsiCodes()
+    {
+        var result = SingleErrorResult();
+
+        var writer = new StringWriter();
+        await new ConsoleViolationReporter(useColor: false).WriteAsync(result, writer);
+        var output = writer.ToString();
+
+        Assert.DoesNotContain("[", output, StringComparison.Ordinal);
+    }
+
+    private static ValidationResult SingleErrorResult() => new(
+        Status: ValidationStatus.Failed,
+        RulesEvaluated: 1,
+        RulesPassed: 0,
+        RulesFailed: 1,
+        Violations:
+        [
+            new Violation(
+                RuleId: "DDD-ENTITY-001",
+                Severity: Severity.Error,
+                Message: "'Contoso.Domain.Entities.LegacyThing' must inherit from 'Contoso.Domain.Entity<TId>'.",
+                File: "LegacyThing.cs",
+                Line: 5,
+                Column: 14,
+                Symbol: "Contoso.Domain.Entities.LegacyThing",
+                Project: "Contoso.Domain",
+                Remediation: "Inherit from Contoso.Domain.Entity<TId>.",
+                DocumentationReferences: [])
+        ],
+        EvaluatedAtUtc: DateTimeOffset.UtcNow);
 }

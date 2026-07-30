@@ -177,6 +177,20 @@ resolution via `Support/CliRepositoryContext.cs`, and are composed in `Program.c
 (`repoRoot, explicitConfigPath`) backing `--config`; the original one-argument overload still
 exists and delegates to it with `null`.
 
+### Post-v1 addition: `--format html` and directory-aware `--output`
+
+`validate --format` also accepts `html` (`RulesEngine.Reporting.Html.HtmlViolationReporter`) — a
+single self-contained file (inline CSS/JS, no external requests) with client-side severity/rule-id/
+project/message filtering, meant to be opened in a browser or published as a CI artifact.
+
+`--output` now accepts a directory as well as an exact file path
+(`RulesEngine.Cli.Support.ReportOutputPathResolver`, tested in `ReportOutputPathResolverTests.cs`
+following the same pure-function-of-its-inputs pattern as `ColorSupport`): if the value is an
+existing directory, or ends in a path separator, a default filename derived from `--format` is
+appended (`validation-report.html`/`.json`/`.sarif`/`.txt`). Either way, `ValidateCommand` now
+creates the resolved path's parent directory if it doesn't exist yet, so `--output
+./artifacts/report.html` no longer requires `./artifacts` to already exist.
+
 ### Post-v1 addition: `check-rules` and the `validate` rule-set pre-flight gate
 
 Design doc: `docs/done/RULE_VALIDATION_PLAN.md`. Before this, a broken rule YAML file made
