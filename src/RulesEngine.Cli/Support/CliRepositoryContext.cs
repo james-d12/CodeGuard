@@ -1,6 +1,7 @@
 using RulesEngine.Configuration.Discovery;
 using RulesEngine.Configuration.GlobalConfig;
 using RulesEngine.Configuration.Loading;
+using RulesEngine.Configuration.Validation;
 using RulesEngine.RuleModel.Rules;
 
 namespace RulesEngine.Cli.Support;
@@ -63,6 +64,15 @@ public sealed class CliRepositoryContext
 
     public IReadOnlyList<(RuleDefinition Rule, string SourceFile)> LoadRulesWithSource() =>
         RuleFileLoader.CreateDefault().LoadFromDirectoriesWithSource(Layout.RulesPaths);
+
+    /// <summary>
+    /// Non-throwing counterpart to <see cref="LoadRules"/>/<see cref="LoadRulesWithSource"/> -
+    /// validates every configured rule file and reports every problem found instead of throwing on
+    /// the first one. Used by `check-rules` and `validate`'s pre-flight rule-set gate
+    /// (`docs/done/RULE_VALIDATION_PLAN.md`).
+    /// </summary>
+    public RuleSetValidationReport ValidateRules() =>
+        RuleFileLoader.CreateDefault().ValidateDirectories(Layout.RulesPaths);
 
     private static RulesEngineConfig WithRules(RulesEngineConfig source, IReadOnlyList<string> rules) => new()
     {

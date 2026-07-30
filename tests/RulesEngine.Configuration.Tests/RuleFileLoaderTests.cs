@@ -253,6 +253,65 @@ public class RuleFileLoaderTests : IDisposable
         Assert.Contains(entries, e => e.Rule.Id == "DDD-ENTITY-002" && e.SourceFile == fileB);
     }
 
+    [Fact]
+    public void ValidateDirectories_MultipleBadFiles_ReportsAllOfThem()
+    {
+        WriteRuleFile("bad-selector.yml", """
+            id: DDD-ENTITY-001
+            name: Some rule
+            target:
+              kind: not_a_real_kind
+            assertions:
+              - must_inherit_from:
+                  type: "Contoso.Domain.Entity<TId>"
+            """);
+        WriteRuleFile("bad-assertion.yml", """
+            id: DDD-ENTITY-002
+            name: Some rule
+            target:
+              kind: class
+              namespace: "Contoso.Domain.Entities"
+            assertions:
+              - not_a_real_assertion: {}
+            """);
+
+        var report = CreateLoader().ValidateDirectories([_directory]);
+
+        Assert.False(report.IsValid);
+        Assert.Equal(2, report.Issues.Count);
+        Assert.Empty(report.Rules);
+        Assert.Contains(report.Issues, i => i.Errors.Any(e => e.Contains("not_a_real_kind")));
+        Assert.Contains(report.Issues, i => i.Errors.Any(e => e.Contains("not_a_real_assertion")));
+    }
+
+    [Fact]
+    public void ValidateDirectories_DuplicateId_ReportsAsIssueNotException()
+    {
+        var fileA = WriteRuleFile("a.yml", RuleYaml("DDD-ENTITY-001"));
+        WriteRuleFile("b.yml", RuleYaml("DDD-ENTITY-001"));
+
+        var report = CreateLoader().ValidateDirectories([_directory]);
+
+        Assert.False(report.IsValid);
+        Assert.Single(report.Rules);
+        Assert.Single(report.Issues);
+        Assert.Contains("DDD-ENTITY-001", report.Issues[0].Errors[0]);
+        Assert.Contains(fileA, report.Issues[0].Errors[0]);
+    }
+
+    [Fact]
+    public void ValidateDirectories_AllValid_ReturnsRulesAndNoIssues()
+    {
+        WriteRuleFile("a.yml", RuleYaml("DDD-ENTITY-001"));
+        WriteRuleFile("b.yml", RuleYaml("DDD-ENTITY-002"));
+
+        var report = CreateLoader().ValidateDirectories([_directory]);
+
+        Assert.True(report.IsValid);
+        Assert.Empty(report.Issues);
+        Assert.Equal(2, report.Rules.Count);
+    }
+
     private static string RuleYaml(string id) => $"""
         id: {id}
         name: Some rule

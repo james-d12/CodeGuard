@@ -78,7 +78,14 @@ public static class ValidateCommand
                 parseResult.GetValue(rulesSourceOption),
                 parseResult.GetValue(branchOption));
 
-            var rules = context.LoadRules();
+            var ruleReport = context.ValidateRules();
+            if (!ruleReport.IsValid)
+            {
+                RuleValidationReportWriter.WriteConsole(ruleReport, Console.Out);
+                return 1;
+            }
+
+            var rules = ruleReport.Rules.Select(r => r.Rule).ToList();
             var selectedRuleIds = parseResult.GetValue(ruleOption) ?? [];
             if (selectedRuleIds.Length > 0)
             {

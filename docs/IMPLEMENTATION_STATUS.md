@@ -179,6 +179,43 @@ resolution via `Support/CliRepositoryContext.cs`, and are composed in `Program.c
 (`repoRoot, explicitConfigPath`) backing `--config`; the original one-argument overload still
 exists and delegates to it with `null`.
 
+### Post-v1 addition: `check-rules` and the `validate` rule-set pre-flight gate
+
+Design doc: `docs/done/RULE_VALIDATION_PLAN.md`. Before this, a broken rule YAML file made
+`RuleFileLoader.LoadFromFile` throw immediately (first error only, uncaught by any CLI command), so
+`validate` against a repo with one bad rule file crashed with a raw .NET stack trace instead of a
+clean report, and there was no way to check a folder of rule YAML in isolation.
+
+- `RuleFileLoader` (`RulesEngine.Configuration/Loading/RuleFileLoader.cs`) gained a non-throwing core:
+  `TryLoadFromFile` (schema-validate-then-parse, catching `RuleSchemaValidationException`/
+  `RuleParsingException`/`RuleLoadException` into an error list instead of throwing) and
+  `ValidateDirectories` (walks a rule-file set, collects **every** file's issues plus duplicate-ID
+  conflicts into one `RuleSetValidationReport`, rather than stopping at the first one).
+  `LoadFromFile`/`LoadFromDirectory(ies)(WithSource)` are unchanged in observable behavior (still
+  throw on the first problem) but are now implemented on top of this non-throwing core, so there is
+  a single parsing pass shared by every caller — no drift between "what `check-rules` approves" and
+  "what `validate` actually loads."
+- New `CliRepositoryContext.ValidateRules()` (`RulesEngine.Cli/Support/CliRepositoryContext.cs`)
+  exposes `ValidateDirectories` for the configured rule paths, parallel to `LoadRules()`.
+- New `check-rules` command (`RulesEngine.Cli/Commands/CheckRulesCommand.cs`): validates a rule set
+  for structural correctness only (schema conformance, unknown selector/assertion/analyzer `kind`,
+  `target`/`assertions` vs `analyzer` mutual exclusivity, duplicate rule IDs) with no analysis model
+  and no MSBuild involved. Shares `--path`/`--config`/`--rules-source`/`--branch` resolution with
+  every other command, so `--rules-source <folder>` points it directly at an ad-hoc rules folder.
+  `--format console|json`; exit `0`/`1` on validity, no severity concept (these are authoring errors,
+  not violations).
+- `validate` (`ValidateCommand.cs`) now calls `context.ValidateRules()` unconditionally before
+  building the `AnalysisModel`/touching `MsBuildAnalysisProvider`; on any issue it prints the same
+  report (`RulesEngine.Cli/Support/RuleValidationReportWriter.cs`, shared with `check-rules`) and
+  returns exit code `1` — no `--skip-rule-validation` escape hatch, since the check is cheap and a
+  broken ruleset should never silently or crashily proceed past it.
+- Tests: `RuleFileLoaderTests` covers `ValidateDirectories` aggregation directly;
+  `RulesEngine.Cli.Tests` gained `CheckRulesCommandTests` and `ValidateCommandPreflightTests`
+  (invoking the actual `Command` via `Build().Parse(...).InvokeAsync()` and redirecting
+  `Console.Out`). Both new CLI test classes share a `[Collection(ConsoleOutputCollection.Name)]` —
+  xUnit parallelizes different test classes by default, and two classes independently swapping the
+  process-global `Console.Out` will race unless serialized into one collection.
+
 ## The 11 starter rules
 
 All under `rules/`, all illustrative (`Contoso.*` namespace, `illustrative: true`), matching the
