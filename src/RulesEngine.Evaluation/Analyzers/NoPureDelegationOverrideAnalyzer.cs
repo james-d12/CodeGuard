@@ -18,14 +18,14 @@ public sealed class NoPureDelegationOverrideAnalyzer(string baseTypePattern) : I
 
     public IEnumerable<AnalyzerViolation> Analyze(RepositoryModel model)
     {
-        var typesByFullName = model.Solutions
+        var typesByProjectAndFullName = model.Solutions
             .SelectMany(s => s.Projects)
             .SelectMany(p => p.Types)
-            .ToDictionary(t => t.FullName);
+            .ToDictionary(t => (t.ProjectName, t.FullName));
 
         return model.MethodBodyShapes
             .Where(m => m.IsSingleBaseCallDelegation
-                && typesByFullName.TryGetValue(m.ContainingType, out var type)
+                && typesByProjectAndFullName.TryGetValue((m.ProjectName, m.ContainingType), out var type)
                 && type.BaseType is not null
                 && GlobMatcher.IsMatch(type.BaseType, baseTypePattern))
             .Select(m => new AnalyzerViolation(

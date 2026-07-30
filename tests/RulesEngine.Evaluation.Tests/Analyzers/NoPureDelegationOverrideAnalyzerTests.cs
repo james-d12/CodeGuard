@@ -17,7 +17,7 @@ public class NoPureDelegationOverrideAnalyzerTests
     [Fact]
     public void Analyze_Flags_PureDelegationOverrideOnMatchingBaseType()
     {
-        var type = TestModels.Type("Contoso.Persistence.OrderRepository", baseType: "Contoso.Persistence.DomainEntityRepository<Order>");
+        var type = TestModels.Type("Contoso.Persistence.OrderRepository", baseType: "Contoso.Persistence.DomainEntityRepository<Order>", projectName: "Contoso.Persistence");
         var project = TestModels.Project("Contoso.Persistence", types: [type]);
         var model = TestModels.RepositoryWithFacts(
             projects: [project],
@@ -34,7 +34,7 @@ public class NoPureDelegationOverrideAnalyzerTests
     [Fact]
     public void Analyze_DoesNotFlag_NonDelegationOverride()
     {
-        var type = TestModels.Type("Contoso.Persistence.OrderRepository", baseType: "Contoso.Persistence.DomainEntityRepository<Order>");
+        var type = TestModels.Type("Contoso.Persistence.OrderRepository", baseType: "Contoso.Persistence.DomainEntityRepository<Order>", projectName: "Contoso.Persistence");
         var project = TestModels.Project("Contoso.Persistence", types: [type]);
         var model = TestModels.RepositoryWithFacts(
             projects: [project],
@@ -49,7 +49,7 @@ public class NoPureDelegationOverrideAnalyzerTests
     [Fact]
     public void Analyze_DoesNotFlag_DelegationOverrideOnNonMatchingBaseType()
     {
-        var type = TestModels.Type("Contoso.Persistence.OrderCache", baseType: "System.Object");
+        var type = TestModels.Type("Contoso.Persistence.OrderCache", baseType: "System.Object", projectName: "Contoso.Persistence");
         var project = TestModels.Project("Contoso.Persistence", types: [type]);
         var model = TestModels.RepositoryWithFacts(
             projects: [project],
