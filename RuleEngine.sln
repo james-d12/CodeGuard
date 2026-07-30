@@ -36,6 +36,17 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RulesEngine.Analyzers.Repos
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RulesEngine.Cli.Tests", "tests\RulesEngine.Cli.Tests\RulesEngine.Cli.Tests.csproj", "{C08A1D46-6375-4FB0-B248-AE94A0A34A38}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{A5510E62-1E49-4D08-B7A8-F9A8A386C303}"
+	ProjectSection(SolutionItems) = preProject
+		.github\workflows\ci.yml = .github\workflows\ci.yml
+		.github\workflows\publish.yml = .github\workflows\publish.yml
+		README.md = README.md
+		LICENSE = LICENSE
+		global.json = global.json
+		Directory.Build.props = Directory.Build.props
+		stryker-config.json = stryker-config.json
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
