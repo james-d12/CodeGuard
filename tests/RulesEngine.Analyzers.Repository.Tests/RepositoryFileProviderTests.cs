@@ -8,7 +8,7 @@ public class RepositoryFileProviderTests
     public async Task ContributeAsync_AddsFilesAndSkipsExcludedDirectories()
     {
         var root = Directory.CreateTempSubdirectory("rules-engine-repo-provider-tests-");
-        
+
         try
         {
             await File.WriteAllTextAsync(Path.Combine(root.FullName, "readme.md"), "hello");
