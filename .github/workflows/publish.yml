@@ -11,7 +11,7 @@ jobs:
 
     permissions:
       id-token: write # enable GitHub OIDC token issuance for NuGet Trusted Publishing
-      contents: read
+      contents: write # required for `gh release create`
 
     steps:
       - name: Checkout
@@ -24,29 +24,42 @@ jobs:
         with:
           global-json-file: global.json
 
-      - name: Restore dotnet tools
+      - name: Restore Dotnet Tools
         run: dotnet tool restore
 
-      - name: Restore
+      - name: Restore NuGet Packages
         run: dotnet restore
 
-      - name: Build
+      - name: Build Solution
         run: dotnet build --no-restore -c Release
 
-      - name: Test
+      - name: Run Tests
         run: dotnet test --no-build -c Release
 
-      - name: Pack
+      - name: Pack Rules-Engine Tool Package
         run: dotnet pack src/RulesEngine.Cli/RulesEngine.Cli.csproj -c Release -o ./nupkg --no-build
 
-      - name: Verify package contains no rule-authoring content
+      - name: Verify Package Contains No Rule-Authoring Content
         run: ./scripts/verify-nupkg-contents.sh ./nupkg/*.nupkg
 
-      - name: NuGet login (OIDC -> temp API key)
+      - name: Get Token
         uses: NuGet/login@v1
         id: login
         with:
           user: ${{ secrets.NUGET_USER }}
 
-      - name: NuGet push
+      - name: Push Package To NuGet.org
         run: dotnet nuget push ./nupkg/*.nupkg --api-key ${{ steps.login.outputs.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          prerelease_flag=""
+          if [[ "$GITHUB_REF_NAME" == *-* ]]; then
+            prerelease_flag="--prerelease"
+          fi
+          gh release create "$GITHUB_REF_NAME" ./nupkg/*.nupkg \
+            --title "$GITHUB_REF_NAME" \
+            --generate-notes \
+            $prerelease_flag
