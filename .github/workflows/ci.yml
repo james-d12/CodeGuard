@@ -20,6 +20,9 @@ jobs:
         with:
           global-json-file: global.json
 
+      - name: Restore dotnet tools
+        run: dotnet tool restore
+
       - name: Restore
         run: dotnet restore
 
@@ -27,7 +30,26 @@ jobs:
         run: dotnet build --no-restore
 
       - name: Test
-        run: dotnet test --no-build
+        run: dotnet test --no-build --collect:"XPlat Code Coverage" --results-directory ./coverage
+
+      - name: Generate coverage report
+        if: always()
+        run: |
+          dotnet reportgenerator \
+            -reports:./coverage/**/coverage.cobertura.xml \
+            -targetdir:./coverage/report \
+            -reporttypes:"Html;MarkdownSummaryGithub"
+
+      - name: Add coverage summary
+        if: always()
+        run: cat ./coverage/report/SummaryGithub.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: ./coverage/report/**
 
   mutation-test:
     runs-on: ubuntu-latest
