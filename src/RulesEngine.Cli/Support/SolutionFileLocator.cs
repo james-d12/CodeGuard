@@ -26,7 +26,7 @@ public static class SolutionFileLocator
             return resolved;
         }
 
-        var candidates = FindSolutionFiles(repoRoot, repoRoot).ToList();
+        var candidates = FindSolutionFiles(repoRoot).ToList();
         if (candidates.Count == 0)
         {
             throw new InvalidOperationException($"No .sln file found under '{repoRoot}'.");
@@ -35,7 +35,7 @@ public static class SolutionFileLocator
         return candidates;
     }
 
-    private static IEnumerable<string> FindSolutionFiles(string rootPath, string directoryPath)
+    private static IEnumerable<string> FindSolutionFiles(string directoryPath)
     {
         foreach (var file in Directory.EnumerateFiles(directoryPath, "*.sln"))
         {
@@ -49,7 +49,7 @@ public static class SolutionFileLocator
                 continue;
             }
 
-            foreach (var file in FindSolutionFiles(rootPath, subdirectory))
+            foreach (var file in FindSolutionFiles(subdirectory))
             {
                 yield return file;
             }

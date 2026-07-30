@@ -22,7 +22,7 @@ public static class RulesEngineConfigLoader
                 throw new FileNotFoundException($"Config file '{explicitConfigPath}' was not found.", explicitConfigPath);
             }
 
-            return Deserializer.Deserialize<RulesEngineConfig>(File.ReadAllText(explicitConfigPath)) ?? DefaultConfig;
+            return Deserializer.Deserialize<RulesEngineConfig>(File.ReadAllText(explicitConfigPath));
         }
 
         var configPath = Path.Combine(repoRoot, DefaultConfigRelativePath);
@@ -32,7 +32,7 @@ public static class RulesEngineConfigLoader
         }
 
         var yaml = File.ReadAllText(configPath);
-        return Deserializer.Deserialize<RulesEngineConfig>(yaml) ?? DefaultConfig;
+        return Deserializer.Deserialize<RulesEngineConfig>(yaml);
     }
 
     private static RulesEngineConfig DefaultConfig { get; } = new()

@@ -66,7 +66,7 @@ public sealed class MsBuildAnalysisProvider(IReadOnlyList<string> solutionPaths)
                 var projectReferenceNames = roslynProject.ProjectReferences
                     .Select(pr => solution.GetProject(pr.ProjectId)?.FilePath)
                     .Where(path => path is not null)
-                    .Select(path => Path.GetFileNameWithoutExtension(path!) ?? string.Empty)
+                    .Select(path => Path.GetFileNameWithoutExtension(path!))
                     .Distinct(StringComparer.OrdinalIgnoreCase)
                     .ToList();
 

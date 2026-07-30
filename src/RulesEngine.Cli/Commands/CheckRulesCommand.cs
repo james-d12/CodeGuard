@@ -30,7 +30,7 @@ public static class CheckRulesCommand
         command.Add(branchOption);
         command.Add(formatOption);
 
-        command.SetAction((parseResult, cancellationToken) =>
+        command.SetAction((parseResult, _) =>
         {
             var context = CliRepositoryContext.Resolve(
                 parseResult.GetValue(pathOption),

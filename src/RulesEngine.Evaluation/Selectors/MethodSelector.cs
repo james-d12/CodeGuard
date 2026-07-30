@@ -25,6 +25,5 @@ public sealed class MethodSelector(
             .Where(method => GlobMatcher.IsMatch(method.Name, namePattern))
             .Where(method => accessibility is null || method.Accessibility == accessibility)
             .Where(method => isAsync is null || method.Modifiers.HasFlag(MethodModifiers.Async) == isAsync)
-            .Where(method => isStatic is null || method.Modifiers.HasFlag(MethodModifiers.Static) == isStatic)
-            .Cast<object>();
+            .Where(method => isStatic is null || method.Modifiers.HasFlag(MethodModifiers.Static) == isStatic);
 }

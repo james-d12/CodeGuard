@@ -15,8 +15,7 @@ public sealed class ConstructorSelector(
             .SelectMany(project => project.Types)
             .SelectMany(type => type.Constructors)
             .Where(constructor => GlobMatcher.IsMatch(constructor.DeclaringType, declaringTypePattern))
-            .Where(MatchesParameterTypes)
-            .Cast<object>();
+            .Where(MatchesParameterTypes);
 
     private bool MatchesParameterTypes(ConstructorModel constructor)
     {

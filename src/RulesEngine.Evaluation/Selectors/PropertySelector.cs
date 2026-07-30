@@ -21,6 +21,5 @@ public sealed class PropertySelector(
             .Where(property => GlobMatcher.IsMatch(property.ProjectName, projectPattern))
             .Where(property => GlobMatcher.IsMatch(property.DeclaringType, declaringTypePattern))
             .Where(property => accessibility is null || property.Accessibility == accessibility)
-            .Where(property => isStatic is null || property.IsStatic == isStatic)
-            .Cast<object>();
+            .Where(property => isStatic is null || property.IsStatic == isStatic);
 }

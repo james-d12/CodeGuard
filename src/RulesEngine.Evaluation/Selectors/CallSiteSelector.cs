@@ -25,8 +25,7 @@ public sealed class CallSiteSelector(
             .Where(cs => GlobMatcher.IsMatch(cs.ContainingMethod, containingMethodPattern))
             .Where(cs => GlobMatcher.IsMatch(cs.ContainingType, containingTypePattern))
             .Where(MatchesArgumentLiteralness)
-            .Where(cs => enclosingComparisonOperator is null || cs.EnclosingComparisonOperator == enclosingComparisonOperator)
-            .Cast<object>();
+            .Where(cs => enclosingComparisonOperator is null || cs.EnclosingComparisonOperator == enclosingComparisonOperator);
 
     private bool MatchesArgumentLiteralness(CallSiteModel callSite)
     {

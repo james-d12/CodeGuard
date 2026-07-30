@@ -17,6 +17,5 @@ public sealed class FieldSelector(
             .SelectMany(type => type.Fields)
             .Where(field => GlobMatcher.IsMatch(field.DeclaringType, declaringTypePattern))
             .Where(field => isReadonly is null || field.Modifiers.HasFlag(FieldModifiers.Readonly) == isReadonly)
-            .Where(field => isStatic is null || field.Modifiers.HasFlag(FieldModifiers.Static) == isStatic)
-            .Cast<object>();
+            .Where(field => isStatic is null || field.Modifiers.HasFlag(FieldModifiers.Static) == isStatic);
 }

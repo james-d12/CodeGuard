@@ -24,7 +24,7 @@ public static class ExplainRuleCommand
         command.Add(branchOption);
         command.Add(ruleIdArgument);
 
-        command.SetAction((parseResult, cancellationToken) =>
+        command.SetAction((parseResult, _) =>
         {
             var context = CliRepositoryContext.Resolve(
                 parseResult.GetValue(pathOption),
