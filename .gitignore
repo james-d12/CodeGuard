@@ -9,3 +9,4 @@ StrykerOutput/
 *.DotSettings.user
 .config
 rules/
+.rulesengine/
