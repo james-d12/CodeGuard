@@ -21,6 +21,7 @@ public class MustNotImplementAssertionTests
         var type = TestModels.Type("Contoso.Domain.Order", interfaces: ["Contoso.Domain.IDisposableEntity"]);
         var outcome = new MustNotImplementAssertion("Contoso.Domain.IDisposableEntity").Evaluate(type, EmptyModel);
         Assert.False(outcome.Passed);
+        Assert.Equal("'Contoso.Domain.Order' must not implement 'Contoso.Domain.IDisposableEntity'.", outcome.Message);
     }
 
     [Fact]
@@ -28,5 +29,6 @@ public class MustNotImplementAssertionTests
     {
         var outcome = new MustNotImplementAssertion("Contoso.Domain.IDisposableEntity").Evaluate(42, EmptyModel);
         Assert.False(outcome.Passed);
+        Assert.Equal("'must_not_implement' can only be evaluated against types.", outcome.Message);
     }
 }

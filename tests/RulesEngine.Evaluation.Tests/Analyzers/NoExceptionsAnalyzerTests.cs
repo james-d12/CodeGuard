@@ -28,6 +28,8 @@ public class NoExceptionsAnalyzerTests
         var violation = Assert.Single(violations);
         Assert.Equal("Order.cs", violation.FilePath);
         Assert.Contains("Contoso.Domain.Order.Process", violation.Message);
+        Assert.Contains("is not allowed in this scope", violation.Message);
+        Assert.DoesNotContain("leading guard-clause statement", violation.Message);
     }
 
     [Fact]
@@ -53,6 +55,8 @@ public class NoExceptionsAnalyzerTests
 
         var violation = Assert.Single(violations);
         Assert.Contains("Contoso.Domain.Order.Process", violation.Message);
+        Assert.Contains("leading guard-clause statement", violation.Message);
+        Assert.DoesNotContain("is not allowed in this scope", violation.Message);
     }
 
     [Fact]

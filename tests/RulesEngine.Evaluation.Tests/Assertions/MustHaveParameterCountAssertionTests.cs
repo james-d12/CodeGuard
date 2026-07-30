@@ -29,6 +29,7 @@ public class MustHaveParameterCountAssertionTests
     {
         var outcome = new MustHaveParameterCountAssertion(2, null).Evaluate(MethodWithParameters(1), EmptyModel);
         Assert.False(outcome.Passed);
+        Assert.Equal("Must have at least 2 parameter(s), found 1.", outcome.Message);
     }
 
     [Fact]
@@ -36,6 +37,7 @@ public class MustHaveParameterCountAssertionTests
     {
         var outcome = new MustHaveParameterCountAssertion(null, 1).Evaluate(MethodWithParameters(2), EmptyModel);
         Assert.False(outcome.Passed);
+        Assert.Equal("Must have at most 1 parameter(s), found 2.", outcome.Message);
     }
 
     [Fact]
@@ -43,6 +45,7 @@ public class MustHaveParameterCountAssertionTests
     {
         var outcome = new MustHaveParameterCountAssertion(null, null).Evaluate(TestModels.Type("Contoso.Domain.Order"), EmptyModel);
         Assert.False(outcome.Passed);
+        Assert.Equal("'must_have_parameter_count' can only be evaluated against methods or constructors.", outcome.Message);
     }
 
     [Fact]

@@ -3,7 +3,7 @@ using RulesEngine.Evaluation.Analyzers;
 
 namespace RulesEngine.Evaluation.Tests.Analyzers;
 
-public class ProjectConventionAnalyzerTests : IDisposable
+public sealed class ProjectConventionAnalyzerTests : IDisposable
 {
     private readonly string _projectPath = Path.Combine(Path.GetTempPath(), $"rulesengine-projectconvention-{Guid.NewGuid():N}.csproj");
 
@@ -56,6 +56,7 @@ public class ProjectConventionAnalyzerTests : IDisposable
 
         var violation = Assert.Single(violations);
         Assert.Contains("call-site", violation.Message);
+        Assert.DoesNotContain("Content Include", violation.Message);
     }
 
     [Fact]
@@ -71,6 +72,56 @@ public class ProjectConventionAnalyzerTests : IDisposable
 
         var violation = Assert.Single(violations);
         Assert.Contains("Content Include", violation.Message);
+        Assert.DoesNotContain("call-site matching", violation.Message);
+    }
+
+    [Fact]
+    public void Analyze_Flags_ProjectMissingBothCallSiteAndContentEntry()
+    {
+        var project = WriteProject("Contoso.Reporting", WithoutScriptsContent);
+        var model = TestModels.RepositoryWithFacts(projects: [project]);
+        var analyzer = new ProjectConventionAnalyzer("*.Reporting*");
+
+        var violations = analyzer.Analyze(model).ToList();
+
+        var violation = Assert.Single(violations);
+        Assert.Contains("a call-site matching '*DeployChanges*' and a <Content Include=> entry referencing 'Scripts'", violation.Message);
+    }
+
+    [Fact]
+    public void Analyze_Flags_WhenMatchingCallSiteBelongsToADifferentProject()
+    {
+        var project = WriteProject("Contoso.Reporting", WithScriptsContent);
+        var model = TestModels.RepositoryWithFacts(
+            projects: [project],
+            callSites: [BootstrapCallSite("Contoso.OtherProject")]);
+        var analyzer = new ProjectConventionAnalyzer("*.Reporting*");
+
+        var violations = analyzer.Analyze(model).ToList();
+
+        var violation = Assert.Single(violations);
+        Assert.Contains("call-site", violation.Message);
+    }
+
+    [Fact]
+    public void Analyze_DoesNotFlag_WhenContentElementHasNoIncludeAttribute()
+    {
+        var project = WriteProject("Contoso.Reporting", """
+            <Project Sdk="Microsoft.NET.Sdk">
+              <ItemGroup>
+                <Content Update="appsettings.json" />
+                <Content Include="Scripts\**\*.sql" />
+              </ItemGroup>
+            </Project>
+            """);
+        var model = TestModels.RepositoryWithFacts(
+            projects: [project],
+            callSites: [BootstrapCallSite("Contoso.Reporting")]);
+        var analyzer = new ProjectConventionAnalyzer("*.Reporting*");
+
+        var violations = analyzer.Analyze(model).ToList();
+
+        Assert.Empty(violations);
     }
 
     [Fact]

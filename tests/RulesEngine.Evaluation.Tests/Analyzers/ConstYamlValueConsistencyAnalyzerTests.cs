@@ -3,7 +3,7 @@ using RulesEngine.Evaluation.Analyzers;
 
 namespace RulesEngine.Evaluation.Tests.Analyzers;
 
-public class ConstYamlValueConsistencyAnalyzerTests : IDisposable
+public sealed class ConstYamlValueConsistencyAnalyzerTests : IDisposable
 {
     private readonly string _path = Path.Combine(Path.GetTempPath(), $"rulesengine-typename-{Guid.NewGuid():N}.yml");
 
@@ -52,6 +52,21 @@ public class ConstYamlValueConsistencyAnalyzerTests : IDisposable
     public void Analyze_Flags_WhenYamlFieldIsMissing()
     {
         var file = WriteYamlFile("client:\n  other: value\n");
+        var type = TestModels.Type("Contoso.Client.OrderConfig", fields: [ConstField("Order")]);
+        var project = TestModels.Project("Contoso.Client", types: [type]);
+        var model = TestModels.RepositoryWithFacts(projects: [project], files: [file]);
+        var analyzer = new ConstYamlValueConsistencyAnalyzer("Contoso.Client.OrderConfig", "TypeName", "*.yml", "client.typeName");
+
+        var violations = analyzer.Analyze(model).ToList();
+
+        var violation = Assert.Single(violations);
+        Assert.Contains("<missing>", violation.Message);
+    }
+
+    [Fact]
+    public void Analyze_Flags_WhenYamlFileHasNoDocuments()
+    {
+        var file = WriteYamlFile("");
         var type = TestModels.Type("Contoso.Client.OrderConfig", fields: [ConstField("Order")]);
         var project = TestModels.Project("Contoso.Client", types: [type]);
         var model = TestModels.RepositoryWithFacts(projects: [project], files: [file]);

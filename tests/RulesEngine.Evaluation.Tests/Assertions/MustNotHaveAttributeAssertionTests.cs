@@ -24,6 +24,7 @@ public class MustNotHaveAttributeAssertionTests
         var type = TestModels.Type("Contoso.Domain.Legacy") with { Attributes = [Obsolete()] };
         var outcome = new MustNotHaveAttributeAssertion("System.ObsoleteAttribute", null).Evaluate(type, EmptyModel);
         Assert.False(outcome.Passed);
+        Assert.Equal("Candidate must not have attribute matching 'System.ObsoleteAttribute'.", outcome.Message);
     }
 
     [Fact]
@@ -31,6 +32,17 @@ public class MustNotHaveAttributeAssertionTests
     {
         var outcome = new MustNotHaveAttributeAssertion("System.ObsoleteAttribute", null).Evaluate(42, EmptyModel);
         Assert.False(outcome.Passed);
+        Assert.Equal("'must_not_have_attribute' cannot be evaluated against this candidate type.", outcome.Message);
+    }
+
+    [Fact]
+    public void Evaluate_Fails_WhenArgumentSpecified_AndAttributeMatchesArgument()
+    {
+        var attribute = new AttributeModel("System.ObsoleteAttribute", ["use something else"], new Dictionary<string, string>());
+        var type = TestModels.Type("Contoso.Domain.Legacy") with { Attributes = [attribute] };
+        var outcome = new MustNotHaveAttributeAssertion("System.ObsoleteAttribute", "use something else").Evaluate(type, EmptyModel);
+        Assert.False(outcome.Passed);
+        Assert.Equal("Candidate must not have attribute matching 'System.ObsoleteAttribute' with argument 'use something else'.", outcome.Message);
     }
 
     [Fact]

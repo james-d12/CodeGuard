@@ -21,6 +21,7 @@ public class MustImplementAssertionTests
         var type = TestModels.Type("Contoso.Domain.Order");
         var outcome = new MustImplementAssertion("Contoso.Domain.IAggregateRoot").Evaluate(type, EmptyModel);
         Assert.False(outcome.Passed);
+        Assert.Equal("'Contoso.Domain.Order' must implement 'Contoso.Domain.IAggregateRoot'.", outcome.Message);
     }
 
     [Fact]
@@ -28,5 +29,6 @@ public class MustImplementAssertionTests
     {
         var outcome = new MustImplementAssertion("Contoso.Domain.IAggregateRoot").Evaluate(42, EmptyModel);
         Assert.False(outcome.Passed);
+        Assert.Equal("'must_implement' can only be evaluated against types.", outcome.Message);
     }
 }

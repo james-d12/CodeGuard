@@ -3,7 +3,7 @@ using RulesEngine.Evaluation.Assertions;
 
 namespace RulesEngine.Evaluation.Tests.Assertions;
 
-public class MustHaveJsonFieldAssertionTests : IDisposable
+public sealed class MustHaveJsonFieldAssertionTests : IDisposable
 {
     private static readonly RepositoryModel EmptyModel = new(".", [], [], [], [], [], [], [], [], []);
     private readonly string _path = Path.Combine(Path.GetTempPath(), $"rulesengine-json-{Guid.NewGuid():N}.json");
@@ -36,6 +36,7 @@ public class MustHaveJsonFieldAssertionTests : IDisposable
         var file = WriteFile("""{ "profiles": {} }""");
         var outcome = new MustHaveJsonFieldAssertion("profiles.http.applicationUrl", null).Evaluate(file, EmptyModel);
         Assert.False(outcome.Passed);
+        Assert.Equal($"File '{Path.GetFileName(_path)}' must have JSON field 'profiles.http.applicationUrl'.", outcome.Message);
     }
 
     [Fact]
@@ -44,6 +45,9 @@ public class MustHaveJsonFieldAssertionTests : IDisposable
         var file = WriteFile("""{ "profiles": { "http": { "applicationUrl": "http://localhost:6000" } } }""");
         var outcome = new MustHaveJsonFieldAssertion("profiles.http.applicationUrl", "http://localhost:5000").Evaluate(file, EmptyModel);
         Assert.False(outcome.Passed);
+        Assert.Equal(
+            $"File '{Path.GetFileName(_path)}' must have JSON field 'profiles.http.applicationUrl' equal to 'http://localhost:5000' (found 'http://localhost:6000').",
+            outcome.Message);
     }
 
     [Fact]
@@ -59,6 +63,7 @@ public class MustHaveJsonFieldAssertionTests : IDisposable
     {
         var outcome = new MustHaveJsonFieldAssertion("profiles.http.applicationUrl", null).Evaluate(42, EmptyModel);
         Assert.False(outcome.Passed);
+        Assert.Equal("'must_have_json_field' can only be evaluated against files.", outcome.Message);
     }
 
     public void Dispose()

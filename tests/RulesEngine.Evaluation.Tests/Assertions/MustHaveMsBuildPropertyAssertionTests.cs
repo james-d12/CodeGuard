@@ -33,6 +33,7 @@ public class MustHaveMsBuildPropertyAssertionTests
         var project = ProjectWithProperty("Nullable", "enable");
         var outcome = new MustHaveMsBuildPropertyAssertion("TreatWarningsAsErrors", null).Evaluate(project, EmptyModel);
         Assert.False(outcome.Passed);
+        Assert.Equal("Project 'Contoso.Domain' must define MSBuild property 'TreatWarningsAsErrors'.", outcome.Message);
     }
 
     [Fact]
@@ -41,6 +42,7 @@ public class MustHaveMsBuildPropertyAssertionTests
         var project = ProjectWithProperty("Nullable", "disable");
         var outcome = new MustHaveMsBuildPropertyAssertion("Nullable", "enable").Evaluate(project, EmptyModel);
         Assert.False(outcome.Passed);
+        Assert.Equal("Project 'Contoso.Domain' must have MSBuild property 'Nullable' set to 'enable' (found 'disable').", outcome.Message);
     }
 
     [Fact]
@@ -56,5 +58,6 @@ public class MustHaveMsBuildPropertyAssertionTests
     {
         var outcome = new MustHaveMsBuildPropertyAssertion("Nullable", null).Evaluate(42, EmptyModel);
         Assert.False(outcome.Passed);
+        Assert.Equal("'must_have_msbuild_property' can only be evaluated against projects.", outcome.Message);
     }
 }

@@ -21,6 +21,7 @@ public class MustNotHaveModifierAssertionTests
         var type = TestModels.Type("Contoso.Domain.Order") with { Modifiers = TypeModifiers.Sealed };
         var outcome = new MustNotHaveModifierAssertion("sealed").Evaluate(type, EmptyModel);
         Assert.False(outcome.Passed);
+        Assert.Equal("Candidate must not have modifier 'sealed'.", outcome.Message);
     }
 
     [Fact]
@@ -28,5 +29,6 @@ public class MustNotHaveModifierAssertionTests
     {
         var outcome = new MustNotHaveModifierAssertion("sealed").Evaluate(42, EmptyModel);
         Assert.False(outcome.Passed);
+        Assert.Equal("Modifier 'sealed' is not applicable to this candidate.", outcome.Message);
     }
 }

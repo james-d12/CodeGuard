@@ -27,7 +27,7 @@ public class MustNotDependOnAssertionTests
         var outcome = new MustNotDependOnAssertion("Contoso.Infrastructure.*").Evaluate(project, model);
 
         Assert.False(outcome.Passed);
-        Assert.Contains("Contoso.Domain.Order", outcome.Message);
+        Assert.Equal("Project 'Contoso.Domain' must not depend on 'Contoso.Infrastructure.*' (via: Contoso.Domain.Order).", outcome.Message);
     }
 
     [Fact]
@@ -103,5 +103,6 @@ public class MustNotDependOnAssertionTests
         var outcome = new MustNotDependOnAssertion("Contoso.Infrastructure.*").Evaluate(TestModels.Type("Contoso.Domain.Order"), model);
 
         Assert.False(outcome.Passed);
+        Assert.Equal("'must_not_depend_on' can only be evaluated against projects.", outcome.Message);
     }
 }

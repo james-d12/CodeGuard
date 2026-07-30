@@ -24,6 +24,7 @@ public class MustNotHaveMethodAssertionTests
         var type = TestModels.Type("Contoso.Domain.Order", methods: [Method("Delete")]);
         var outcome = new MustNotHaveMethodAssertion("Delete").Evaluate(type, EmptyModel);
         Assert.False(outcome.Passed);
+        Assert.Equal("'Contoso.Domain.Order' must not have a method matching 'Delete' (found 'Delete').", outcome.Message);
     }
 
     [Fact]
@@ -31,5 +32,6 @@ public class MustNotHaveMethodAssertionTests
     {
         var outcome = new MustNotHaveMethodAssertion("Delete").Evaluate(42, EmptyModel);
         Assert.False(outcome.Passed);
+        Assert.Equal("'must_not_have_method' can only be evaluated against types.", outcome.Message);
     }
 }

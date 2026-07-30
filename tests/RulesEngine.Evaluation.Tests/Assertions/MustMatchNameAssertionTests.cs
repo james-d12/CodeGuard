@@ -21,6 +21,7 @@ public class MustMatchNameAssertionTests
         var type = TestModels.Type("Contoso.Domain.Order");
         var outcome = new MustMatchNameAssertion("^.+Event$").Evaluate(type, EmptyModel);
         Assert.False(outcome.Passed);
+        Assert.Equal("'Order' must match name pattern '^.+Event$'.", outcome.Message);
     }
 
     [Fact]
@@ -28,6 +29,7 @@ public class MustMatchNameAssertionTests
     {
         var outcome = new MustMatchNameAssertion("^.+$").Evaluate(42, EmptyModel);
         Assert.False(outcome.Passed);
+        Assert.Equal("'must_match_name' cannot be evaluated against this candidate type.", outcome.Message);
     }
 
     [Fact]

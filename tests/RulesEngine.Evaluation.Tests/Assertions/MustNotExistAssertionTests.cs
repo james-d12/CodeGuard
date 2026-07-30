@@ -35,5 +35,6 @@ public class MustNotExistAssertionTests
         var outcome = assertion.Evaluate(TestModels.Type("Contoso.Domain.Order"), EmptyModel);
 
         Assert.False(outcome.Passed);
+        Assert.Equal("Expected no matches for a 'stub' selector, but found at least one.", outcome.Message);
     }
 }

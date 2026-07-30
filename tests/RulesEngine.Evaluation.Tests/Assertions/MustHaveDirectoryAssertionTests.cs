@@ -3,7 +3,7 @@ using RulesEngine.Evaluation.Assertions;
 
 namespace RulesEngine.Evaluation.Tests.Assertions;
 
-public class MustHaveDirectoryAssertionTests : IDisposable
+public sealed class MustHaveDirectoryAssertionTests : IDisposable
 {
     private readonly string _root = Directory.CreateTempSubdirectory("rulesengine-directory-tests-").FullName;
 
@@ -26,6 +26,7 @@ public class MustHaveDirectoryAssertionTests : IDisposable
         var outcome = new MustHaveDirectoryAssertion("src").Evaluate(model, model);
 
         Assert.False(outcome.Passed);
+        Assert.Equal("Repository must have a directory at 'src'.", outcome.Message);
     }
 
     [Fact]
@@ -36,6 +37,7 @@ public class MustHaveDirectoryAssertionTests : IDisposable
         var outcome = new MustHaveDirectoryAssertion("src").Evaluate(42, model);
 
         Assert.False(outcome.Passed);
+        Assert.Equal("'must_have_directory' can only be evaluated against the repository.", outcome.Message);
     }
 
     public void Dispose() => Directory.Delete(_root, recursive: true);

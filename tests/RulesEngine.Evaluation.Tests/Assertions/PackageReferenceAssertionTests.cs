@@ -23,6 +23,7 @@ public class PackageReferenceAssertionTests
         var project = TestModels.Project("Contoso.Infrastructure");
         var outcome = new MustReferencePackageAssertion("Microsoft.EntityFrameworkCore").Evaluate(project, EmptyModel);
         Assert.False(outcome.Passed);
+        Assert.Equal("Project 'Contoso.Infrastructure' must reference package matching 'Microsoft.EntityFrameworkCore'.", outcome.Message);
     }
 
     [Fact]
@@ -41,6 +42,7 @@ public class PackageReferenceAssertionTests
 
         var outcome = new MustNotReferencePackageAssertion("Microsoft.EntityFrameworkCore").Evaluate(project, EmptyModel);
         Assert.False(outcome.Passed);
+        Assert.Equal("Project 'Contoso.Domain' must not reference package 'Microsoft.EntityFrameworkCore'.", outcome.Message);
     }
 
     [Fact]
@@ -48,6 +50,7 @@ public class PackageReferenceAssertionTests
     {
         var outcome = new MustReferencePackageAssertion("Microsoft.EntityFrameworkCore").Evaluate(42, EmptyModel);
         Assert.False(outcome.Passed);
+        Assert.Equal("'must_reference_package' can only be evaluated against projects.", outcome.Message);
     }
 
     [Fact]
@@ -55,5 +58,6 @@ public class PackageReferenceAssertionTests
     {
         var outcome = new MustNotReferencePackageAssertion("Microsoft.EntityFrameworkCore").Evaluate(42, EmptyModel);
         Assert.False(outcome.Passed);
+        Assert.Equal("'must_not_reference_package' can only be evaluated against projects.", outcome.Message);
     }
 }

@@ -21,6 +21,7 @@ public class MustHaveFileAssertionTests
         var model = BuildModel(new FileModel("/repo/README.md", "README.md", ".md"));
         var outcome = new MustHaveFileAssertion(".editorconfig").Evaluate(model, model);
         Assert.False(outcome.Passed);
+        Assert.Equal("Repository must have a file matching '.editorconfig'.", outcome.Message);
     }
 
     [Fact]
@@ -29,5 +30,6 @@ public class MustHaveFileAssertionTests
         var model = BuildModel();
         var outcome = new MustHaveFileAssertion(".editorconfig").Evaluate("not-a-repository", model);
         Assert.False(outcome.Passed);
+        Assert.Equal("'must_have_file' can only be evaluated against the repository.", outcome.Message);
     }
 }

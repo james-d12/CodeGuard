@@ -26,6 +26,7 @@ public class MustNotHavePropertyAssertionTests
         var type = TestModels.Type("Contoso.Domain.Order", properties: [Property("Password")]);
         var outcome = new MustNotHavePropertyAssertion("Password").Evaluate(type, EmptyModel);
         Assert.False(outcome.Passed);
+        Assert.Equal("'Contoso.Domain.Order' must not have a property matching 'Password' (found 'Password').", outcome.Message);
     }
 
     [Fact]
@@ -33,5 +34,6 @@ public class MustNotHavePropertyAssertionTests
     {
         var outcome = new MustNotHavePropertyAssertion("Password").Evaluate(42, EmptyModel);
         Assert.False(outcome.Passed);
+        Assert.Equal("'must_not_have_property' can only be evaluated against types.", outcome.Message);
     }
 }

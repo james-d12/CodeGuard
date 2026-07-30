@@ -20,6 +20,7 @@ public class MustMatchFilenameAssertionTests
         var type = TestModels.Type("Contoso.Domain.Order") with { FilePath = "SomethingElse.cs" };
         var outcome = new MustMatchFilenameAssertion().Evaluate(type, EmptyModel);
         Assert.False(outcome.Passed);
+        Assert.Equal("'Contoso.Domain.Order' must be declared in a file named 'Order.cs' (found 'SomethingElse.cs').", outcome.Message);
     }
 
     [Fact]
@@ -27,5 +28,6 @@ public class MustMatchFilenameAssertionTests
     {
         var outcome = new MustMatchFilenameAssertion().Evaluate(42, EmptyModel);
         Assert.False(outcome.Passed);
+        Assert.Equal("'must_match_filename' can only be evaluated against types.", outcome.Message);
     }
 }

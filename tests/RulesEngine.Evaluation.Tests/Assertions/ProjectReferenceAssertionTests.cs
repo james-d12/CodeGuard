@@ -21,6 +21,7 @@ public class ProjectReferenceAssertionTests
         var project = TestModels.Project("Contoso.Application");
         var outcome = new MustReferenceProjectAssertion("*.Domain").Evaluate(project, EmptyModel);
         Assert.False(outcome.Passed);
+        Assert.Equal("Project 'Contoso.Application' must reference a project matching '*.Domain'.", outcome.Message);
     }
 
     [Fact]
@@ -37,6 +38,7 @@ public class ProjectReferenceAssertionTests
         var project = TestModels.Project("Contoso.Domain", projectReferences: ["Contoso.Infrastructure"]);
         var outcome = new MustNotReferenceProjectAssertion("*.Infrastructure").Evaluate(project, EmptyModel);
         Assert.False(outcome.Passed);
+        Assert.Equal("Project 'Contoso.Domain' must not reference project 'Contoso.Infrastructure'.", outcome.Message);
     }
 
     [Fact]
@@ -44,6 +46,7 @@ public class ProjectReferenceAssertionTests
     {
         var outcome = new MustReferenceProjectAssertion("*.Domain").Evaluate(42, EmptyModel);
         Assert.False(outcome.Passed);
+        Assert.Equal("'must_reference_project' can only be evaluated against projects.", outcome.Message);
     }
 
     [Fact]
@@ -51,5 +54,6 @@ public class ProjectReferenceAssertionTests
     {
         var outcome = new MustNotReferenceProjectAssertion("*.Infrastructure").Evaluate(42, EmptyModel);
         Assert.False(outcome.Passed);
+        Assert.Equal("'must_not_reference_project' can only be evaluated against projects.", outcome.Message);
     }
 }

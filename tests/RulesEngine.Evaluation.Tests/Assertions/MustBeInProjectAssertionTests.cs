@@ -21,6 +21,7 @@ public class MustBeInProjectAssertionTests
         var type = TestModels.Type("Contoso.Domain.Events.OrderPlaced", projectName: "Contoso.Application");
         var outcome = new MustBeInProjectAssertion("*.Domain").Evaluate(type, EmptyModel);
         Assert.False(outcome.Passed);
+        Assert.Equal("'Contoso.Domain.Events.OrderPlaced' must be in a project matching '*.Domain'.", outcome.Message);
     }
 
     [Fact]
@@ -28,5 +29,6 @@ public class MustBeInProjectAssertionTests
     {
         var outcome = new MustBeInProjectAssertion("*").Evaluate(42, EmptyModel);
         Assert.False(outcome.Passed);
+        Assert.Equal("'must_be_in_project' can only be evaluated against types.", outcome.Message);
     }
 }

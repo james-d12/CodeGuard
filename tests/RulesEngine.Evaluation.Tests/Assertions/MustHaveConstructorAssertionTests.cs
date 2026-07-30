@@ -26,6 +26,7 @@ public class MustHaveConstructorAssertionTests
         var outcome = new MustHaveConstructorAssertion([Accessibility.Private, Accessibility.Protected])
             .Evaluate(type, EmptyModel);
         Assert.False(outcome.Passed);
+        Assert.Equal("'Contoso.Domain.Order' must have a constructor with accessibility Private or Protected.", outcome.Message);
     }
 
     [Fact]
@@ -49,5 +50,6 @@ public class MustHaveConstructorAssertionTests
     {
         var outcome = new MustHaveConstructorAssertion([Accessibility.Public]).Evaluate(42, EmptyModel);
         Assert.False(outcome.Passed);
+        Assert.Equal("'must_have_constructor' can only be evaluated against types.", outcome.Message);
     }
 }

@@ -21,6 +21,7 @@ public class MustNotHaveFileAssertionTests
         var model = BuildModel(new FileModel("/repo/App.csproj.user", "App.csproj.user", ".user"));
         var outcome = new MustNotHaveFileAssertion("*.user").Evaluate(model, model);
         Assert.False(outcome.Passed);
+        Assert.Equal("Repository must not have a file matching '*.user' (found 'App.csproj.user').", outcome.Message);
     }
 
     [Fact]
@@ -31,5 +32,6 @@ public class MustNotHaveFileAssertionTests
         var outcome = new MustNotHaveFileAssertion("*.user").Evaluate(42, model);
 
         Assert.False(outcome.Passed);
+        Assert.Equal("'must_not_have_file' can only be evaluated against the repository.", outcome.Message);
     }
 }

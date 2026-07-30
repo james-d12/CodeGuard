@@ -21,6 +21,7 @@ public class MustBeInNamespaceAssertionTests
         var type = TestModels.Type("Contoso.Application.Events.OrderPlaced");
         var outcome = new MustBeInNamespaceAssertion("*.Domain.Events").Evaluate(type, EmptyModel);
         Assert.False(outcome.Passed);
+        Assert.Equal("'Contoso.Application.Events.OrderPlaced' must be in a namespace matching '*.Domain.Events'.", outcome.Message);
     }
 
     [Fact]
@@ -28,5 +29,6 @@ public class MustBeInNamespaceAssertionTests
     {
         var outcome = new MustBeInNamespaceAssertion("*").Evaluate(42, EmptyModel);
         Assert.False(outcome.Passed);
+        Assert.Equal("'must_be_in_namespace' can only be evaluated against types.", outcome.Message);
     }
 }

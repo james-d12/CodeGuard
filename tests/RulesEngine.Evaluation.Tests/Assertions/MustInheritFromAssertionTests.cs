@@ -35,6 +35,7 @@ public class MustInheritFromAssertionTests
     {
         var outcome = new MustInheritFromAssertion("Contoso.Domain.Entity<TId>").Evaluate(42, EmptyModel);
         Assert.False(outcome.Passed);
+        Assert.Equal("'must_inherit_from' can only be evaluated against types.", outcome.Message);
     }
 
     private static TypeModel CreateType(string? baseType) => new(

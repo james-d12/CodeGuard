@@ -21,6 +21,7 @@ public class MustNotInheritFromAssertionTests
         var type = TestModels.Type("Contoso.Domain.Order", baseType: "Contoso.Infrastructure.EfEntity");
         var outcome = new MustNotInheritFromAssertion("Contoso.Infrastructure.EfEntity").Evaluate(type, EmptyModel);
         Assert.False(outcome.Passed);
+        Assert.Equal("'Contoso.Domain.Order' must not inherit from 'Contoso.Infrastructure.EfEntity'.", outcome.Message);
     }
 
     [Fact]
@@ -28,5 +29,6 @@ public class MustNotInheritFromAssertionTests
     {
         var outcome = new MustNotInheritFromAssertion("Contoso.Infrastructure.EfEntity").Evaluate(42, EmptyModel);
         Assert.False(outcome.Passed);
+        Assert.Equal("'must_not_inherit_from' can only be evaluated against types.", outcome.Message);
     }
 }

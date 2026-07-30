@@ -85,4 +85,93 @@ public class MemberOrderingAnalyzerTests
 
         Assert.Equal("member-ordering", analyzer.Name);
     }
+
+    [Fact]
+    public void DefaultOrder_IsFieldsConstructorsPropertiesMethods()
+    {
+        Assert.Equal(["fields", "constructors", "properties", "methods"], MemberOrderingAnalyzer.DefaultOrder);
+    }
+
+    [Fact]
+    public void Analyze_Flags_TypeWithConstructorDeclaredAfterMethod()
+    {
+        var type = TestModels.Type(
+            DeclaringType,
+            methods: [Method(1)],
+            constructors: [Constructor(2)]);
+        var project = TestModels.Project("Contoso.Domain", types: [type]);
+        var model = TestModels.RepositoryWithFacts(projects: [project]);
+        var analyzer = new MemberOrderingAnalyzer();
+
+        var violations = analyzer.Analyze(model).ToList();
+
+        var violation = Assert.Single(violations);
+        Assert.Contains("Contoso.Domain.Order..ctor", violation.Message);
+    }
+
+    [Fact]
+    public void Analyze_Flags_TypeWithPropertyDeclaredAfterMethod()
+    {
+        var type = TestModels.Type(
+            DeclaringType,
+            methods: [Method(1)],
+            properties: [Property(2)]);
+        var project = TestModels.Project("Contoso.Domain", types: [type]);
+        var model = TestModels.RepositoryWithFacts(projects: [project]);
+        var analyzer = new MemberOrderingAnalyzer();
+
+        var violations = analyzer.Analyze(model).ToList();
+
+        var violation = Assert.Single(violations);
+        Assert.Contains("Contoso.Domain.Order.Total", violation.Message);
+    }
+
+    [Fact]
+    public void Analyze_Flags_TypeWithMethodDeclaredOutOfOrder_UnderCustomOrder()
+    {
+        var type = TestModels.Type(
+            DeclaringType,
+            fields: [Field(1)],
+            methods: [Method(2)]);
+        var project = TestModels.Project("Contoso.Domain", types: [type]);
+        var model = TestModels.RepositoryWithFacts(projects: [project]);
+        var analyzer = new MemberOrderingAnalyzer(["methods", "fields", "constructors", "properties"]);
+
+        var violations = analyzer.Analyze(model).ToList();
+
+        var violation = Assert.Single(violations);
+        Assert.Contains("Contoso.Domain.Order.Recalculate", violation.Message);
+    }
+
+    [Fact]
+    public void Analyze_DoesNotFlag_TwoMembersOfTheSameGroup()
+    {
+        var type = TestModels.Type(
+            DeclaringType,
+            fields: [Field(10), Field(1)]);
+        var project = TestModels.Project("Contoso.Domain", types: [type]);
+        var model = TestModels.RepositoryWithFacts(projects: [project]);
+        var analyzer = new MemberOrderingAnalyzer();
+
+        var violations = analyzer.Analyze(model).ToList();
+
+        Assert.Empty(violations);
+    }
+
+    [Fact]
+    public void Analyze_StopsAtFirstViolation_PerType()
+    {
+        var type = TestModels.Type(
+            DeclaringType,
+            methods: [Method(1)],
+            properties: [Property(2)],
+            fields: [Field(3)]);
+        var project = TestModels.Project("Contoso.Domain", types: [type]);
+        var model = TestModels.RepositoryWithFacts(projects: [project]);
+        var analyzer = new MemberOrderingAnalyzer();
+
+        var violations = analyzer.Analyze(model).ToList();
+
+        Assert.Single(violations);
+    }
 }

@@ -3,7 +3,7 @@ using RulesEngine.Evaluation.Assertions;
 
 namespace RulesEngine.Evaluation.Tests.Assertions;
 
-public class MustNotMatchContentAssertionTests : IDisposable
+public sealed class MustNotMatchContentAssertionTests : IDisposable
 {
     private static readonly RepositoryModel EmptyModel = new(".", [], [], [], [], [], [], [], [], []);
     private readonly string _path = Path.Combine(Path.GetTempPath(), $"rulesengine-content-{Guid.NewGuid():N}.txt");
@@ -28,6 +28,7 @@ public class MustNotMatchContentAssertionTests : IDisposable
         var file = WriteFile("var value = task.Result;");
         var outcome = new MustNotMatchContentAssertion(@"\.Result\b").Evaluate(file, EmptyModel);
         Assert.False(outcome.Passed);
+        Assert.Equal($"File '{Path.GetFileName(_path)}' must not contain content matching '\\.Result\\b'.", outcome.Message);
     }
 
     [Fact]
@@ -35,6 +36,7 @@ public class MustNotMatchContentAssertionTests : IDisposable
     {
         var outcome = new MustNotMatchContentAssertion(@"\.Result\b").Evaluate(42, EmptyModel);
         Assert.False(outcome.Passed);
+        Assert.Equal("'must_not_match_content' can only be evaluated against files.", outcome.Message);
     }
 
     public void Dispose()

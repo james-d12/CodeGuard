@@ -24,6 +24,7 @@ public class MustHaveMethodAssertionTests
         var type = TestModels.Type("Contoso.Domain.Order", methods: [Method("Update")]);
         var outcome = new MustHaveMethodAssertion("Create").Evaluate(type, EmptyModel);
         Assert.False(outcome.Passed);
+        Assert.Equal("'Contoso.Domain.Order' must have a method matching 'Create'.", outcome.Message);
     }
 
     [Fact]
@@ -31,5 +32,6 @@ public class MustHaveMethodAssertionTests
     {
         var outcome = new MustHaveMethodAssertion("Create").Evaluate(42, EmptyModel);
         Assert.False(outcome.Passed);
+        Assert.Equal("'must_have_method' can only be evaluated against types.", outcome.Message);
     }
 }
