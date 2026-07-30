@@ -31,6 +31,22 @@ public class MustNotDependOnAssertionTests
     }
 
     [Fact]
+    public void Evaluate_Fails_WhenMultipleTypesReferenceForbiddenNamespace()
+    {
+        var order = TestModels.Type("Contoso.Domain.Order", baseType: "Contoso.Infrastructure.EfEntity");
+        var customer = TestModels.Type("Contoso.Domain.Customer", interfaces: ["Contoso.Infrastructure.IPersistable"]);
+        var project = TestModels.Project("Contoso.Domain", types: [order, customer]);
+        var model = TestModels.Repository(project);
+
+        var outcome = new MustNotDependOnAssertion("Contoso.Infrastructure.*").Evaluate(project, model);
+
+        Assert.False(outcome.Passed);
+        Assert.Equal(
+            "Project 'Contoso.Domain' must not depend on 'Contoso.Infrastructure.*' (via: Contoso.Domain.Order, Contoso.Domain.Customer).",
+            outcome.Message);
+    }
+
+    [Fact]
     public void Evaluate_Fails_WhenAMethodSignatureReferencesForbiddenNamespace()
     {
         var method = new MethodModel(
