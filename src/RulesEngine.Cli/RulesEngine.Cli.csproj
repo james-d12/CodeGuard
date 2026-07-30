@@ -4,6 +4,7 @@
         <OutputType>Exe</OutputType>
         <RootNamespace>RulesEngine.Cli</RootNamespace>
         <AssemblyName>rules-engine</AssemblyName>
+        <IsPublishable>true</IsPublishable>
     </PropertyGroup>
 
     <!-- dotnet tool packaging: `dotnet tool install -g RulesEngine` installs the `rules-engine` command. -->

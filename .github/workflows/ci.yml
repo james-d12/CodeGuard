@@ -38,6 +38,9 @@ jobs:
       - name: Test
         run: dotnet test --no-build --collect:"XPlat Code Coverage" --results-directory ./coverage
 
+      - name: Publish
+        run: dotnet publish --no-restore
+  
       - name: Generate coverage report
         if: always()
         run: |

@@ -6,6 +6,7 @@
         <Nullable>enable</Nullable>
         <LangVersion>latest</LangVersion>
         <Features>strict</Features>
+        <IsPublishable>false</IsPublishable>
         <WarningLevel>4</WarningLevel>
         <AnalysisMode>Default</AnalysisMode>
         <NuGetAuditMode>all</NuGetAuditMode>
