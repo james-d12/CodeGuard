@@ -101,6 +101,14 @@ them into `RuleDocumentParser` or `rules/schema/rule.schema.json` yet. Adding th
 `.rulesengine/config.yml` configures repository discovery (where rules/skills/agents/source/tests
 live) — discovery is deliberately configurable per-repo, missing paths are skipped silently.
 
+**Never add `rules/` content to a packable project.** `RulesEngine.Cli` is published publicly to
+nuget.org as a `dotnet tool` (see `Directory.Build.props`/`RulesEngine.Cli.csproj` for
+`PackAsTool`), and some of this repo's rule content is derived from real company conventions —
+only `rules/schema/rule.schema.json` (already embedded as a resource in
+`RulesEngine.Configuration`) may travel with the packaged tool. Do not add `rules/` as
+`<Content>`/`<None>`/`<EmbeddedResource>` to `RulesEngine.Cli` or any other packable project;
+`scripts/verify-nupkg-contents.sh` enforces this in CI before publishing.
+
 ### Known limitation — CLI self-analysis
 
 `MsBuildAnalysisProvider` used to crash reliably when analyzing this tool's own solution

@@ -18,9 +18,24 @@ dotnet build
 dotnet test
 ```
 
+## Installation
+
+The CLI is published to nuget.org as a [.NET tool](https://learn.microsoft.com/en-us/dotnet/core/tools/global-tools):
+
+```bash
+dotnet tool install -g RuleEngine.NET
+rules-engine --help
+```
+
+This installs the `rules-engine` command globally. See [CLI usage](#cli-usage) below (all
+examples work the same whether invoked as `rules-engine <command>` after a tool install, or as
+`dotnet run --project src/RulesEngine.Cli -- <command>` from a checkout of this repo).
+
 ## CLI usage
 
-The CLI (`rules-engine`) is run via `dotnet run --project src/RulesEngine.Cli --`.
+If you've installed the tool (see [Installation](#installation)), run commands directly as
+`rules-engine <command>`. If you're working in a checkout of this repo, run them via
+`dotnet run --project src/RulesEngine.Cli -- <command>` instead.
 
 | Command | Description |
 |---|---|
@@ -40,7 +55,15 @@ restricts analysis to specific `.sln` files), `--severity-threshold`, `--fail-on
 `--standard`, and `--enabled-only`. `setup` supports `--source`, `--branch`, and `--type
 directory|git` (see below).
 
-Examples:
+Examples (installed tool):
+
+```bash
+rules-engine list-rules
+rules-engine explain-rule DDD-ENTITY-001
+rules-engine validate --format json --output report.json
+```
+
+Examples (from a checkout of this repo):
 
 ```bash
 dotnet run --project src/RulesEngine.Cli -- list-rules
