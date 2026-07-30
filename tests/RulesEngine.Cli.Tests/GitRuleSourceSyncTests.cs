@@ -69,6 +69,8 @@ public class GitRuleSourceSyncTests : IDisposable
     public void SyncOrClone_ReportsBlocked_WhenLocalCacheHasDivergedFromRemote()
     {
         GitRuleSourceSync.SyncOrClone(_remoteDir, Branch, _destinationDir);
+        RunGit(_destinationDir, "config", "user.email", "test@example.com");
+        RunGit(_destinationDir, "config", "user.name", "Test");
         RunGit(_destinationDir, "commit", "--allow-empty", "-m", "local-only commit");
         CommitFile("second.txt", "two"); // remote moves forward too, so histories diverge
 
