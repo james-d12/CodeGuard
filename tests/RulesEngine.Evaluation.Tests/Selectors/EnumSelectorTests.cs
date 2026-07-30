@@ -20,4 +20,26 @@ public class EnumSelectorTests
         var result = Assert.Single(candidates);
         Assert.Equal("Contoso.Domain.Status", result.FullName);
     }
+
+    [Fact]
+    public void SelectCandidates_DefaultsToAllNamespaces()
+    {
+        var enumType = TestModels.Type("Contoso.Domain.Status", kind: TypeKind.Enum);
+        var project = TestModels.Project("Contoso.Domain", types: [enumType]);
+        var model = TestModels.Repository(project);
+
+        var candidates = new EnumSelector().SelectCandidates(model).ToList();
+
+        Assert.Single(candidates);
+    }
+
+    [Fact]
+    public void SelectCandidates_ReturnsEmpty_WhenRepositoryHasNoProjects()
+    {
+        var model = TestModels.Repository();
+
+        var candidates = new EnumSelector().SelectCandidates(model).ToList();
+
+        Assert.Empty(candidates);
+    }
 }

@@ -21,4 +21,14 @@ public class InheritsFromSelectorTests
         var match = Assert.Single(candidates);
         Assert.Equal("Contoso.Domain.Order", match.FullName);
     }
+
+    [Fact]
+    public void SelectCandidates_ReturnsEmpty_WhenRepositoryHasNoProjects()
+    {
+        var model = TestModels.Repository();
+
+        var candidates = new InheritsFromSelector("*").SelectCandidates(model).ToList();
+
+        Assert.Empty(candidates);
+    }
 }

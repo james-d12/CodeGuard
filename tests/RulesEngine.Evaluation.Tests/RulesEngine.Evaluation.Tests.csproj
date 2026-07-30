@@ -22,8 +22,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\RulesEngine.Analysis\RulesEngine.Analysis.csproj" />
-    <ProjectReference Include="..\..\src\RulesEngine.RuleModel\RulesEngine.RuleModel.csproj" />
     <ProjectReference Include="..\..\src\RulesEngine.Evaluation\RulesEngine.Evaluation.csproj" />
   </ItemGroup>
 

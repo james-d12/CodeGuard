@@ -31,4 +31,14 @@ public class TypeSelectorTests
 
         Assert.Equal(2, candidates.Count);
     }
+
+    [Fact]
+    public void SelectCandidates_ReturnsEmpty_WhenRepositoryHasNoProjects()
+    {
+        var model = TestModels.Repository();
+
+        var candidates = new TypeSelector().SelectCandidates(model).ToList();
+
+        Assert.Empty(candidates);
+    }
 }

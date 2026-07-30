@@ -25,4 +25,11 @@ public class MustNotHaveMethodAssertionTests
         var outcome = new MustNotHaveMethodAssertion("Delete").Evaluate(type, EmptyModel);
         Assert.False(outcome.Passed);
     }
+
+    [Fact]
+    public void Evaluate_Fails_ForUnsupportedCandidate()
+    {
+        var outcome = new MustNotHaveMethodAssertion("Delete").Evaluate(42, EmptyModel);
+        Assert.False(outcome.Passed);
+    }
 }

@@ -30,6 +30,29 @@ public class MustNotHaveJsonFieldAssertionTests : IDisposable
         Assert.False(outcome.Passed);
     }
 
+    [Fact]
+    public void Evaluate_Passes_WhenFieldExists_ButValueDiffersFromForbiddenValue()
+    {
+        var file = WriteFile("""{ "profiles": { "http": { "applicationUrl": "http://localhost:6000" } } }""");
+        var outcome = new MustNotHaveJsonFieldAssertion("profiles.http.applicationUrl", "http://localhost:5000").Evaluate(file, EmptyModel);
+        Assert.True(outcome.Passed);
+    }
+
+    [Fact]
+    public void Evaluate_Fails_WhenFieldExists_AndMatchesForbiddenValue()
+    {
+        var file = WriteFile("""{ "profiles": { "http": { "applicationUrl": "http://localhost:5000" } } }""");
+        var outcome = new MustNotHaveJsonFieldAssertion("profiles.http.applicationUrl", "http://localhost:5000").Evaluate(file, EmptyModel);
+        Assert.False(outcome.Passed);
+    }
+
+    [Fact]
+    public void Evaluate_Fails_ForUnsupportedCandidate()
+    {
+        var outcome = new MustNotHaveJsonFieldAssertion("profiles.http.applicationUrl", null).Evaluate(42, EmptyModel);
+        Assert.False(outcome.Passed);
+    }
+
     public void Dispose()
     {
         if (File.Exists(_path)) File.Delete(_path);

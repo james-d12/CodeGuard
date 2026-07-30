@@ -28,5 +28,15 @@ public class MustHaveDirectoryAssertionTests : IDisposable
         Assert.False(outcome.Passed);
     }
 
+    [Fact]
+    public void Evaluate_Fails_ForUnsupportedCandidate()
+    {
+        var model = new RepositoryModel(_root, [], [], [], [], [], [], [], [], []);
+
+        var outcome = new MustHaveDirectoryAssertion("src").Evaluate(42, model);
+
+        Assert.False(outcome.Passed);
+    }
+
     public void Dispose() => Directory.Delete(_root, recursive: true);
 }

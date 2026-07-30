@@ -35,4 +35,45 @@ public class FieldSelectorTests
 
         Assert.Single(candidates);
     }
+
+    [Fact]
+    public void SelectCandidates_FiltersByIsStatic()
+    {
+        var staticField = Field("Default", "Contoso.Domain.Order", FieldModifiers.Static);
+        var instanceField = Field("_id", "Contoso.Domain.Order");
+        var type = TestModels.Type("Contoso.Domain.Order", fields: [staticField, instanceField]);
+        var project = TestModels.Project("Contoso.Domain", types: [type]);
+        var model = TestModels.Repository(project);
+
+        var candidates = new FieldSelector(isStatic: true).SelectCandidates(model).Cast<FieldModel>().ToList();
+
+        var field = Assert.Single(candidates);
+        Assert.Equal("Default", field.Name);
+    }
+
+    [Fact]
+    public void SelectCandidates_ReturnsEmpty_WhenRepositoryHasNoProjects()
+    {
+        var model = TestModels.Repository();
+
+        var candidates = new FieldSelector().SelectCandidates(model).ToList();
+
+        Assert.Empty(candidates);
+    }
+
+    [Fact]
+    public void SelectCandidates_CombinesIsReadonlyAndIsStatic_RequiringBothToMatch()
+    {
+        var staticReadonly = Field("MaxCount", "Contoso.Domain.Order", FieldModifiers.Static | FieldModifiers.Readonly);
+        var staticMutable = Field("Counter", "Contoso.Domain.Order", FieldModifiers.Static);
+        var instanceReadonly = Field("_id", "Contoso.Domain.Order", FieldModifiers.Readonly);
+        var type = TestModels.Type("Contoso.Domain.Order", fields: [staticReadonly, staticMutable, instanceReadonly]);
+        var project = TestModels.Project("Contoso.Domain", types: [type]);
+        var model = TestModels.Repository(project);
+
+        var candidates = new FieldSelector(isReadonly: true, isStatic: true).SelectCandidates(model).Cast<FieldModel>().ToList();
+
+        var field = Assert.Single(candidates);
+        Assert.Equal("MaxCount", field.Name);
+    }
 }

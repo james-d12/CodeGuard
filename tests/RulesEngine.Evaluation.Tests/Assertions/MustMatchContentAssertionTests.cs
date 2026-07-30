@@ -30,6 +30,13 @@ public class MustMatchContentAssertionTests : IDisposable
         Assert.False(outcome.Passed);
     }
 
+    [Fact]
+    public void Evaluate_Fails_ForUnsupportedCandidate()
+    {
+        var outcome = new MustMatchContentAssertion("<Nullable>enable</Nullable>").Evaluate(42, EmptyModel);
+        Assert.False(outcome.Passed);
+    }
+
     public void Dispose()
     {
         if (File.Exists(_path)) File.Delete(_path);

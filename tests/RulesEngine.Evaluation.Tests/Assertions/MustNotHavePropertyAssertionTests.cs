@@ -27,4 +27,11 @@ public class MustNotHavePropertyAssertionTests
         var outcome = new MustNotHavePropertyAssertion("Password").Evaluate(type, EmptyModel);
         Assert.False(outcome.Passed);
     }
+
+    [Fact]
+    public void Evaluate_Fails_ForUnsupportedCandidate()
+    {
+        var outcome = new MustNotHavePropertyAssertion("Password").Evaluate(42, EmptyModel);
+        Assert.False(outcome.Passed);
+    }
 }

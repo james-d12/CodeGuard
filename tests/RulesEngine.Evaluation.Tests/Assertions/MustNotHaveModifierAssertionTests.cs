@@ -22,4 +22,11 @@ public class MustNotHaveModifierAssertionTests
         var outcome = new MustNotHaveModifierAssertion("sealed").Evaluate(type, EmptyModel);
         Assert.False(outcome.Passed);
     }
+
+    [Fact]
+    public void Evaluate_Fails_ForUnsupportedCandidate()
+    {
+        var outcome = new MustNotHaveModifierAssertion("sealed").Evaluate(42, EmptyModel);
+        Assert.False(outcome.Passed);
+    }
 }

@@ -21,6 +21,16 @@ public class ClassInNamespaceSelectorTests
         Assert.Equal("Contoso.Domain.Entities.Order", candidates[0].FullName);
     }
 
+    [Fact]
+    public void SelectCandidates_ReturnsEmpty_WhenRepositoryHasNoProjects()
+    {
+        var model = BuildModel();
+
+        var candidates = new ClassInNamespaceSelector("*").SelectCandidates(model).ToList();
+
+        Assert.Empty(candidates);
+    }
+
     private static TypeModel CreateType(string fullName, string ns, TypeKind kind) => new(
         Name: fullName.Split('.')[^1],
         FullName: fullName,

@@ -25,4 +25,11 @@ public class MustHaveMethodAssertionTests
         var outcome = new MustHaveMethodAssertion("Create").Evaluate(type, EmptyModel);
         Assert.False(outcome.Passed);
     }
+
+    [Fact]
+    public void Evaluate_Fails_ForUnsupportedCandidate()
+    {
+        var outcome = new MustHaveMethodAssertion("Create").Evaluate(42, EmptyModel);
+        Assert.False(outcome.Passed);
+    }
 }

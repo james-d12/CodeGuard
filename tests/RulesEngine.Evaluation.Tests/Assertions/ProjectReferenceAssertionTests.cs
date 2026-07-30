@@ -38,4 +38,18 @@ public class ProjectReferenceAssertionTests
         var outcome = new MustNotReferenceProjectAssertion("*.Infrastructure").Evaluate(project, EmptyModel);
         Assert.False(outcome.Passed);
     }
+
+    [Fact]
+    public void MustReferenceProject_Fails_ForUnsupportedCandidate()
+    {
+        var outcome = new MustReferenceProjectAssertion("*.Domain").Evaluate(42, EmptyModel);
+        Assert.False(outcome.Passed);
+    }
+
+    [Fact]
+    public void MustNotReferenceProject_Fails_ForUnsupportedCandidate()
+    {
+        var outcome = new MustNotReferenceProjectAssertion("*.Infrastructure").Evaluate(42, EmptyModel);
+        Assert.False(outcome.Passed);
+    }
 }

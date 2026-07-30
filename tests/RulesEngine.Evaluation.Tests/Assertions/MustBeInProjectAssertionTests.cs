@@ -22,4 +22,11 @@ public class MustBeInProjectAssertionTests
         var outcome = new MustBeInProjectAssertion("*.Domain").Evaluate(type, EmptyModel);
         Assert.False(outcome.Passed);
     }
+
+    [Fact]
+    public void Evaluate_Fails_ForUnsupportedCandidate()
+    {
+        var outcome = new MustBeInProjectAssertion("*").Evaluate(42, EmptyModel);
+        Assert.False(outcome.Passed);
+    }
 }

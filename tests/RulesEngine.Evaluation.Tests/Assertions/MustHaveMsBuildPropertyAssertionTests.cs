@@ -42,4 +42,19 @@ public class MustHaveMsBuildPropertyAssertionTests
         var outcome = new MustHaveMsBuildPropertyAssertion("Nullable", "enable").Evaluate(project, EmptyModel);
         Assert.False(outcome.Passed);
     }
+
+    [Fact]
+    public void Evaluate_Passes_WhenPropertyValueMatches_IgnoringCase()
+    {
+        var project = ProjectWithProperty("Nullable", "Enable");
+        var outcome = new MustHaveMsBuildPropertyAssertion("Nullable", "enable").Evaluate(project, EmptyModel);
+        Assert.True(outcome.Passed);
+    }
+
+    [Fact]
+    public void Evaluate_Fails_ForUnsupportedCandidate()
+    {
+        var outcome = new MustHaveMsBuildPropertyAssertion("Nullable", null).Evaluate(42, EmptyModel);
+        Assert.False(outcome.Passed);
+    }
 }

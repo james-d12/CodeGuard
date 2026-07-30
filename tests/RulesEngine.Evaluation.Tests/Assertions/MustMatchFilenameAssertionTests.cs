@@ -21,4 +21,11 @@ public class MustMatchFilenameAssertionTests
         var outcome = new MustMatchFilenameAssertion().Evaluate(type, EmptyModel);
         Assert.False(outcome.Passed);
     }
+
+    [Fact]
+    public void Evaluate_Fails_ForUnsupportedCandidate()
+    {
+        var outcome = new MustMatchFilenameAssertion().Evaluate(42, EmptyModel);
+        Assert.False(outcome.Passed);
+    }
 }

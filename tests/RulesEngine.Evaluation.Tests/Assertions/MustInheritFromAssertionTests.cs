@@ -30,6 +30,13 @@ public class MustInheritFromAssertionTests
         Assert.Contains("must inherit from", outcome.Message);
     }
 
+    [Fact]
+    public void Evaluate_Fails_ForUnsupportedCandidate()
+    {
+        var outcome = new MustInheritFromAssertion("Contoso.Domain.Entity<TId>").Evaluate(42, EmptyModel);
+        Assert.False(outcome.Passed);
+    }
+
     private static TypeModel CreateType(string? baseType) => new(
         Name: "LegacyThing",
         FullName: "Contoso.Domain.Entities.LegacyThing",

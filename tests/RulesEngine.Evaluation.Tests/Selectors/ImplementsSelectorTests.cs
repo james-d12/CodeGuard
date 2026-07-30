@@ -23,4 +23,14 @@ public class ImplementsSelectorTests
         var match = Assert.Single(candidates);
         Assert.Equal("Contoso.Application.PlaceOrderHandler", match.FullName);
     }
+
+    [Fact]
+    public void SelectCandidates_ReturnsEmpty_WhenRepositoryHasNoProjects()
+    {
+        var model = TestModels.Repository();
+
+        var candidates = new ImplementsSelector("*").SelectCandidates(model).ToList();
+
+        Assert.Empty(candidates);
+    }
 }

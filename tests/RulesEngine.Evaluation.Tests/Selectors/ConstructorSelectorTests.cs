@@ -37,4 +37,14 @@ public class ConstructorSelectorTests
         var constructor = Assert.Single(candidates);
         Assert.Equal(2, constructor.Parameters.Count);
     }
+
+    [Fact]
+    public void SelectCandidates_ReturnsEmpty_WhenRepositoryHasNoProjects()
+    {
+        var model = TestModels.Repository();
+
+        var candidates = new ConstructorSelector().SelectCandidates(model).ToList();
+
+        Assert.Empty(candidates);
+    }
 }

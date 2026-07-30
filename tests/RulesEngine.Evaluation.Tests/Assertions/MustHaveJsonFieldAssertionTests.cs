@@ -46,6 +46,21 @@ public class MustHaveJsonFieldAssertionTests : IDisposable
         Assert.False(outcome.Passed);
     }
 
+    [Fact]
+    public void Evaluate_Fails_WhenOnlyLeafSegmentMissing()
+    {
+        var file = WriteFile("""{ "profiles": { "http": {} } }""");
+        var outcome = new MustHaveJsonFieldAssertion("profiles.http.applicationUrl", null).Evaluate(file, EmptyModel);
+        Assert.False(outcome.Passed);
+    }
+
+    [Fact]
+    public void Evaluate_Fails_ForUnsupportedCandidate()
+    {
+        var outcome = new MustHaveJsonFieldAssertion("profiles.http.applicationUrl", null).Evaluate(42, EmptyModel);
+        Assert.False(outcome.Passed);
+    }
+
     public void Dispose()
     {
         if (File.Exists(_path)) File.Delete(_path);

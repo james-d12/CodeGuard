@@ -68,4 +68,45 @@ public class MethodSelectorTests
         var method = Assert.Single(candidates);
         Assert.Equal("Returns400", method.Name);
     }
+
+    [Fact]
+    public void SelectCandidates_FiltersByIsAsync()
+    {
+        var asyncMethod = Method("SaveAsync", "Contoso.Domain.Order", "Contoso.Domain", MethodModifiers.Async);
+        var syncMethod = Method("Save", "Contoso.Domain.Order", "Contoso.Domain");
+        var type = TestModels.Type("Contoso.Domain.Order", methods: [asyncMethod, syncMethod]);
+        var project = TestModels.Project("Contoso.Domain", types: [type]);
+        var model = TestModels.Repository(project);
+
+        var candidates = new MethodSelector(isAsync: true).SelectCandidates(model).Cast<MethodModel>().ToList();
+
+        var method = Assert.Single(candidates);
+        Assert.Equal("SaveAsync", method.Name);
+    }
+
+    [Fact]
+    public void SelectCandidates_ReturnsEmpty_WhenRepositoryHasNoProjects()
+    {
+        var model = TestModels.Repository();
+
+        var candidates = new MethodSelector().SelectCandidates(model).ToList();
+
+        Assert.Empty(candidates);
+    }
+
+    [Fact]
+    public void SelectCandidates_CombinesIsStaticAndIsAsync_RequiringBothToMatch()
+    {
+        var staticAsync = Method("CreateAsync", "Contoso.Domain.Order", "Contoso.Domain", MethodModifiers.Static | MethodModifiers.Async);
+        var staticSync = Method("Create", "Contoso.Domain.Order", "Contoso.Domain", MethodModifiers.Static);
+        var instanceAsync = Method("SaveAsync", "Contoso.Domain.Order", "Contoso.Domain", MethodModifiers.Async);
+        var type = TestModels.Type("Contoso.Domain.Order", methods: [staticAsync, staticSync, instanceAsync]);
+        var project = TestModels.Project("Contoso.Domain", types: [type]);
+        var model = TestModels.Repository(project);
+
+        var candidates = new MethodSelector(isStatic: true, isAsync: true).SelectCandidates(model).Cast<MethodModel>().ToList();
+
+        var method = Assert.Single(candidates);
+        Assert.Equal("CreateAsync", method.Name);
+    }
 }

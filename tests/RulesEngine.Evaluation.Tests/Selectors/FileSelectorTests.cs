@@ -32,4 +32,24 @@ public class FileSelectorTests
         var file = Assert.Single(candidates);
         Assert.Equal(".csproj", file.Extension);
     }
+
+    [Fact]
+    public void SelectCandidates_FiltersByExtension_IgnoringCase()
+    {
+        var model = BuildModel(new FileModel("/repo/src/Foo.CS", "src/Foo.CS", ".CS"));
+
+        var candidates = new FileSelector(extension: ".cs").SelectCandidates(model).ToList();
+
+        Assert.Single(candidates);
+    }
+
+    [Fact]
+    public void SelectCandidates_ReturnsEmpty_WhenRepositoryHasNoFiles()
+    {
+        var model = BuildModel();
+
+        var candidates = new FileSelector().SelectCandidates(model).ToList();
+
+        Assert.Empty(candidates);
+    }
 }

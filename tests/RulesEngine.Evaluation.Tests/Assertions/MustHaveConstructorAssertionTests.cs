@@ -35,4 +35,19 @@ public class MustHaveConstructorAssertionTests
         var outcome = new MustHaveConstructorAssertion([Accessibility.Private]).Evaluate(type, EmptyModel);
         Assert.False(outcome.Passed);
     }
+
+    [Fact]
+    public void Evaluate_Fails_WhenAllowedAccessibilitiesIsEmpty_EvenIfConstructorsExist()
+    {
+        var type = TestModels.Type("Contoso.Domain.Order", constructors: [Constructor(Accessibility.Public)]);
+        var outcome = new MustHaveConstructorAssertion([]).Evaluate(type, EmptyModel);
+        Assert.False(outcome.Passed);
+    }
+
+    [Fact]
+    public void Evaluate_Fails_ForUnsupportedCandidate()
+    {
+        var outcome = new MustHaveConstructorAssertion([Accessibility.Public]).Evaluate(42, EmptyModel);
+        Assert.False(outcome.Passed);
+    }
 }

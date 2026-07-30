@@ -18,4 +18,14 @@ public class ProjectSelectorTests
         var project = Assert.Single(candidates);
         Assert.Equal("Contoso.Domain", project.Name);
     }
+
+    [Fact]
+    public void SelectCandidates_ReturnsEmpty_WhenRepositoryHasNoProjects()
+    {
+        var model = TestModels.Repository();
+
+        var candidates = new ProjectSelector("*").SelectCandidates(model).ToList();
+
+        Assert.Empty(candidates);
+    }
 }

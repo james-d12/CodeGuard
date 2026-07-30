@@ -22,4 +22,11 @@ public class MustImplementAssertionTests
         var outcome = new MustImplementAssertion("Contoso.Domain.IAggregateRoot").Evaluate(type, EmptyModel);
         Assert.False(outcome.Passed);
     }
+
+    [Fact]
+    public void Evaluate_Fails_ForUnsupportedCandidate()
+    {
+        var outcome = new MustImplementAssertion("Contoso.Domain.IAggregateRoot").Evaluate(42, EmptyModel);
+        Assert.False(outcome.Passed);
+    }
 }

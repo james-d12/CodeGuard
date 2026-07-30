@@ -22,4 +22,11 @@ public class MustBeInNamespaceAssertionTests
         var outcome = new MustBeInNamespaceAssertion("*.Domain.Events").Evaluate(type, EmptyModel);
         Assert.False(outcome.Passed);
     }
+
+    [Fact]
+    public void Evaluate_Fails_ForUnsupportedCandidate()
+    {
+        var outcome = new MustBeInNamespaceAssertion("*").Evaluate(42, EmptyModel);
+        Assert.False(outcome.Passed);
+    }
 }

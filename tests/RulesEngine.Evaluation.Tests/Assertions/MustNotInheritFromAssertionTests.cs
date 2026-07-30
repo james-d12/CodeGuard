@@ -22,4 +22,11 @@ public class MustNotInheritFromAssertionTests
         var outcome = new MustNotInheritFromAssertion("Contoso.Infrastructure.EfEntity").Evaluate(type, EmptyModel);
         Assert.False(outcome.Passed);
     }
+
+    [Fact]
+    public void Evaluate_Fails_ForUnsupportedCandidate()
+    {
+        var outcome = new MustNotInheritFromAssertion("Contoso.Infrastructure.EfEntity").Evaluate(42, EmptyModel);
+        Assert.False(outcome.Passed);
+    }
 }

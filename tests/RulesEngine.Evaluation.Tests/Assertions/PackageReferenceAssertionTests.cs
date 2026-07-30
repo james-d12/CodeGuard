@@ -42,4 +42,18 @@ public class PackageReferenceAssertionTests
         var outcome = new MustNotReferencePackageAssertion("Microsoft.EntityFrameworkCore").Evaluate(project, EmptyModel);
         Assert.False(outcome.Passed);
     }
+
+    [Fact]
+    public void MustReferencePackage_Fails_ForUnsupportedCandidate()
+    {
+        var outcome = new MustReferencePackageAssertion("Microsoft.EntityFrameworkCore").Evaluate(42, EmptyModel);
+        Assert.False(outcome.Passed);
+    }
+
+    [Fact]
+    public void MustNotReferencePackage_Fails_ForUnsupportedCandidate()
+    {
+        var outcome = new MustNotReferencePackageAssertion("Microsoft.EntityFrameworkCore").Evaluate(42, EmptyModel);
+        Assert.False(outcome.Passed);
+    }
 }

@@ -25,4 +25,19 @@ public class MustNotHaveAttributeAssertionTests
         var outcome = new MustNotHaveAttributeAssertion("System.ObsoleteAttribute", null).Evaluate(type, EmptyModel);
         Assert.False(outcome.Passed);
     }
+
+    [Fact]
+    public void Evaluate_Fails_ForUnsupportedCandidate()
+    {
+        var outcome = new MustNotHaveAttributeAssertion("System.ObsoleteAttribute", null).Evaluate(42, EmptyModel);
+        Assert.False(outcome.Passed);
+    }
+
+    [Fact]
+    public void Evaluate_Passes_WhenAttributePresent_ButTypeNameDoesNotMatch_EvenWithNoArgumentConstraint()
+    {
+        var type = TestModels.Type("Contoso.Domain.Legacy") with { Attributes = [Obsolete()] };
+        var outcome = new MustNotHaveAttributeAssertion("System.SerializableAttribute", null).Evaluate(type, EmptyModel);
+        Assert.True(outcome.Passed);
+    }
 }

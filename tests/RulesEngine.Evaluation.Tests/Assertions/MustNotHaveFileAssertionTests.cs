@@ -22,4 +22,14 @@ public class MustNotHaveFileAssertionTests
         var outcome = new MustNotHaveFileAssertion("*.user").Evaluate(model, model);
         Assert.False(outcome.Passed);
     }
+
+    [Fact]
+    public void Evaluate_Fails_ForUnsupportedCandidate()
+    {
+        var model = BuildModel();
+
+        var outcome = new MustNotHaveFileAssertion("*.user").Evaluate(42, model);
+
+        Assert.False(outcome.Passed);
+    }
 }

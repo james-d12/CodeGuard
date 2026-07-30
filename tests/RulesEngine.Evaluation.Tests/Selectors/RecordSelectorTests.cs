@@ -32,4 +32,14 @@ public class RecordSelectorTests
 
         Assert.Single(candidates);
     }
+
+    [Fact]
+    public void SelectCandidates_ReturnsEmpty_WhenRepositoryHasNoProjects()
+    {
+        var model = TestModels.Repository();
+
+        var candidates = new RecordSelector().SelectCandidates(model).ToList();
+
+        Assert.Empty(candidates);
+    }
 }

@@ -22,4 +22,11 @@ public class MustNotImplementAssertionTests
         var outcome = new MustNotImplementAssertion("Contoso.Domain.IDisposableEntity").Evaluate(type, EmptyModel);
         Assert.False(outcome.Passed);
     }
+
+    [Fact]
+    public void Evaluate_Fails_ForUnsupportedCandidate()
+    {
+        var outcome = new MustNotImplementAssertion("Contoso.Domain.IDisposableEntity").Evaluate(42, EmptyModel);
+        Assert.False(outcome.Passed);
+    }
 }
