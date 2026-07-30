@@ -13,7 +13,7 @@ public class ValidateEndToEndTests
     public async Task Validate_AgainstSimpleDomainSolution_ProducesExpectedResults()
     {
         var solutionPath = GetFixtureSolutionPath();
-        var rulesDirectory = GetRepoRulesDirectory();
+        var rulesDirectory = GetExampleRulesDirectory();
 
         var builder = new AnalysisModelBuilder([new MsBuildAnalysisProvider([solutionPath])]);
         var model = await builder.BuildAsync(Path.GetDirectoryName(solutionPath)!);
@@ -66,10 +66,6 @@ public class ValidateEndToEndTests
     private static string GetFixtureSolutionPath([CallerFilePath] string sourceFilePath = "") =>
         Path.Combine(Path.GetDirectoryName(sourceFilePath)!, "Fixtures", "SimpleDomainSolution", "SimpleDomainSolution.sln");
 
-    private static string GetRepoRulesDirectory([CallerFilePath] string sourceFilePath = "")
-    {
-        var testProjectDir = Path.GetDirectoryName(sourceFilePath)!;
-        var repoRoot = Path.GetFullPath(Path.Combine(testProjectDir, "..", ".."));
-        return Path.Combine(repoRoot, "rules");
-    }
+    private static string GetExampleRulesDirectory([CallerFilePath] string sourceFilePath = "") =>
+        Path.Combine(Path.GetDirectoryName(sourceFilePath)!, "Fixtures", "ExampleRules");
 }
