@@ -6,7 +6,6 @@ description: >
   never implemented for that aggregate, more than one means it's ambiguous
   which builder is authoritative. Doesn't verify [ExcludeFromCodeCoverage] or
   that no PartitionKey(...) construction happens outside that class.
-standard: .github/skills/persistence/pps-persistence-partition-key/SKILL.md
 severity: warning
 enforcement:
   classification: deterministic

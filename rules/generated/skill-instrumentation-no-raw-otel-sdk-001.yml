@@ -5,7 +5,6 @@ description: >
   ActivitySource(...), .AddOpenTelemetry().WithTracing(...)) - use framework
   extensions instead. Doesn't exclude PP.Framework.Instrumentation itself
   (which legitimately wires the SDK once, centrally).
-standard: .github/skills/utils/pps-instrumentation/SKILL.md
 severity: error
 enforcement:
   classification: deterministic

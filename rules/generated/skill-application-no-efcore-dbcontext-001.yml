@@ -3,7 +3,6 @@ name: Application layer is persistence-agnostic
 description: >
   *.Application projects remain persistence-agnostic: no direct DbContext or
   Microsoft.EntityFrameworkCore references.
-standard: .github/skills/application/index.md
 severity: critical
 enforcement:
   classification: deterministic

@@ -5,7 +5,6 @@ description: >
   follow the Create{Entity}Command/{Action}{Entity}Command naming pattern.
   (The "no throw statements" and "mandatory members use required" clauses
   need method-body/per-property analysis and are left for a future pass.)
-standard: .github/skills/domain/pps-domain-command-contract/SKILL.md
 severity: error
 enforcement:
   classification: deterministic

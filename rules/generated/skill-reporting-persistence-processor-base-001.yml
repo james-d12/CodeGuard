@@ -4,7 +4,6 @@ description: >
   Persistence processor classes must derive from
   ReportingPersistenceProcessorBase<TModel> rather than implementing their
   own try/catch/retry classification logic.
-standard: .github/skills/reporting/pps-reporting-persistence-processor/SKILL.md
 severity: error
 enforcement:
   classification: deterministic

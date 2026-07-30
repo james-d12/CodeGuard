@@ -7,7 +7,6 @@ description: >
   (zero references to Infrastructure/Persistence project); the other three
   clauses of the full layer matrix would need their own rules targeting
   *.Application/*.Api/*.Persistence project names respectively.
-standard: standards/golden-standard.md#2-core-architecture-patterns
 severity: critical
 enforcement:
   classification: deterministic

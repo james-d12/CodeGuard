@@ -6,7 +6,6 @@ description: >
   value falls within its component's specific reserved numeric block
   (e.g. 3000-3099 for one entity) - block-boundary checking would need a
   per-component range table this analyzer doesn't have.
-standard: .github/skills/reporting/index.md
 severity: warning
 enforcement:
   classification: deterministic

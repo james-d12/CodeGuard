@@ -6,7 +6,6 @@ description: >
   persistence stack. (Full Cosmos-only vs SQL-only mutual exclusivity between
   *.Persistence and *.Reporting.Persistence isn't expressible with glob-only
   project name matching, so this rule covers the sub-check that applies to both.)
-standard: standards/golden-standard.md#6-project-layers-detailed-responsibilities
 severity: error
 enforcement:
   classification: deterministic

@@ -6,7 +6,6 @@ description: >
   exceptions thrown from factories" (needs return-statement analysis), or
   "no persistence ID property" (needs a property-absence check by name) -
   each would need its own rule targeting the property level.
-standard: .github/skills/domain/pps-domain-value-object/SKILL.md
 severity: error
 enforcement:
   classification: deterministic

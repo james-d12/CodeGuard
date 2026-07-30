@@ -3,7 +3,6 @@ name: Schemas project has zero package dependencies
 description: >
   *.Schemas projects must have zero NuGet package references - contracts must
   not carry behavior or third-party dependencies.
-standard: standards/golden-standard.md#4-application-layer-http-api-design
 severity: critical
 enforcement:
   classification: deterministic

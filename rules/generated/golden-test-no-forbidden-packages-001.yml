@@ -3,7 +3,6 @@ name: xUnit only, no FluentAssertions/Moq/NSubstitute
 description: >
   Test projects use xUnit only; FluentAssertions, Moq, and NSubstitute are
   forbidden - hand-crafted test doubles and xUnit's built-in Assert are required.
-standard: standards/golden-standard.md#12-testing
 severity: critical
 enforcement:
   classification: deterministic

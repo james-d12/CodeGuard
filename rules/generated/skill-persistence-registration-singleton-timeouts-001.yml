@@ -6,7 +6,6 @@ description: >
   the repository" rather than verifying the exact documented values (30s /
   30s,3) or that the repository is registered AddSingleton (not
   scoped/transient).
-standard: .github/skills/persistence/pps-persistence-registration/SKILL.md
 severity: error
 enforcement:
   classification: deterministic

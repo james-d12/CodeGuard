@@ -3,7 +3,6 @@ name: Event route strings are named constants
 description: >
   Event route strings must be public static class constants, not inlined
   string literals passed directly to Map* endpoint-registration calls.
-standard: standards/golden-standard.md#6-project-layers-detailed-responsibilities
 severity: info
 enforcement:
   classification: deterministic

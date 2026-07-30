@@ -3,7 +3,6 @@ name: Minimal APIs only, no MVC controllers
 description: >
   ASP.NET Core Minimal APIs required; MVC controllers ([ApiController] /
   ControllerBase) are forbidden.
-standard: standards/golden-standard.md#4-application-layer-http-api-design
 severity: error
 enforcement:
   classification: deterministic

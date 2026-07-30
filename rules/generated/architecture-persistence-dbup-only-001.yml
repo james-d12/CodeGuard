@@ -3,7 +3,6 @@ name: Reporting persistence uses PP.Framework.SPP.Reporting.DbUp
 description: >
   Reporting.Persistence projects must use PP.Framework.SPP.Reporting.DbUp, not
   bare DbUp packages or EF Core Migrations.
-standard: standards/golden-standard.md#3-data-persistence
 severity: error
 enforcement:
   classification: deterministic

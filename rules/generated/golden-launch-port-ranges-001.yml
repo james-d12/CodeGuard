@@ -3,7 +3,6 @@ name: Port assignment ranges by service type
 description: >
   applicationUrl ports declared in launchSettings.json must fall within the
   documented overall HTTP port range (5000-7999).
-standard: standards/golden-standard.md#5-project-launch-configuration
 severity: info
 enforcement:
   classification: deterministic

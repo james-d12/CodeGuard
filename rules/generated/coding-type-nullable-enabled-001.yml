@@ -2,7 +2,6 @@ id: CODING-TYPE-NULLABLE-ENABLED-001
 name: Nullable reference types enabled
 description: >
   <Nullable>enable</Nullable> required in all projects.
-standard: standards/coding-standards.md#type-design
 severity: error
 enforcement:
   classification: deterministic

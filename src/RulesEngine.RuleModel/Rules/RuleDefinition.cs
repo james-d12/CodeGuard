@@ -10,7 +10,6 @@ public sealed class RuleDefinition
     public required string Id { get; init; }
     public required string Name { get; init; }
     public string? Description { get; init; }
-    public string? Standard { get; init; }
     public Severity Severity { get; init; } = Severity.Warning;
     public EnforcementMetadata Enforcement { get; init; } = new();
     public IReadOnlyList<string> Tags { get; init; } = [];

@@ -5,7 +5,6 @@ description: >
   repository. Doesn't cover the "no async void outside designated
   event-handler signatures" clause (that needs a method-signature/attribute
   cross-check this rule doesn't perform).
-standard: standards/coding-standards.md#asynchronous-programming
 severity: error
 enforcement:
   classification: deterministic

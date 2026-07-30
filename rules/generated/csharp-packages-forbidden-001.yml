@@ -3,7 +3,6 @@ name: Forbidden NuGet packages absent
 description: >
   AutoMapper, FluentValidation, Moq, NSubstitute, Dapper, Hangfire, and NLog must
   never be referenced by any project.
-standard: standards/coding-standards.md#nuget-package-policy
 severity: critical
 enforcement:
   classification: deterministic

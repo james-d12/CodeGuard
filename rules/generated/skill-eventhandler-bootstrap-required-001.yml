@@ -4,7 +4,6 @@ description: >
   EventHandler Program.cs must bootstrap via
   SppWebApplication.CreateBuilder(...)/BuildApp(...), never the raw
   WebApplication.CreateBuilder(args)/builder.Build().
-standard: .github/skills/eventhandler/pps-eventhandler-bootstrap/SKILL.md
 severity: critical
 enforcement:
   classification: deterministic

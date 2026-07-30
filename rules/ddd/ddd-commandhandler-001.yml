@@ -3,7 +3,6 @@ name: Command handlers must implement ICommandHandler
 description: >
   Types in the Application.Handlers namespace must implement
   Contoso.Application.ICommandHandler<TCommand> for the command they handle.
-standard: CQRS-001
 severity: error
 enforcement:
   classification: deterministic

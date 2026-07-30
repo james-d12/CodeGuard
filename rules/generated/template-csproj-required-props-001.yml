@@ -3,7 +3,6 @@ name: Scaffolded csproj required properties
 description: >
   Generated .csproj files must set Nullable=enable, ImplicitUsings=enable,
   and TreatWarningsAsErrors=true.
-standard: standards/template-extraction.md
 severity: warning
 enforcement:
   classification: deterministic

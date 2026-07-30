@@ -3,7 +3,6 @@ name: Pipeline file naming convention
 description: >
   azure-pipelines.yaml (full CI/CD) and azure-pipelines-pr.yaml (build
   validation only) must both exist at repo root.
-standard: standards/golden-standard.md#13-cicd-and-deployment
 severity: warning
 enforcement:
   classification: deterministic

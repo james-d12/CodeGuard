@@ -47,7 +47,6 @@ public static class RuleDocumentParser
             Id = document.GetRequiredString("id"),
             Name = document.GetRequiredString("name"),
             Description = document.GetOptionalString("description"),
-            Standard = document.GetOptionalString("standard"),
             Severity = ParseSeverity(document),
             Enforcement = new EnforcementMetadata { Classification = ParseClassification(document) },
             Tags = document.GetStringArray("tags"),

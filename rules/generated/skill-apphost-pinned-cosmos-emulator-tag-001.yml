@@ -3,7 +3,6 @@ name: Pinned Cosmos emulator image tag must not change casually
 description: >
   The pinned Cosmos emulator image tag vnext-EN20260602 must not change
   without an explicit, validated change.
-standard: .github/skills/aspire/pps-apphost-configuration/SKILL.md
 severity: warning
 enforcement:
   classification: deterministic

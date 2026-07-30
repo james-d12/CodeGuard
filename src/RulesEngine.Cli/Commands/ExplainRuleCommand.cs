@@ -63,7 +63,6 @@ public static class ExplainRuleCommand
         {
             Console.WriteLine($"Description:   {rule.Description.Trim()}");
         }
-        Console.WriteLine($"Standard:      {rule.Standard ?? "-"}");
         Console.WriteLine($"Severity:      {rule.Severity}");
         Console.WriteLine($"Enforcement:   {rule.Enforcement.Classification}");
         Console.WriteLine($"Tags:          {(rule.Tags.Count == 0 ? "-" : string.Join(", ", rule.Tags))}");

@@ -3,7 +3,6 @@ name: base/app.json contains only the argocd block
 description: >
   base/app.json must contain the argocd block and must not speculatively add
   a resources block.
-standard: .github/skills/utils/pps-service-requirements/SKILL.md
 severity: warning
 enforcement:
   classification: deterministic

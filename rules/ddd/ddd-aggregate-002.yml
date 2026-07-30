@@ -3,7 +3,6 @@ name: Aggregate roots must expose a Create factory method
 description: >
   Aggregate roots must be constructed through a static Create factory method
   rather than directly via their constructor.
-standard: DDD-002
 severity: warning
 enforcement:
   classification: deterministic

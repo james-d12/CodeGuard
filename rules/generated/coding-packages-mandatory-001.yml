@@ -5,7 +5,6 @@ description: >
   Microsoft.Extensions.* referenced as applicable per project role.
   Approximated here against *.Api projects only; other project roles have
   different required package sets not covered by this single rule.
-standard: standards/coding-standards.md#nuget-package-policy
 severity: warning
 enforcement:
   classification: deterministic

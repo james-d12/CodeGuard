@@ -5,7 +5,6 @@ description: >
   cover the yyyyMMdd/seconds-since-midnight value-format invariants (runtime
   data shape, not a static code fact) or "reverse conversion returns null
   rather than throwing" (needs return-statement analysis).
-standard: .github/skills/reporting/pps-reporting-datetime-surrogates/SKILL.md
 severity: warning
 enforcement:
   classification: deterministic

@@ -3,7 +3,6 @@ name: No EF Core for operational data
 description: >
   Core framework fixed: Cosmos SDK + DbUp for operational data. Persistence
   projects must not reference Microsoft.EntityFrameworkCore.
-standard: standards/golden-standard.md#14-technology-stack
 severity: error
 enforcement:
   classification: deterministic

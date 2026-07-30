@@ -3,7 +3,6 @@ name: EventHandler outbound calls use typed adapters
 description: >
   Outbound calls from EventHandler application adapters must use typed
   adapters + PP.Framework.Http abstractions, never raw HttpClient.
-standard: .github/skills/eventhandler/index.md
 severity: error
 enforcement:
   classification: deterministic

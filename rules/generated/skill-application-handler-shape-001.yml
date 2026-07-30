@@ -3,7 +3,6 @@ name: Application handlers are sealed partial with HandleAsync
 description: >
   Handler classes must be declared sealed partial class and expose a
   HandleAsync entry point.
-standard: .github/skills/application/index.md
 severity: error
 enforcement:
   classification: deterministic

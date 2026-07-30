@@ -3,7 +3,6 @@ name: EventHandler.Application requires EventLimiting folder
 description: >
   *.EventHandler.Application projects must include an EventLimiting/ middleware
   folder.
-standard: standards/coding-standards.md#api-design
 severity: error
 enforcement:
   classification: deterministic

@@ -6,7 +6,6 @@ description: >
   in the exhaustive switch default of CreateEventData. Approximated as "throw
   must be the leading statement of its method" rather than verifying it's
   specifically that one sanctioned ArgumentOutOfRangeException call.
-standard: .github/skills/domain/pps-domain-entity-framework/SKILL.md
 severity: critical
 enforcement:
   classification: deterministic

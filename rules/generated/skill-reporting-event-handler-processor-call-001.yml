@@ -5,7 +5,6 @@ description: >
   construct a bespoke *PersistenceProcessorInput wrapper class per handler.
   Doesn't cover the "shared MapEventRoute extension defined once and reused"
   cardinality clause.
-standard: .github/skills/reporting/pps-reporting-event-handler/SKILL.md
 severity: warning
 enforcement:
   classification: deterministic

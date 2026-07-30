@@ -4,7 +4,6 @@ description: >
   Routes follow /api/v{version}/{resource}. Doesn't cover the "RFC 7807
   ProblemDetails for all errors" clause (that needs response-path analysis
   this engine doesn't perform).
-standard: standards/golden-standard.md#4-application-layer-http-api-design
 severity: warning
 enforcement:
   classification: deterministic

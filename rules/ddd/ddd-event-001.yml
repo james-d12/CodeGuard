@@ -3,7 +3,6 @@ name: Domain events must live in the Domain.Events namespace
 description: >
   Types implementing IDomainEvent must be declared in a namespace ending in
   Domain.Events.
-standard: DDD-003
 severity: error
 enforcement:
   classification: deterministic

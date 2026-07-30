@@ -3,7 +3,6 @@ name: Domain layer has no infrastructure dependencies
 description: >
   Domain source files must not reference HttpClient, Cosmos DB, or SqlConnection
   types - the domain layer must stay persistence- and transport-ignorant.
-standard: standards/golden-standard.md#6-project-layers-detailed-responsibilities
 severity: critical
 enforcement:
   classification: deterministic

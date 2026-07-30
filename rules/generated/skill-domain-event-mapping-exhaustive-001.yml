@@ -7,7 +7,6 @@ description: >
   types can silently go unhandled. Doesn't verify that every arm sets
   Audit/Version = EntityVersion (that needs per-arm construction analysis
   beyond what this analyzer performs).
-standard: .github/skills/domain/pps-domain-event-mapping/SKILL.md
 severity: error
 enforcement:
   classification: deterministic

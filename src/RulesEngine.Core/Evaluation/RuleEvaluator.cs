@@ -50,7 +50,6 @@ public sealed class RuleEvaluator : IRuleEvaluator
             ruleFailed = true;
             violations.Add(new Violation(
                 rule.Id,
-                rule.Standard,
                 rule.Severity,
                 analyzerViolation.Message,
                 analyzerViolation.FilePath,
@@ -98,7 +97,6 @@ public sealed class RuleEvaluator : IRuleEvaluator
 
         return new Violation(
             rule.Id,
-            rule.Standard,
             rule.Severity,
             outcome.Message ?? $"Rule '{rule.Id}' failed.",
             file,

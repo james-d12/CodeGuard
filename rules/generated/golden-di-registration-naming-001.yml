@@ -3,7 +3,6 @@ name: DI registration extension method naming
 description: >
   Public static registration extension methods must be named Add{Feature}, matching
   the standard Microsoft.Extensions.DependencyInjection convention.
-standard: standards/golden-standard.md#8-dependency-injection
 severity: info
 enforcement:
   classification: deterministic

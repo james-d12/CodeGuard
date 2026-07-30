@@ -34,11 +34,6 @@ public static class ListRulesCommand
             Description = "Only include rules with at least one of these tags (repeatable)."
         };
 
-        var standardOption = new Option<string?>("--standard")
-        {
-            Description = "Only include rules referencing this standard."
-        };
-
         var enabledOnlyOption = new Option<bool>("--enabled-only")
         {
             Description = "Only include enabled rules."
@@ -51,7 +46,6 @@ public static class ListRulesCommand
         command.Add(branchOption);
         command.Add(formatOption);
         command.Add(tagOption);
-        command.Add(standardOption);
         command.Add(enabledOnlyOption);
 
         command.SetAction((parseResult, cancellationToken) =>
@@ -69,12 +63,6 @@ public static class ListRulesCommand
             {
                 var tagSet = new HashSet<string>(tags, StringComparer.OrdinalIgnoreCase);
                 rules = rules.Where(r => r.Tags.Any(tagSet.Contains));
-            }
-
-            var standard = parseResult.GetValue(standardOption);
-            if (standard is not null)
-            {
-                rules = rules.Where(r => r.Standard == standard);
             }
 
             if (parseResult.GetValue(enabledOnlyOption))
@@ -108,19 +96,18 @@ public static class ListRulesCommand
             return;
         }
 
-        Console.WriteLine($"{"ID",-24}{"SEVERITY",-10}{"STANDARD",-14}{"ENFORCEMENT",-24}{"ENABLED",-9}TAGS");
+        Console.WriteLine($"{"ID",-24}{"SEVERITY",-10}{"ENFORCEMENT",-24}{"ENABLED",-9}TAGS");
         foreach (var rule in rules)
         {
             var tags = string.Join(",", rule.Tags);
             Console.WriteLine(
-                $"{rule.Id,-24}{rule.Severity,-10}{rule.Standard ?? "-",-14}{rule.Enforcement.Classification,-24}{rule.Enabled,-9}{tags}");
+                $"{rule.Id,-24}{rule.Severity,-10}{rule.Enforcement.Classification,-24}{rule.Enabled,-9}{tags}");
         }
     }
 
     private sealed record RuleSummary(
         string Id,
         string Name,
-        string? Standard,
         Severity Severity,
         EnforcementClassification Enforcement,
         IReadOnlyList<string> Tags,
@@ -128,7 +115,7 @@ public static class ListRulesCommand
         bool Illustrative)
     {
         public static RuleSummary From(RuleDefinition rule) => new(
-            rule.Id, rule.Name, rule.Standard, rule.Severity, rule.Enforcement.Classification,
+            rule.Id, rule.Name, rule.Severity, rule.Enforcement.Classification,
             rule.Tags, rule.Enabled, rule.Illustrative);
     }
 }

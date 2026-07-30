@@ -3,7 +3,6 @@ name: Prefer .slnx over .sln
 description: >
   Solutions should use .slnx; if a .slnx file exists, no .sln file may also
   be present.
-standard: standards/golden-standard.md#1-repository-structure
 severity: warning
 enforcement:
   classification: deterministic

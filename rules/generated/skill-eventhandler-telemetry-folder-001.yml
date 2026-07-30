@@ -3,7 +3,6 @@ name: Shared Telemetry folder with required files
 description: >
   A shared Telemetry/ folder must exist containing MetricNames, TagNames, and
   MetricExtensions files.
-standard: .github/skills/eventhandler/index.md
 severity: warning
 enforcement:
   classification: deterministic

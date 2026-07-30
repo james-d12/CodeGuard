@@ -6,7 +6,6 @@ description: >
   members") is not covered by this rule, since it targets a different type
   (the base record, not its derivatives) and would need a second rule
   targeting Contoso.Domain.Events.EventBase directly.
-standard: standards/golden-standard.md#2-core-architecture-patterns
 severity: warning
 enforcement:
   classification: deterministic

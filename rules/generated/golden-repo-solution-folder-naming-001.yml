@@ -3,7 +3,6 @@ name: Solution folder naming has no service-name prefix
 description: >
   Solution folder elements in the .slnx file must not be prefixed with the
   service name (Contoso).
-standard: standards/golden-standard.md#1-repository-structure
 severity: info
 enforcement:
   classification: deterministic

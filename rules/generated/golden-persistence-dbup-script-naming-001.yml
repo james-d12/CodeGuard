@@ -3,7 +3,6 @@ name: DbUp script naming convention
 description: >
   RunOnce scripts must be named {NNN}_{description}.sql and RunAlways scripts
   must be named {EntityName}_{Operation}.sql - no usp_/sp_ filename prefixes.
-standard: standards/golden-standard.md#3-data-persistence
 severity: warning
 enforcement:
   classification: deterministic

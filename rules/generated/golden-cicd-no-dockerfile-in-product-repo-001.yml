@@ -3,7 +3,6 @@ name: Product repos must not contain a Dockerfile
 description: >
   Dockerfile ownership belongs to shared pipeline templates; presence in a
   product repo is a violation.
-standard: standards/golden-standard.md#13-cicd-and-deployment
 severity: error
 enforcement:
   classification: deterministic

@@ -5,7 +5,6 @@ description: >
   use client_sector grouping instead. Approximated as a source-text scan for
   the literal tag name, since named-argument values aren't captured by this
   engine's call-site model.
-standard: .github/skills/application/pps-application-observability/SKILL.md
 severity: critical
 enforcement:
   classification: deterministic

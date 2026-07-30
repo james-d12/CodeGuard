@@ -3,7 +3,6 @@ name: Domain projects must not reference Infrastructure projects
 description: >
   Domain projects must not take a project reference on an Infrastructure project -
   dependencies must point inward, not outward, per the dependency rule.
-standard: ARCH-001
 severity: critical
 enforcement:
   classification: deterministic

@@ -3,7 +3,6 @@ name: Mandatory root files
 description: >
   The repository root must contain azure-pipelines.yaml, azure-pipelines-pr.yaml,
   .editorconfig, .gitignore, and README.md.
-standard: standards/golden-standard.md#1-repository-structure
 severity: error
 enforcement:
   classification: deterministic

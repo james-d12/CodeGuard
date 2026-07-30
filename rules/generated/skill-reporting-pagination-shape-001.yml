@@ -5,7 +5,6 @@ description: >
   properties. Doesn't verify TotalRecords is populated from the persistence
   layer rather than client-computed (needs data-flow/provenance analysis),
   or that PageSize has an enforced upper bound.
-standard: .github/skills/reporting/pps-reporting-application/SKILL.md
 severity: error
 enforcement:
   classification: deterministic

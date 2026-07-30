@@ -5,7 +5,6 @@ description: >
   default/unknown value starts at 0. The first-member-value=0 clause is not
   covered by this rule (requires enum member value inspection not modeled
   in a single declarative assertion).
-standard: standards/coding-standards.md#type-design
 severity: warning
 enforcement:
   classification: deterministic

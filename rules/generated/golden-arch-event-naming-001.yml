@@ -2,7 +2,6 @@ id: GOLDEN-ARCH-EVENT-NAMING-001
 name: Event naming convention
 description: >
   Events named {Entity}{Action}Event.
-standard: standards/golden-standard.md#2-core-architecture-patterns
 severity: warning
 enforcement:
   classification: deterministic

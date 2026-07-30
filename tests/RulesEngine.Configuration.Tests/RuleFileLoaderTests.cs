@@ -28,7 +28,6 @@ public class RuleFileLoaderTests : IDisposable
             id: DDD-ENTITY-001
             name: Domain entities must inherit from Entity
             description: All domain entities must inherit from the approved base class.
-            standard: DDD-001
             severity: error
             enforcement:
               classification: deterministic
@@ -47,7 +46,6 @@ public class RuleFileLoaderTests : IDisposable
 
         Assert.Equal("DDD-ENTITY-001", rule.Id);
         Assert.Equal("Domain entities must inherit from Entity", rule.Name);
-        Assert.Equal("DDD-001", rule.Standard);
         Assert.Equal(Severity.Error, rule.Severity);
         Assert.Equal(EnforcementClassification.Deterministic, rule.Enforcement.Classification);
         Assert.Equal(["ddd", "domain"], rule.Tags);

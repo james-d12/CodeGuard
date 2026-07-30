@@ -3,7 +3,6 @@ name: Handlers use TimeProvider, not DateTime.UtcNow
 description: >
   Application handler code must obtain time via an injected TimeProvider,
   never DateTime.UtcNow directly.
-standard: .github/skills/application/index.md
 severity: warning
 enforcement:
   classification: deterministic

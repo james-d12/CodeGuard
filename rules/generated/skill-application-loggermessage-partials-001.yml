@@ -3,7 +3,6 @@ name: Structured logs use LoggerMessage partials
 description: >
   Structured logs must use [LoggerMessage] source-generated partial methods,
   not ad hoc logger.LogInformation/LogWarning/LogError interpolation.
-standard: .github/skills/application/index.md
 severity: warning
 enforcement:
   classification: deterministic

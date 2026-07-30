@@ -5,7 +5,6 @@ description: >
   the Ttl-defaults-to--1 clause (needs a property initializer value fact not
   modeled) or the "no override on non-virtual base members" clause (needs a
   base-member-virtuality cross-check not modeled).
-standard: .github/skills/persistence/pps-persistence-documents/SKILL.md
 severity: error
 enforcement:
   classification: deterministic

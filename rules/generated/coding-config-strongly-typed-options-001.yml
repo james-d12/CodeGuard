@@ -5,7 +5,6 @@ description: >
   .ValidateDataAnnotations().ValidateOnStart(). Approximated as "a
   ValidateOnStart() call exists somewhere in the repository" rather than
   verifying every individual AddOptions<T>() registration chains it.
-standard: standards/coding-standards.md#configuration-management
 severity: warning
 enforcement:
   classification: deterministic

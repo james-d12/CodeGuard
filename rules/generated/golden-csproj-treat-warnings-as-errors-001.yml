@@ -3,7 +3,6 @@ name: TreatWarningsAsErrors required
 description: >
   Every .csproj must set <TreatWarningsAsErrors>true</TreatWarningsAsErrors> so
   compiler warnings fail the build instead of accumulating silently.
-standard: standards/golden-standard.md#12-testing
 severity: error
 enforcement:
   classification: deterministic

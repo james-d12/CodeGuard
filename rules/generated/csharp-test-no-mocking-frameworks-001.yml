@@ -4,7 +4,6 @@ description: >
   Test projects must use xUnit and must not reference Moq, NSubstitute, or
   FluentAssertions - hand-crafted test doubles and plain xUnit assertions are
   required instead.
-standard: standards/coding-standards.md#testing-standards
 severity: critical
 enforcement:
   classification: deterministic

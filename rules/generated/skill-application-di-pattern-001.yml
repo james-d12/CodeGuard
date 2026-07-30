@@ -6,7 +6,6 @@ description: >
   than verifying every chain, and doesn't cover the "TimeProvider registered
   exactly once" cardinality clause (needs a repo-wide duplicate-registration
   count this rule doesn't perform).
-standard: .github/skills/application/pps-application-di/SKILL.md
 severity: warning
 enforcement:
   classification: deterministic

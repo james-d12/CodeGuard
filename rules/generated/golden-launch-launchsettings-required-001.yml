@@ -3,7 +3,6 @@ name: launchSettings.json required per application project
 description: >
   Properties/launchSettings.json must exist for every application project with
   http and https profiles and ASPNETCORE_ENVIRONMENT=Development.
-standard: standards/golden-standard.md#5-project-launch-configuration
 severity: warning
 enforcement:
   classification: deterministic

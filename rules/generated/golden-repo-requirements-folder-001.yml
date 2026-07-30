@@ -3,7 +3,6 @@ name: requirements/ folder per environment
 description: >
   The requirements/ folder must contain the standard per-environment
   subfolders (base, dev, sandbox, uat, infrastructure).
-standard: standards/golden-standard.md#1-repository-structure
 severity: warning
 enforcement:
   classification: deterministic

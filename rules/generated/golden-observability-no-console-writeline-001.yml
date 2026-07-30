@@ -4,7 +4,6 @@ description: >
   ILogger<T> is required; Console.WriteLine/Console.Write are forbidden.
   Doesn't exclude test or console-tool projects (that would need per-project
   classification this engine doesn't have).
-standard: standards/golden-standard.md#10-observability
 severity: warning
 enforcement:
   classification: deterministic

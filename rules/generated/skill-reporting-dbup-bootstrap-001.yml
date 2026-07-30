@@ -7,7 +7,6 @@ description: >
   dbup-sqlserver package references, requires CREATE OR ALTER procs, and a
   Script{NNN}_ filename prefix) - the filename-prefix half is already covered
   declaratively by golden-persistence-dbup-script-naming-001.yml.
-standard: .github/skills/reporting/pps-reporting-dbup/SKILL.md
 severity: critical
 enforcement:
   classification: deterministic

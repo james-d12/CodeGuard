@@ -6,7 +6,6 @@ description: >
   such a wrapper adds nothing over inheriting the base implementation
   directly. Companion rule to GOLDEN-PERSISTENCE-REPOSITORY-BASE-CLASS-001
   (the inheritance clause).
-standard: standards/golden-standard.md#3-data-persistence
 severity: critical
 enforcement:
   classification: deterministic

@@ -2,7 +2,6 @@ id: GOLDEN-TEST-NAMING-CONVENTION-001
 name: Test naming convention (golden standard)
 description: >
   Test method identifiers must follow {MethodName}_{Scenario}_{ExpectedOutcome}.
-standard: standards/golden-standard.md#12-testing
 severity: warning
 enforcement:
   classification: deterministic

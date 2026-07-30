@@ -6,7 +6,6 @@ description: >
   as "the calls exist/don't exist somewhere in the repository" rather than
   verifying every method individually, and doesn't cover the "one stored
   procedure per method" 1:1 naming clause.
-standard: .github/skills/reporting/pps-reporting-sql-repository/SKILL.md
 severity: warning
 enforcement:
   classification: deterministic

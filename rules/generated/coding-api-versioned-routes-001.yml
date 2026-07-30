@@ -2,7 +2,6 @@ id: CODING-API-VERSIONED-ROUTES-001
 name: API routes versioned in URL path
 description: >
   API versioning appears in the URL path, e.g. /v1/... or /api/v1/....
-standard: standards/coding-standards.md#api-design
 severity: warning
 enforcement:
   classification: deterministic

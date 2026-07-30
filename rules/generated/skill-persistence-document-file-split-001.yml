@@ -3,7 +3,6 @@ name: Entity/event document contracts in separate files
 description: >
   *EntityDocument and *EventDocument types must be declared in their own file,
   matching the type name.
-standard: .github/skills/persistence/pps-persistence-documents/SKILL.md
 severity: warning
 enforcement:
   classification: deterministic

@@ -3,7 +3,6 @@ name: Domain projects must not depend on the Infrastructure namespace
 description: >
   Even without a direct project reference, Domain types must not reference any
   type in an Infrastructure namespace via base types, interfaces, or member signatures.
-standard: ARCH-001
 severity: critical
 enforcement:
   classification: deterministic

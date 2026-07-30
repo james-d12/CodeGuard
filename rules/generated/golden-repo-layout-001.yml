@@ -3,7 +3,6 @@ name: Standard repository layout
 description: >
   Repositories must have an src/ folder at the root containing the per-layer
   service projects.
-standard: standards/golden-standard.md#1-repository-structure
 severity: error
 enforcement:
   classification: deterministic

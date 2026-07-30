@@ -5,7 +5,6 @@ description: >
   from entity.EntityData/EntityVersion, not from commands" or "event
   documents derived only from entity.NewEvents" (both need method-body
   data-flow analysis this rule doesn't perform).
-standard: .github/skills/persistence/pps-persistence-factory/SKILL.md
 severity: warning
 enforcement:
   classification: deterministic

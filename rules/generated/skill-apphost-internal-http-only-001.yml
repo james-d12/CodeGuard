@@ -3,7 +3,6 @@ name: Internal service-to-service uses http scheme
 description: >
   Always use the http scheme between internal AppHost-managed services; https
   is reserved for external endpoints.
-standard: .github/skills/aspire/pps-apphost-configuration/SKILL.md
 severity: info
 enforcement:
   classification: deterministic

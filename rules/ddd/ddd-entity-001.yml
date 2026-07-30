@@ -2,7 +2,6 @@ id: DDD-ENTITY-001
 name: Domain entities must inherit from Entity
 description: >
   All domain entities must inherit from the approved Entity<TId> base class.
-standard: DDD-001
 severity: error
 enforcement:
   classification: deterministic

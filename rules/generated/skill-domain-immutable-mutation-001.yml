@@ -4,7 +4,6 @@ description: >
   Entity state must be mutated only via immutable `with` updates on
   EntityData, never a direct field/property assignment after construction -
   record types are meant to be immutable value objects.
-standard: .github/skills/domain/index.md
 severity: error
 enforcement:
   classification: deterministic

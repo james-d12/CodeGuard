@@ -3,7 +3,6 @@ name: Use IHttpClientFactory
 description: >
   No `new HttpClient()` instantiation outside DI/factory registration - use
   IHttpClientFactory to reuse HttpClient instances and configure timeouts.
-standard: standards/coding-standards.md#performance-guidelines
 severity: warning
 enforcement:
   classification: deterministic

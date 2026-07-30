@@ -4,7 +4,6 @@ description: >
   Program.cs must call MapHealthChecks. Approximated as "the call exists
   somewhere in the repository" rather than verifying the literal
   "/health"/"/ready" path arguments.
-standard: standards/golden-standard.md#10-observability
 severity: error
 enforcement:
   classification: deterministic

@@ -6,7 +6,6 @@ description: >
   only; the per-property required/DataAnnotations rules for request vs.
   response records need per-record-kind scoping not yet expressible as a
   single declarative rule and are left for a future pass.)
-standard: .github/skills/application/pps-application-schema/SKILL.md
 severity: critical
 enforcement:
   classification: deterministic

@@ -8,7 +8,7 @@ namespace RulesEngine.Cli.Support;
 
 /// <summary>
 /// Resolves the repo root/config/rule-directory layout shared by every CLI command, so
-/// validate/list-rules/explain-rule/list-standards don't each duplicate the resolution logic.
+/// validate/list-rules/explain-rule don't each duplicate the resolution logic.
 ///
 /// Rules-path resolution precedence (see docs/SETUP_COMMAND_PLAN.md):
 ///   1. <paramref name="rulesSource"/> ("--rules-source"), if passed - highest precedence, an

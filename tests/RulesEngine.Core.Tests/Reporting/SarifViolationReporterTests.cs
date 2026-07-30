@@ -19,7 +19,6 @@ public class SarifViolationReporterTests
             [
                 new Violation(
                     RuleId: "DDD-ENTITY-001",
-                    StandardId: "DDD-001",
                     Severity: Severity.Error,
                     Message: "'Contoso.Domain.Entities.LegacyThing' must inherit from 'Contoso.Domain.Entity<TId>'.",
                     File: "LegacyThing.cs",
@@ -64,9 +63,9 @@ public class SarifViolationReporterTests
             ValidationStatus.Failed, RulesEvaluated: 1, RulesPassed: 0, RulesFailed: 1,
             Violations:
             [
-                new Violation("RULE-INFO", null, Severity.Info, "info message", null, null, null, null, null, null, []),
-                new Violation("RULE-WARN", null, Severity.Warning, "warning message", null, null, null, null, null, null, []),
-                new Violation("RULE-CRIT", null, Severity.Critical, "critical message", null, null, null, null, null, null, [])
+                new Violation("RULE-INFO", Severity.Info, "info message", null, null, null, null, null, null, []),
+                new Violation("RULE-WARN", Severity.Warning, "warning message", null, null, null, null, null, null, []),
+                new Violation("RULE-CRIT", Severity.Critical, "critical message", null, null, null, null, null, null, [])
             ],
             EvaluatedAtUtc: DateTimeOffset.UtcNow);
 

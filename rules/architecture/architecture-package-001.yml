@@ -3,7 +3,6 @@ name: Domain projects must not reference Entity Framework Core directly
 description: >
   Domain projects must remain persistence-ignorant; only Infrastructure projects
   may take a direct dependency on Microsoft.EntityFrameworkCore.
-standard: ARCH-002
 severity: error
 enforcement:
   classification: deterministic

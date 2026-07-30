@@ -3,7 +3,6 @@ name: Reporting.Schemas has zero NuGet/project references
 description: >
   *.Reporting.Schemas projects carry pure data contracts and must have zero
   PackageReference and zero ProjectReference entries.
-standard: .github/skills/reporting/pps-reporting-model-contracts/SKILL.md
 severity: error
 enforcement:
   classification: deterministic

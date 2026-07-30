@@ -3,7 +3,6 @@ name: Domain events must be defined in a Domain project
 description: >
   Types implementing IDomainEvent must be declared in a project whose name
   matches *.Domain, not in an Application or Infrastructure project.
-standard: DDD-003
 severity: error
 enforcement:
   classification: deterministic

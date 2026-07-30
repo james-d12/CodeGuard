@@ -5,7 +5,6 @@ description: >
   point. Doesn't verify the body delegates to ReportingSearchExecutor.ExecuteAsync
   (method-body inspection) or that DI registration uses AddScoped
   (call-site/registration-lifetime check).
-standard: .github/skills/reporting/pps-reporting-application/SKILL.md
 severity: error
 enforcement:
   classification: deterministic

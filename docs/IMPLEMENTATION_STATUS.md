@@ -50,7 +50,6 @@ dotnet build          # should succeed, 0 errors (14 pre-existing NU1903 advisor
 dotnet test           # should show 81 passed across 6 test projects, 0 failed
 dotnet run --project RuleEngine/RulesEngine.Cli -- list-rules       # works against this repo's own rules/
 dotnet run --project RuleEngine/RulesEngine.Cli -- explain-rule DDD-ENTITY-001
-dotnet run --project RuleEngine/RulesEngine.Cli -- list-standards
 dotnet run --project RuleEngine/RulesEngine.Cli -- validate   # see "Known limitation" below — self-validation still crashes
 ```
 
@@ -74,7 +73,7 @@ RuleEngine/
   REFACTORING.md                # separate, much larger architectural-evolution proposal — not started, see above
   RulesEngine.Cli/               # System.CommandLine-based CLI (net10.0 exe, AssemblyName=rules-engine)
     Program.cs                  #   MSBuildLocator bootstrap + composes RootCommand from Commands/
-    Commands/                   #   ValidateCommand, ListRulesCommand, ExplainRuleCommand, ListStandardsCommand
+    Commands/                   #   ValidateCommand, ListRulesCommand, ExplainRuleCommand
     Support/                    #   CliRepositoryContext (shared --path/--config resolution), CommonOptions
   RulesEngine.Core/              # RuleEvaluator, ValidationResult/Violation (Core.Evaluation, Core.Results)
   RulesEngine.RuleModel/         # RuleDefinition, Severity, EnforcementClassification;
@@ -171,9 +170,8 @@ resolution via `Support/CliRepositoryContext.cs`, and are composed in `Program.c
 | Command | Options | Notes |
 |---|---|---|
 | `validate` | `--path`, `--config`, `--format console\|json\|sarif`, `--output <file>`, `--rule <id>` (repeatable), `--solution <path>` (repeatable), `--severity-threshold info\|warning\|error\|critical`, `--fail-on info\|warning\|error\|critical` | Providers run `[RepositoryFileProvider, MsBuildAnalysisProvider]` in that order. `SolutionFileLocator` (`Cli/Support/SolutionFileLocator.cs`) discovers `.sln` files recursively under `--path` (skipping `bin`/`obj`/`.git`/`.vs`/`.idea`/`node_modules`), analyzing **every** `.sln` found by default; `--solution` restricts to specific file(s) instead. `MsBuildAnalysisProvider` takes the resulting list and dedupes any project referenced by more than one solution (by project path) so it's only built/reported once, attributed to whichever solution is processed first. `--severity-threshold` filters the reported `ValidationResult` (recomputing `RulesPassed`/`RulesFailed`/`Status`); `--fail-on` (default `info`) independently decides the process exit code from what's left after that filter — both default to today's original behavior (any violation reported, any violation fails) when omitted. |
-| `list-rules` | `--path`, `--config`, `--format table\|json`, `--tag` (repeatable, any-match), `--standard`, `--enabled-only` | Pure rule loading — no analysis model, no Roslyn/MSBuild, so this is cheap for an agent to call before generating code. |
+| `list-rules` | `--path`, `--config`, `--format table\|json`, `--tag` (repeatable, any-match), `--enabled-only` | Pure rule loading — no analysis model, no Roslyn/MSBuild, so this is cheap for an agent to call before generating code. |
 | `explain-rule <ruleId>` | `--path`, `--config` | Uses `RuleFileLoader.LoadFromDirectoriesWithSource` to find the backing YAML file, then prints parsed metadata plus the **raw YAML source verbatim** (rather than trying to introspect configured selector/assertion parameters, which `ITargetSelector`/`IAssertion` don't expose beyond `Kind` — see decision #5 below). |
-| `list-standards` | `--path`, `--config`, `--format table\|json` | Derives distinct `Standard` values purely from loaded rules' `standard` field — no separate standards-file format (as planned). |
 
 `RulesEngineConfigLoader.LoadOrDefault` now has a two-argument overload
 (`repoRoot, explicitConfigPath`) backing `--config`; the original one-argument overload still
@@ -365,8 +363,14 @@ All under `rules/`, all illustrative (`Contoso.*` namespace, `illustrative: true
   (`MustUsePackageVersionAtLeast`), property-setter assertions (`MustNotHaveSetter`).
 - Non-C# analysis providers (YAML/JSON/Terraform/K8s/etc.) — architecture left open via
   `IAnalysisProvider`, nothing implemented.
-- A dedicated standards-file format — `list-standards` derives standards purely from the
-  `standard` field already present on loaded rules, as planned (no separate standards-file format).
+- A dedicated standards-file format was never built. The `RuleDefinition.Standard` field and the
+  `list-standards`/`list-rules --standard` commands that surfaced it were later **removed**
+  (`docs/done/RULE_VALIDATION_PLAN.md`-adjacent cleanup, post-Stage B): the field had two mutually
+  incompatible value conventions in practice — short codes (`DDD-001`) on the 11 hand-authored
+  rules vs. markdown-doc-path/anchor or `SKILL.md` values (from `rules.generated.json`, a different
+  target repo) on the 97 generated rules — so `list-standards` produced ~60 mostly-singleton groups
+  instead of a meaningful category list. `Documentation` (`IReadOnlyList<string>`) remains on
+  `RuleDefinition` as the intended doc-reference field but is unpopulated by any current rule file.
 - Everything in `RuleEngine/REFACTORING.md` (analysis sessions/caching, rule versioning and
   lifecycle states, the Selector/Predicate/Assertion/Diagnostic split, a custom-analyzer escape
   hatch, rule fixture testing) — a deliberately separate, larger initiative the user chose not to

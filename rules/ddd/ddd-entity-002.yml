@@ -3,7 +3,6 @@ name: Domain entities must have a private or protected constructor
 description: >
   Domain entities must not expose a public constructor - construction should go
   through a factory method so invariants can be enforced.
-standard: DDD-001
 severity: error
 enforcement:
   classification: deterministic

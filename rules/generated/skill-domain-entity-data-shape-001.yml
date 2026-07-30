@@ -3,7 +3,6 @@ name: Domain entity data shape
 description: >
   *EntityData types must be record with required+init properties, including
   CreatedDateTime and UpdatedDateTime.
-standard: .github/skills/domain/pps-domain-entity-data/SKILL.md
 severity: error
 enforcement:
   classification: deterministic

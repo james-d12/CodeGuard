@@ -5,7 +5,6 @@ description: >
   catch (Exception ex). Zero catches lets errors propagate uncontrolled;
   more than one usually means exception-type-based branching that should be
   handled elsewhere.
-standard: .github/skills/application/pps-application-handler/SKILL.md
 severity: warning
 enforcement:
   classification: deterministic

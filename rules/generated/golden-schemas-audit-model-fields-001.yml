@@ -3,7 +3,6 @@ name: Canonical Audit model fields
 description: >
   The Audit record must declare the canonical field set: Username, Name,
   UserId, ApplicationId, ApplicationName, Operation, DateRequested.
-standard: standards/golden-standard.md#6-project-layers-detailed-responsibilities
 severity: warning
 enforcement:
   classification: deterministic

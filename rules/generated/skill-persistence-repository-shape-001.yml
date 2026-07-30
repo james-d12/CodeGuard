@@ -7,7 +7,6 @@ description: >
   SKILL-PERSISTENCE-REGISTRATION-SINGLETON-TIMEOUTS-001) or the
   "no single-argument VersionedEntityData<T> construction" clause (needs
   constructor-overload-at-call-site resolution this engine doesn't perform).
-standard: .github/skills/persistence/pps-persistence-repository/SKILL.md
 severity: error
 enforcement:
   classification: deterministic

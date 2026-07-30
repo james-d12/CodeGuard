@@ -3,7 +3,6 @@ name: coverlet.msbuild mandatory in test projects
 description: >
   Every test project must reference coverlet.msbuild so coverage is collected
   during the standard build/test pipeline.
-standard: standards/golden-standard.md#12-testing
 severity: warning
 enforcement:
   classification: deterministic

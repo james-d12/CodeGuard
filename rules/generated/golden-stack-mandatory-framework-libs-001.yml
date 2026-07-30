@@ -3,7 +3,6 @@ name: Mandatory PayPoint framework libraries
 description: >
   Application projects must reference the mandatory PayPoint framework
   libraries for logging, instrumentation, health checks, and HTTP.
-standard: standards/golden-standard.md#14-technology-stack
 severity: warning
 enforcement:
   classification: deterministic

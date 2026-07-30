@@ -3,7 +3,6 @@ name: Schemas project contracts are sealed records
 description: >
   Every type declared in a *.Schemas project must be a sealed record - schemas
   are pure transport contracts, not extensible types.
-standard: standards/golden-standard.md#4-application-layer-http-api-design
 severity: critical
 enforcement:
   classification: deterministic

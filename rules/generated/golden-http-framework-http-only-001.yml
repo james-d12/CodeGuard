@@ -3,7 +3,6 @@ name: Outbound HTTP must use PP.Framework.Http
 description: >
   Application code must not subclass HttpClient or reimplement a bespoke
   SendRequest wrapper - outbound HTTP must go through PP.Framework.Http.
-standard: standards/golden-standard.md#4-application-layer-http-api-design
 severity: error
 enforcement:
   classification: deterministic

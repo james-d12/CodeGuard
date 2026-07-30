@@ -7,7 +7,6 @@ description: >
   GOLDEN-PERSISTENCE-REPOSITORY-BASE-CLASS-002 (a custom analyzer, since
   delegation detection needs method-body inspection); the "interface lives
   only in Domain" clause isn't covered by either.
-standard: standards/golden-standard.md#3-data-persistence
 severity: critical
 enforcement:
   classification: deterministic

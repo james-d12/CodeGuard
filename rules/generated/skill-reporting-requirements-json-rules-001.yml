@@ -4,7 +4,6 @@ description: >
   The DbUp component's deploymentType must be "job" in requirements.json.
   (The pre-app.json/base-app.json membership clauses need array-membership
   checks not yet available and are left for a future pass.)
-standard: .github/skills/reporting/pps-reporting-requirements/SKILL.md
 severity: error
 enforcement:
   classification: deterministic

@@ -8,7 +8,6 @@ description: >
   cross-artifact call-site and structural checks this analyzer doesn't
   perform). The specific const/YAML field pairing below is an illustrative
   judgment call, not derived from a real CRD schema.
-standard: .github/skills/utils/pps-client-config-distribution/SKILL.md
 severity: error
 enforcement:
   classification: deterministic

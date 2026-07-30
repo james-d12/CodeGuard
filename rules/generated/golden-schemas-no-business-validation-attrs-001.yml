@@ -4,7 +4,6 @@ description: >
   Request schema properties must not carry business-rule validation attributes
   such as [StringLength], [Range], [MinLength], or [RegularExpression] - those
   rules belong in domain factories, not on transport contracts.
-standard: standards/golden-standard.md#4-application-layer-http-api-design
 severity: error
 enforcement:
   classification: deterministic

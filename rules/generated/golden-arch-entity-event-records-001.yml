@@ -6,7 +6,6 @@ description: >
   covered here (which properties are mandatory isn't derivable from naming
   alone); see the schema/entity-data-shape rules for `required` property
   checks on specific shapes.
-standard: standards/golden-standard.md#2-core-architecture-patterns
 severity: warning
 enforcement:
   classification: deterministic

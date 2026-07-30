@@ -68,7 +68,6 @@ public class RuleEvaluatorTests
     {
         Id = "DDD-ENTITY-001",
         Name = "Domain entities must inherit from Entity",
-        Standard = "DDD-001",
         Severity = Severity.Error,
         Enforcement = new EnforcementMetadata { Classification = EnforcementClassification.Deterministic },
         Remediation = $"Inherit from {EntityBaseType}.",

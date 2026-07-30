@@ -8,7 +8,6 @@ description: >
   MethodName_Should_ExpectedBehavior_WhenCondition naming convention).
   Doesn't verify coverage is per HTTP client method, only that each code is
   covered somewhere in the project.
-standard: .github/skills/eventhandler/pps-eventhandler-unit-test/SKILL.md
 severity: warning
 enforcement:
   classification: deterministic

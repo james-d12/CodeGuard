@@ -2,7 +2,6 @@ id: CODING-TEST-NAMING-CONVENTION-001
 name: Test naming convention
 description: >
   Test methods named MethodName_Scenario_ExpectedBehavior.
-standard: standards/coding-standards.md#testing-standards
 severity: warning
 enforcement:
   classification: deterministic
