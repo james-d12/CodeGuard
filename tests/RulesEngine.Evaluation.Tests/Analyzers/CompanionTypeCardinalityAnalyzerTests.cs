@@ -1,4 +1,3 @@
-using RulesEngine.Analysis.AnalysisModel;
 using RulesEngine.Evaluation.Analyzers;
 
 namespace RulesEngine.Evaluation.Tests.Analyzers;

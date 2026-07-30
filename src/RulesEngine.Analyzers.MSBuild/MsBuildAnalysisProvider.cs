@@ -1,5 +1,4 @@
 using Microsoft.Build.Evaluation;
-using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.MSBuild;
 using RulesEngine.Analysis.AnalysisModel;

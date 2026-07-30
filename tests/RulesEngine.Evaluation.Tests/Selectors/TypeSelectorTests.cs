@@ -8,7 +8,7 @@ public class TypeSelectorTests
     [Fact]
     public void SelectCandidates_MatchesAnyKind_WhenPatternMatches()
     {
-        var domainClass = TestModels.Type("Contoso.Domain.Entities.Order", TypeKind.Class);
+        var domainClass = TestModels.Type("Contoso.Domain.Entities.Order");
         var domainInterface = TestModels.Type("Contoso.Domain.Entities.IOrder", TypeKind.Interface);
         var other = TestModels.Type("Contoso.Application.Commands.PlaceOrder");
 
