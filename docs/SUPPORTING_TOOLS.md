@@ -1,10 +1,10 @@
-# Rule Engine Supporting Tooling Design
+# CodeGuard Supporting Tooling Design
 
 ## Purpose
 
-The rule engine provides deterministic validation of software repositories against organisational engineering standards.
+CodeGuard provides deterministic validation of software repositories against organisational engineering standards.
 
-To make the rule engine scalable and maintainable, it should be supported by a set of developer-facing tools that help create, review, test, understand, and consume rules.
+To make CodeGuard scalable and maintainable, it should be supported by a set of developer-facing tools that help create, review, test, understand, and consume rules.
 
 The supporting tooling should make rules easy to evolve while preventing drift, invalid definitions, and unexpected behaviour.
 
@@ -12,7 +12,7 @@ The supporting tooling should make rules easy to evolve while preventing drift, 
 
 # Tooling Overview
 
-The rule engine ecosystem consists of the following commands:
+The CodeGuard ecosystem consists of the following commands:
 
 ```text
 codeguard
@@ -392,7 +392,7 @@ Recommended workflow:
 
 # 8. Integration With AI Agents
 
-The rule engine should expose machine-readable results.
+CodeGuard should expose machine-readable results.
 
 Example:
 
@@ -415,7 +415,7 @@ Agents can then:
 4. Apply fixes
 5. Re-run validation
 
-The AI does not decide whether the implementation complies; the rule engine provides deterministic evidence.
+The AI does not decide whether the implementation complies; CodeGuard provides deterministic evidence.
 
 ---
 

@@ -870,7 +870,7 @@ CodeGuard should focus on:
 
 ```text
 ┌──────────────────────────────────────────────┐
-│                 RULE ENGINE                  │
+│                  CODEGUARD                   │
 │                                              │
 │  Architecture                                │
 │  Organisational Standards                    │
