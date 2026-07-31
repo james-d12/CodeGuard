@@ -54,7 +54,7 @@ public static class ValidateCommand
 
         var solutionOption = new Option<string[]>("--solution")
         {
-            Description = "Restrict analysis to these .sln file(s) (repeatable). Default: every .sln found recursively under --path."
+            Description = "Restrict analysis to these .sln/.slnx file(s) (repeatable). Default: every .sln/.slnx file found recursively under --path."
         };
 
         var severityThresholdOption = new Option<string>("--severity-threshold")

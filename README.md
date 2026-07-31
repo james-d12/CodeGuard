@@ -50,7 +50,7 @@ root, default cwd), `--config` (explicit `.codeguard/config.yml`), `--rules-sour
 rules directory or git URL, bypassing config entirely — see below), `--branch` (git branch for
 `--rules-source`). `validate` additionally supports `--format console|json|sarif`, `--output
 <file>`, `--rule <id>` (repeatable, restricts evaluation), `--solution <file>` (repeatable,
-restricts analysis to specific `.sln` files), `--severity-threshold`, `--fail-on`.
+restricts analysis to specific `.sln`/`.slnx` files), `--severity-threshold`, `--fail-on`.
 `list-rules`/`list-standards` support `--format table|json`; `list-rules` also supports `--tag`,
 `--standard`, and `--enabled-only`. `setup` supports `--source`, `--branch`, and `--type
 directory|git` (see below).

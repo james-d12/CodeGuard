@@ -12,15 +12,30 @@ public class ValidateEndToEndTests
     [Fact]
     public async Task Validate_AgainstSimpleDomainSolution_ProducesExpectedResults()
     {
-        var solutionPath = GetFixtureSolutionPath();
+        var result = await RunValidateAsync(GetFixtureSolutionPath("SimpleDomainSolution.sln"));
+        AssertExpectedResults(result);
+    }
+
+    [Fact]
+    public async Task Validate_AgainstSimpleDomainSolutionSlnx_ProducesExpectedResults()
+    {
+        var result = await RunValidateAsync(GetFixtureSolutionPath("SimpleDomainSolution.slnx"));
+        AssertExpectedResults(result);
+    }
+
+    private static async Task<ValidationResult> RunValidateAsync(string solutionPath)
+    {
         var rulesDirectory = GetExampleRulesDirectory();
 
         var builder = new AnalysisModelBuilder([new MsBuildAnalysisProvider([solutionPath])]);
         var model = await builder.BuildAsync(Path.GetDirectoryName(solutionPath)!);
 
         var rules = RuleFileLoader.CreateDefault().LoadFromDirectory(rulesDirectory);
-        var result = new RuleEvaluator().Evaluate(rules, model);
+        return new RuleEvaluator().Evaluate(rules, model);
+    }
 
+    private static void AssertExpectedResults(ValidationResult result)
+    {
         var violationsByRuleId = result.Violations.ToLookup(v => v.RuleId);
 
         // DDD-ENTITY-001: Order inherits Entity<int> (pass); LegacyThing has no base type (fail).
@@ -63,8 +78,8 @@ public class ValidateEndToEndTests
         Assert.Equal(ValidationStatus.Failed, result.Status);
     }
 
-    private static string GetFixtureSolutionPath([CallerFilePath] string sourceFilePath = "") =>
-        Path.Combine(Path.GetDirectoryName(sourceFilePath)!, "Fixtures", "SimpleDomainSolution", "SimpleDomainSolution.sln");
+    private static string GetFixtureSolutionPath(string fileName, [CallerFilePath] string sourceFilePath = "") =>
+        Path.Combine(Path.GetDirectoryName(sourceFilePath)!, "Fixtures", "SimpleDomainSolution", fileName);
 
     private static string GetExampleRulesDirectory([CallerFilePath] string sourceFilePath = "") =>
         Path.Combine(Path.GetDirectoryName(sourceFilePath)!, "Fixtures", "ExampleRules");

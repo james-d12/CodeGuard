@@ -1,7 +1,7 @@
 namespace CodeGuard.Cli.Support;
 
 /// <summary>
-/// Discovers .sln files under a repository root for the validate command, recursively so the
+/// Discovers .sln/.slnx files under a repository root for the validate command, recursively so the
 /// solution doesn't need to sit at the repo root, skipping build/tooling directories.
 /// </summary>
 public static class SolutionFileLocator
@@ -29,7 +29,7 @@ public static class SolutionFileLocator
         var candidates = FindSolutionFiles(repoRoot).ToList();
         if (candidates.Count == 0)
         {
-            throw new InvalidOperationException($"No .sln file found under '{repoRoot}'.");
+            throw new InvalidOperationException($"No .sln or .slnx file found under '{repoRoot}'.");
         }
 
         return candidates;
@@ -38,6 +38,11 @@ public static class SolutionFileLocator
     private static IEnumerable<string> FindSolutionFiles(string directoryPath)
     {
         foreach (var file in Directory.EnumerateFiles(directoryPath, "*.sln"))
+        {
+            yield return file;
+        }
+
+        foreach (var file in Directory.EnumerateFiles(directoryPath, "*.slnx"))
         {
             yield return file;
         }
