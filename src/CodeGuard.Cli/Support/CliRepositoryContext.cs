@@ -8,7 +8,7 @@ namespace CodeGuard.Cli.Support;
 
 /// <summary>
 /// Resolves the repo root/config/rule-directory layout shared by every CLI command, so
-/// validate/list-rules/explain-rule don't each duplicate the resolution logic.
+/// validate/rules list/rules explain don't each duplicate the resolution logic.
 ///
 /// Rules-path resolution precedence (see docs/SETUP_COMMAND_PLAN.md):
 ///   1. <paramref name="rulesSource"/> ("--rules-source"), if passed - highest precedence, an
@@ -68,7 +68,7 @@ public sealed class CliRepositoryContext
     /// <summary>
     /// Non-throwing counterpart to <see cref="LoadRules"/>/<see cref="LoadRulesWithSource"/> -
     /// validates every configured rule file and reports every problem found instead of throwing on
-    /// the first one. Used by `check-rules` and `validate`'s pre-flight rule-set gate
+    /// the first one. Used by `rules check` and `validate`'s pre-flight rule-set gate
     /// (`docs/done/RULE_VALIDATION_PLAN.md`).
     /// </summary>
     public RuleSetValidationReport ValidateRules() =>

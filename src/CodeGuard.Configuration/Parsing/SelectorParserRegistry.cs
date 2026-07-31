@@ -7,6 +7,8 @@ public sealed class SelectorParserRegistry(IEnumerable<ISelectorParser> parsers)
 {
     private readonly Dictionary<string, ISelectorParser> _byKind = parsers.ToDictionary(p => p.Kind);
 
+    public IReadOnlyCollection<string> Kinds => _byKind.Keys;
+
     public ITargetSelector Parse(JsonObject node)
     {
         var kind = node.GetRequiredString("kind");

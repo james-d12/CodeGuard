@@ -20,9 +20,7 @@ if (!MSBuildLocator.IsRegistered)
 var rootCommand = new RootCommand("Deterministic engineering rules and analysis engine");
 
 rootCommand.Subcommands.Add(ValidateCommand.Build());
-rootCommand.Subcommands.Add(CheckRulesCommand.Build());
-rootCommand.Subcommands.Add(ListRulesCommand.Build());
-rootCommand.Subcommands.Add(ExplainRuleCommand.Build());
+rootCommand.Subcommands.Add(RulesCommand.Build());
 rootCommand.Subcommands.Add(SetupCommand.Build());
 
 return await rootCommand.Parse(args).InvokeAsync();

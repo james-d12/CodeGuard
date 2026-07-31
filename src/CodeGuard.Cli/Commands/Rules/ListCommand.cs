@@ -4,9 +4,9 @@ using System.Text.Json.Serialization;
 using CodeGuard.Cli.Support;
 using CodeGuard.RuleModel.Rules;
 
-namespace CodeGuard.Cli.Commands;
+namespace CodeGuard.Cli.Commands.Rules;
 
-public static class ListRulesCommand
+public static class ListCommand
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -39,7 +39,7 @@ public static class ListRulesCommand
             Description = "Only include enabled rules."
         };
 
-        var command = new Command("list-rules", "List rules discovered from the configured rule directories");
+        var command = new Command("list", "List rules discovered from the configured rule directories");
         command.Add(pathOption);
         command.Add(configOption);
         command.Add(rulesSourceOption);

@@ -40,40 +40,42 @@ If you've installed the tool (see [Installation](#installation)), run commands d
 | Command | Description |
 |---|---|
 | `validate` | Validate a repository against configured rules |
-| `list-rules` | List rules discovered from the configured rule directories |
-| `explain-rule <ruleId>` | Print full metadata and source YAML for a single rule |
-| `list-standards` | List standards referenced by the configured rules |
+| `rules list` | List rules discovered from the configured rule directories |
+| `rules explain <ruleId>` | Print full metadata and source YAML for a single rule |
+| `rules check` | Validate a set of rule YAML files for structural correctness |
+| `rules create` | Interactively scaffold a new rule YAML file |
 | `setup` | Configure the rules source (a directory or git repo) used across all repos |
 
-Common options shared by `validate`/`list-rules`/`explain-rule`/`list-standards`: `--path` (repo
-root, default cwd), `--config` (explicit `.codeguard/config.yml`), `--rules-source` (ad-hoc
-rules directory or git URL, bypassing config entirely — see below), `--branch` (git branch for
-`--rules-source`). `validate` additionally supports `--format console|json|sarif`, `--output
-<file>`, `--rule <id>` (repeatable, restricts evaluation), `--solution <file>` (repeatable,
-restricts analysis to specific `.sln`/`.slnx` files), `--severity-threshold`, `--fail-on`.
-`list-rules`/`list-standards` support `--format table|json`; `list-rules` also supports `--tag`,
-`--standard`, and `--enabled-only`. `setup` supports `--source`, `--branch`, and `--type
-directory|git` (see below).
+Common options shared by `validate`/`rules list`/`rules explain`/`rules check`/`rules create`:
+`--path` (repo root, default cwd), `--config` (explicit `.codeguard/config.yml`),
+`--rules-source` (ad-hoc rules directory or git URL, bypassing config entirely — see below),
+`--branch` (git branch for `--rules-source`). `validate` additionally supports `--format
+console|json|sarif|html`, `--output <file>`, `--rule <id>` (repeatable, restricts evaluation),
+`--solution <file>` (repeatable, restricts analysis to specific `.sln`/`.slnx` files),
+`--severity-threshold`, `--fail-on`. `rules list` supports `--format table|json`, `--tag`, and
+`--enabled-only`. `rules check` supports `--format console|json`. `setup` supports `--source`,
+`--branch`, and `--type directory|git` (see below).
 
 Examples (installed tool):
 
 ```bash
-codeguard list-rules
-codeguard explain-rule DDD-ENTITY-001
+codeguard rules list
+codeguard rules explain DDD-ENTITY-001
+codeguard rules create
 codeguard validate --format json --output report.json
 ```
 
 Examples (from a checkout of this repo):
 
 ```bash
-dotnet run --project src/CodeGuard.Cli -- list-rules
-dotnet run --project src/CodeGuard.Cli -- explain-rule DDD-ENTITY-001
+dotnet run --project src/CodeGuard.Cli -- rules list
+dotnet run --project src/CodeGuard.Cli -- rules explain DDD-ENTITY-001
 dotnet run --project src/CodeGuard.Cli -- validate --format json --output report.json
 ```
 
 ### Configuring where rules come from
 
-By default, `validate`/`list-rules`/etc. look for rules via `.codeguard/config.yml` in the
+By default, `validate`/`rules list`/etc. look for rules via `.codeguard/config.yml` in the
 target repo. Two ways to point them somewhere else:
 
 **One-time setup**, so every command works out of the box against any repo without per-repo

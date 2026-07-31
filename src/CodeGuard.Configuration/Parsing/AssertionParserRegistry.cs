@@ -7,6 +7,8 @@ public sealed class AssertionParserRegistry(IEnumerable<IAssertionParser> parser
 {
     private readonly Dictionary<string, IAssertionParser> _byKind = parsers.ToDictionary(p => p.Kind);
 
+    public IReadOnlyCollection<string> Kinds => _byKind.Keys;
+
     public IAssertion Parse(JsonObject assertionEntry)
     {
         if (assertionEntry.Count != 1)

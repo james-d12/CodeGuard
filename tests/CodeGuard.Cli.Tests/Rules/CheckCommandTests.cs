@@ -1,11 +1,12 @@
-using CodeGuard.Cli.Commands;
+using CodeGuard.Cli.Commands.Rules;
+using CodeGuard.Cli.Tests;
 
-namespace CodeGuard.Cli.Tests;
+namespace CodeGuard.Cli.Tests.Rules;
 
-/// <summary>Covers the `check-rules` command end-to-end via its System.CommandLine `Command`, and the
+/// <summary>Covers the `rules check` command end-to-end via its System.CommandLine `Command`, and the
 /// pre-flight gate `validate` shares with it (docs/done/RULE_VALIDATION_PLAN.md).</summary>
 [Collection(ConsoleOutputCollection.Name)]
-public class CheckRulesCommandTests : IDisposable
+public class CheckCommandTests : IDisposable
 {
     private readonly string _rulesDir = Directory.CreateTempSubdirectory("rulesengine-checkrules-").FullName;
 
@@ -85,7 +86,7 @@ public class CheckRulesCommandTests : IDisposable
         Console.SetOut(writer);
         try
         {
-            var exitCode = await CheckRulesCommand.Build().Parse(args.ToArray()).InvokeAsync();
+            var exitCode = await CheckCommand.Build().Parse(args.ToArray()).InvokeAsync();
             return (exitCode, writer.ToString());
         }
         finally

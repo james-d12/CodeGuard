@@ -46,7 +46,7 @@ public sealed class RuleFileLoader(
 
     /// <summary>
     /// Validates every rule file under <paramref name="directoryPaths"/> and reports every problem
-    /// found, rather than throwing on the first one - used by the CLI's `check-rules` command and by
+    /// found, rather than throwing on the first one - used by the CLI's `rules check` command and by
     /// `validate`'s pre-flight rule-set gate. Missing directories are skipped silently, matching the
     /// existing repository-discovery behavior (`docs/done/RULE_VALIDATION_PLAN.md`).
     /// </summary>

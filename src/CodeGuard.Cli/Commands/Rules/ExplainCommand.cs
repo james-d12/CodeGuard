@@ -2,9 +2,9 @@ using System.CommandLine;
 using CodeGuard.Cli.Support;
 using CodeGuard.RuleModel.Rules;
 
-namespace CodeGuard.Cli.Commands;
+namespace CodeGuard.Cli.Commands.Rules;
 
-public static class ExplainRuleCommand
+public static class ExplainCommand
 {
     public static Command Build()
     {
@@ -17,7 +17,7 @@ public static class ExplainRuleCommand
             Description = "The rule ID to explain, e.g. DDD-ENTITY-001."
         };
 
-        var command = new Command("explain-rule", "Print full metadata and source YAML for a single rule");
+        var command = new Command("explain", "Print full metadata and source YAML for a single rule");
         command.Add(pathOption);
         command.Add(configOption);
         command.Add(rulesSourceOption);

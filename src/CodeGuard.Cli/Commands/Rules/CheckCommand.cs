@@ -1,9 +1,9 @@
 using System.CommandLine;
 using CodeGuard.Cli.Support;
 
-namespace CodeGuard.Cli.Commands;
+namespace CodeGuard.Cli.Commands.Rules;
 
-public static class CheckRulesCommand
+public static class CheckCommand
 {
     public static Command Build()
     {
@@ -20,7 +20,7 @@ public static class CheckRulesCommand
         formatOption.AcceptOnlyFromAmong("console", "json");
 
         var command = new Command(
-            "check-rules",
+            "check",
             "Validate a set of rule YAML files for structural correctness (schema conformance, known " +
             "selector/assertion/analyzer kinds, no duplicate rule ids) without evaluating them against a repository. " +
             "Use --rules-source to point directly at a folder; otherwise checks whatever this repo is configured to use.");

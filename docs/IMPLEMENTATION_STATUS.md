@@ -165,13 +165,16 @@ future rule needs it, you'll need to add a
 ## CLI commands (PR7)
 
 All four commands live in `CodeGuard/CodeGuard.Cli/Commands/`, share `--path`/`--config`
-resolution via `Support/CliRepositoryContext.cs`, and are composed in `Program.cs`.
+resolution via `Support/CliRepositoryContext.cs`, and are composed in `Program.cs`. **Note:**
+the table below documents the original PR7 command names; `list-rules`/`explain-rule`/`check-rules`
+were later regrouped under a `rules` subcommand (`rules list`/`rules explain`/`rules check`) — see
+"Post-v1 addition: `rules` subcommand group + `rules create`" below.
 
 | Command | Options | Notes |
 |---|---|---|
 | `validate` | `--path`, `--config`, `--format console\|json\|sarif`, `--output <file>`, `--rule <id>` (repeatable), `--solution <path>` (repeatable), `--severity-threshold info\|warning\|error\|critical`, `--fail-on info\|warning\|error\|critical` | Providers run `[RepositoryFileProvider, MsBuildAnalysisProvider]` in that order. `SolutionFileLocator` (`Cli/Support/SolutionFileLocator.cs`) discovers `.sln`/`.slnx` files recursively under `--path` (skipping `bin`/`obj`/`.git`/`.vs`/`.idea`/`node_modules`), analyzing **every** `.sln`/`.slnx` file found by default; `--solution` restricts to specific file(s) instead. `MsBuildAnalysisProvider` takes the resulting list and dedupes any project referenced by more than one solution (by project path) so it's only built/reported once, attributed to whichever solution is processed first. `--severity-threshold` filters the reported `ValidationResult` (recomputing `RulesPassed`/`RulesFailed`/`Status`); `--fail-on` (default `info`) independently decides the process exit code from what's left after that filter — both default to today's original behavior (any violation reported, any violation fails) when omitted. |
-| `list-rules` | `--path`, `--config`, `--format table\|json`, `--tag` (repeatable, any-match), `--enabled-only` | Pure rule loading — no analysis model, no Roslyn/MSBuild, so this is cheap for an agent to call before generating code. |
-| `explain-rule <ruleId>` | `--path`, `--config` | Uses `RuleFileLoader.LoadFromDirectoriesWithSource` to find the backing YAML file, then prints parsed metadata plus the **raw YAML source verbatim** (rather than trying to introspect configured selector/assertion parameters, which `ITargetSelector`/`IAssertion` don't expose beyond `Kind` — see decision #5 below). |
+| `rules list` (was `list-rules`) | `--path`, `--config`, `--format table\|json`, `--tag` (repeatable, any-match), `--enabled-only` | Pure rule loading — no analysis model, no Roslyn/MSBuild, so this is cheap for an agent to call before generating code. |
+| `rules explain <ruleId>` (was `explain-rule`) | `--path`, `--config` | Uses `RuleFileLoader.LoadFromDirectoriesWithSource` to find the backing YAML file, then prints parsed metadata plus the **raw YAML source verbatim** (rather than trying to introspect configured selector/assertion parameters, which `ITargetSelector`/`IAssertion` don't expose beyond `Kind` — see decision #5 below). |
 
 `CodeGuardConfigLoader.LoadOrDefault` now has a two-argument overload
 (`repoRoot, explicitConfigPath`) backing `--config`; the original one-argument overload still
@@ -227,6 +230,38 @@ clean report, and there was no way to check a folder of rule YAML in isolation.
   `Console.Out`). Both new CLI test classes share a `[Collection(ConsoleOutputCollection.Name)]` —
   xUnit parallelizes different test classes by default, and two classes independently swapping the
   process-global `Console.Out` will race unless serialized into one collection.
+
+### Post-v1 addition: `rules` subcommand group + `rules create`
+
+The flat command names `check-rules`/`list-rules`/`explain-rule` were regrouped under a new
+`rules` parent command (`Cli/Commands/RulesCommand.cs`, a `Command` whose own `.Subcommands` are
+populated the same way `rootCommand`'s are in `Program.cs` — this is the first place in the repo
+a `Command` nests another `Command` rather than being a direct child of `rootCommand`):
+`check-rules` → `rules check`, `list-rules` → `rules list`, `explain-rule <id>` → `rules explain
+<id>`. `validate` and `setup` stay top-level. This was a clean break (no hidden aliases for the
+old flat names) since the tool is still pre-1.0.
+
+The command classes moved from `Cli/Commands/*.cs` into `Cli/Commands/Rules/*.cs`
+(`CheckRulesCommand` → `Rules.CheckCommand`, `ListRulesCommand` → `Rules.ListCommand`,
+`ExplainRuleCommand` → `Rules.ExplainCommand`), namespace `CodeGuard.Cli.Commands.Rules`. Tests
+mirrored the move (`CheckRulesCommandTests` → `tests/CodeGuard.Cli.Tests/Rules/CheckCommandTests.cs`).
+
+A new `rules create` command (`Rules/CreateCommand.cs`) interactively scaffolds a rule YAML file.
+Rather than hardcoding each target-selector/assertion kind's parameter shape into the CLI (there
+are 14 selector kinds and ~35 assertion kinds in `DefaultParsers`, each with different parameter
+names), it drives a generic kind-picker + key/value parameter loop off
+`SelectorParserRegistry.Kinds`/`AssertionParserRegistry.Kinds` (new one-line accessors added to
+both registries, backed by the `_byKind` dictionary each already had) — so it automatically
+supports new kinds with zero CLI changes when they're registered in `DefaultParsers`. It only
+authors the `target`+`assertions` rule shape, not the `analyzer`-referencing shape (which points
+at a specific pre-existing `ICustomAnalyzer` by name — a rarer, more advanced path). The assembled
+document is serialized to YAML via a new `CodeGuard.Configuration.Writing.RuleYamlWriter`
+(wrapping `YamlDotNet.Serialization.SerializerBuilder`), keeping the `YamlDotNet` dependency
+confined to `CodeGuard.Configuration` rather than adding it to `CodeGuard.Cli` directly. Before
+reporting success, it runs the same `CliRepositoryContext.ValidateRules()` (`RuleFileLoader
+.ValidateDirectories`) that `rules check`/`validate`'s pre-flight gate use, against the rules
+directory including the newly written file — catching schema errors and duplicate-ID conflicts
+before the user walks away thinking the rule is good.
 
 ## The 11 starter rules
 

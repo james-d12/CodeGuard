@@ -35,7 +35,7 @@ public static class SetupCommand
         };
         typeOption.AcceptOnlyFromAmong("directory", "git");
 
-        var command = new Command("setup", "Configure the rules source used by validate/list-rules/etc. across all repos");
+        var command = new Command("setup", "Configure the rules source used by validate/rules list/etc. across all repos");
         command.Add(sourceOption);
         command.Add(branchOption);
         command.Add(typeOption);
