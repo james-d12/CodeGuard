@@ -13,7 +13,7 @@
         <IsPackable>true</IsPackable>
         <PackAsTool>true</PackAsTool>
         <ToolCommandName>rules-engine</ToolCommandName>
-        <PackageId>RuleEngine.NET</PackageId>
+        <PackageId>RulesEngine.NET</PackageId>
         <Description>Deterministic analysis/validation engine for enforcing engineering standards (DDD, architecture layering, C# conventions) against .NET repositories.</Description>
         <PackageTags>dotnet-tool;static-analysis;roslyn;ddd;architecture;code-quality</PackageTags>
         <PackageReadmeFile>README.md</PackageReadmeFile>
