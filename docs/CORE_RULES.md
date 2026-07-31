@@ -1,14 +1,14 @@
-# Deterministic Software Rule Engine
+# CodeGuard: A Deterministic Software Rule Engine
 
 ## Core Scope, Responsibilities and Boundaries
 
 ## 1. Purpose
 
-The Rule Engine is a deterministic policy and verification platform for software systems.
+CodeGuard is a deterministic policy and verification platform for software systems.
 
 Its purpose is to allow an organisation to express its own engineering, architectural, structural, and governance policies as executable rules, and evaluate those rules consistently across repositories and systems.
 
-The Rule Engine is **not intended to replace SonarQube, Roslyn analyzers, linters, security scanners, testing frameworks, or human engineering judgement**.
+CodeGuard is **not intended to replace SonarQube, Roslyn analyzers, linters, security scanners, testing frameworks, or human engineering judgement**.
 
 Its primary purpose is to answer:
 
@@ -20,11 +20,11 @@ The engine should make organisational standards executable, repeatable, explaina
 
 # 2. Core Design Principle
 
-The Rule Engine should maximise the amount of verification that can be performed **deterministically**.
+CodeGuard should maximise the amount of verification that can be performed **deterministically**.
 
 It should never use AI to answer a question that can be answered reliably and cheaply through deterministic analysis.
 
-Where a question is inherently ambiguous or requires judgement, the Rule Engine should not attempt to manufacture certainty. Instead, it should expose evidence that can be consumed by an AI reviewer or human engineer.
+Where a question is inherently ambiguous or requires judgement, CodeGuard should not attempt to manufacture certainty. Instead, it should expose evidence that can be consumed by an AI reviewer or human engineer.
 
 The overall model is:
 
@@ -46,17 +46,17 @@ Deterministic Rule Evaluation
       └── EVIDENCE / REVIEW REQUIRED
 ```
 
-The Rule Engine should therefore be viewed as a **deterministic policy layer over a software analysis model**, rather than as another general-purpose static analysis tool.
+CodeGuard should therefore be viewed as a **deterministic policy layer over a software analysis model**, rather than as another general-purpose static analysis tool.
 
 ---
 
 # 3. Core Pillars
 
-The Rule Engine should focus on six core pillars.
+CodeGuard should focus on six core pillars.
 
 ## Pillar 1 — Architectural Policy
 
-The Rule Engine should enforce organisation-specific architectural boundaries and invariants.
+CodeGuard should enforce organisation-specific architectural boundaries and invariants.
 
 Examples:
 
@@ -87,7 +87,7 @@ assertions:
       must_not_exist: true
 ```
 
-The important distinction is that the Rule Engine should express the **architectural policy**, not the implementation mechanism used to discover it.
+The important distinction is that CodeGuard should express the **architectural policy**, not the implementation mechanism used to discover it.
 
 The engine should not need to know whether the dependency was discovered through a `.csproj`, Roslyn, or another language's project system.
 
@@ -95,7 +95,7 @@ The engine should not need to know whether the dependency was discovered through
 
 ## Pillar 2 — Organisational Standards and Conventions
 
-The Rule Engine should enforce deterministic conventions that are specific to the organisation, team, or repository.
+CodeGuard should enforce deterministic conventions that are specific to the organisation, team, or repository.
 
 Examples:
 
@@ -146,7 +146,7 @@ These are organisation-specific policies that are unlikely to be fully covered b
 
 ## Pillar 3 — System and Repository Governance
 
-The Rule Engine should verify that software repositories and systems meet defined organisational requirements.
+CodeGuard should verify that software repositories and systems meet defined organisational requirements.
 
 Examples:
 
@@ -189,7 +189,7 @@ This moves the engine beyond traditional source-code analysis and into **softwar
 
 ## Pillar 4 — Cross-System and Cross-Technology Policy
 
-The Rule Engine should be able to reason across technology boundaries.
+CodeGuard should be able to reason across technology boundaries.
 
 This is potentially one of its strongest differentiators from traditional static analysis tools.
 
@@ -206,7 +206,7 @@ C# / .NET
     └── Documentation
 ```
 
-The Rule Engine should be able to evaluate policies across those boundaries.
+CodeGuard should be able to evaluate policies across those boundaries.
 
 Examples:
 
@@ -225,7 +225,7 @@ It is **policy evaluation over a model of the complete software system**.
 
 ## Pillar 5 — Change and Impact Policy
 
-The Rule Engine should be capable of consuming deterministic information about changes.
+CodeGuard should be capable of consuming deterministic information about changes.
 
 However, its primary responsibility should be to evaluate **known policies about changes**, rather than to become a general-purpose code metrics platform.
 
@@ -319,7 +319,7 @@ Severity:
   BLOCKER
 ```
 
-The Rule Engine should make failures understandable to:
+CodeGuard should make failures understandable to:
 
 * developers
 * CI/CD systems
@@ -333,11 +333,11 @@ A failure without useful evidence is significantly less valuable than a failure 
 
 # 4. The Normalised Analysis Model
 
-The most important architectural component may not actually be the Rule Engine itself.
+The most important architectural component may not actually be CodeGuard itself.
 
 It is the **Normalised Analysis Model** that sits underneath it.
 
-The Rule Engine should not directly understand:
+CodeGuard should not directly understand:
 
 * Roslyn
 * `.csproj`
@@ -372,7 +372,7 @@ Service Catalogue
   → Owner
 ```
 
-The Rule Engine then operates against those concepts.
+CodeGuard then operates against those concepts.
 
 Conceptually:
 
@@ -388,19 +388,19 @@ Conceptually:
             Normalised Model
                      │
                      ▼
-                Rule Engine
+                 CodeGuard
                      │
                      ▼
                 Rule Result
 ```
 
-This allows the Rule Engine to remain technology-independent while allowing organisations to define their own concepts.
+This allows CodeGuard to remain technology-independent while allowing organisations to define their own concepts.
 
 ---
 
 # 5. Organisation-Specific Concepts
 
-The Rule Engine should not hardcode concepts such as:
+CodeGuard should not hardcode concepts such as:
 
 * Entity
 * Aggregate
@@ -447,19 +447,19 @@ Rules
 "What is allowed or required?"
 ```
 
-This separation is essential for keeping the Rule Engine reusable.
+This separation is essential for keeping CodeGuard reusable.
 
 ---
 
-# 6. What the Rule Engine SHOULD NOT Try to Validate
+# 6. What CodeGuard SHOULD NOT Try to Validate
 
-The Rule Engine should have explicit boundaries.
+CodeGuard should have explicit boundaries.
 
 It should deliberately avoid duplicating capabilities already provided effectively by mature tools.
 
 ## 6.1 General Code Quality Metrics
 
-The Rule Engine should not attempt to replace SonarQube or equivalent tools for:
+CodeGuard should not attempt to replace SonarQube or equivalent tools for:
 
 * Cyclomatic complexity.
 * Cognitive complexity.
@@ -473,7 +473,7 @@ The Rule Engine should not attempt to replace SonarQube or equivalent tools for:
 
 These can be consumed as external evidence if necessary.
 
-The Rule Engine should focus on how those facts relate to **organisational policy**, rather than recreating the analysis itself.
+CodeGuard should focus on how those facts relate to **organisational policy**, rather than recreating the analysis itself.
 
 For example:
 
@@ -481,18 +481,18 @@ For example:
 Sonar:
   Cognitive complexity = 24
 
-Rule Engine:
+CodeGuard:
   New code exceeding organisation threshold
   requires additional review
 ```
 
-The Rule Engine consumes the evidence; it does not need to calculate cognitive complexity itself.
+CodeGuard consumes the evidence; it does not need to calculate cognitive complexity itself.
 
 ---
 
 ## 6.2 Standard Language and Framework Linting
 
-The Rule Engine should not replace:
+CodeGuard should not replace:
 
 * Roslyn analyzers.
 * .NET analyzers.
@@ -505,13 +505,13 @@ The Rule Engine should not replace:
 
 These tools already excel at identifying language-specific issues.
 
-The Rule Engine should instead consume their results when those results are relevant to organisational policy.
+CodeGuard should instead consume their results when those results are relevant to organisational policy.
 
 ---
 
 ## 6.3 Security Scanning
 
-The Rule Engine should not attempt to become a full security scanner.
+CodeGuard should not attempt to become a full security scanner.
 
 It should not duplicate:
 
@@ -524,7 +524,7 @@ It should not duplicate:
 
 Instead, it should consume the results of specialist security tooling.
 
-The Rule Engine may enforce policies around those results, for example:
+CodeGuard may enforce policies around those results, for example:
 
 ```text
 No critical vulnerabilities may be present in production.
@@ -536,7 +536,7 @@ But the vulnerability discovery itself belongs to specialist tools.
 
 ## 6.4 Automated Testing
 
-The Rule Engine should not attempt to prove that software is functionally correct.
+CodeGuard should not attempt to prove that software is functionally correct.
 
 It cannot reliably determine:
 
@@ -544,7 +544,7 @@ It cannot reliably determine:
 
 Tests, integration tests, contract tests, and end-to-end tests are responsible for this.
 
-The Rule Engine can enforce policies such as:
+CodeGuard can enforce policies such as:
 
 ```text
 Every command must have tests.
@@ -556,13 +556,13 @@ or:
 Every public API change must have corresponding contract tests.
 ```
 
-But the Rule Engine should not replace the tests themselves.
+But CodeGuard should not replace the tests themselves.
 
 ---
 
 ## 6.5 Business Necessity
 
-The Rule Engine should not attempt to determine:
+CodeGuard should not attempt to determine:
 
 > "Does the business actually need this feature?"
 
@@ -570,13 +570,13 @@ That is a product and business decision.
 
 It may consume metadata about requirements or change types, but it cannot reliably determine customer value.
 
-This should remain outside the deterministic Rule Engine.
+This should remain outside CodeGuard's deterministic scope.
 
 ---
 
 ## 6.6 Subjective Architectural Quality
 
-The Rule Engine should not attempt to prove:
+CodeGuard should not attempt to prove:
 
 > "This is a good architecture."
 
@@ -590,7 +590,7 @@ or:
 
 These require judgement.
 
-The Rule Engine can identify deterministic evidence:
+CodeGuard can identify deterministic evidence:
 
 ```text
 +12 classes
@@ -609,7 +609,7 @@ That is a candidate for targeted AI or human review.
 
 ## 6.7 General AI Code Review
 
-The Rule Engine should not become an AI code reviewer.
+CodeGuard should not become an AI code reviewer.
 
 It should not attempt to evaluate:
 
@@ -650,7 +650,7 @@ Send entire repository to AI
 
 # 7. Relationship with SonarQube and Static Analysis
 
-The Rule Engine should be complementary to existing tooling.
+CodeGuard should be complementary to existing tooling.
 
 A useful architecture is:
 
@@ -670,13 +670,13 @@ A useful architecture is:
                Normalised Evidence
                         │
                         ▼
-                  Rule Engine
+                  CodeGuard
                         │
                         ▼
                  Policy Decision
 ```
 
-The Rule Engine should answer:
+CodeGuard should answer:
 
 > "Given the evidence available, does this system comply with our policies?"
 
@@ -773,9 +773,9 @@ It is to make exceptions **visible, accountable and temporary where appropriate*
 
 ---
 
-# 10. The Rule Engine's Ideal Position
+# 10. CodeGuard's Ideal Position
 
-The Rule Engine should ultimately be positioned as:
+CodeGuard should ultimately be positioned as:
 
 > **A deterministic policy engine that evaluates an organisation's software architecture, engineering standards, and system governance against a normalised model of its software systems.**
 
@@ -798,13 +798,13 @@ Its value lies in formalising the rules that are currently often:
 * inconsistently applied
 * difficult to enforce automatically
 
-The Rule Engine turns those policies into **executable organisational knowledge**.
+CodeGuard turns those policies into **executable organisational knowledge**.
 
 ---
 
 # 11. Core Product Test
 
-A useful test for whether something belongs in the Rule Engine is:
+A useful test for whether something belongs in CodeGuard is:
 
 > **Can this be expressed as a deterministic statement about a known software fact, structure, relationship, or organisational policy?**
 
@@ -866,7 +866,7 @@ Those questions may be surfaced as **review opportunities**, but should not be p
 
 # 12. Final Scope
 
-The Rule Engine should focus on:
+CodeGuard should focus on:
 
 ```text
 ┌──────────────────────────────────────────────┐
@@ -921,4 +921,4 @@ It is:
 
 > **"Build a deterministic, technology-independent mechanism for turning an organisation's engineering and architectural policies into executable, explainable, and consistently enforced rules."**
 
-That boundary should remain central to the product. It keeps the Rule Engine focused, avoids duplicating mature tooling, and creates a clear role for it within an AI-assisted engineering environment.
+That boundary should remain central to the product. It keeps CodeGuard focused, avoids duplicating mature tooling, and creates a clear role for it within an AI-assisted engineering environment.

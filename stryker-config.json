@@ -1,7 +1,7 @@
 {
   "stryker-config": {
     "solution": "CodeGuard.sln",
-    "mutate": ["**/*.cs", "!src/CodeGuard.Cli/**/*.cs"],
+    "mutate": ["**/*.cs", "!src/CodeGuard.Cli/**/*.cs", "!tests/CodeGuard.IntegrationTests/**/*.cs"],
     "reporters": ["progress", "html", "json"],
     "thresholds": {
       "high": 80,

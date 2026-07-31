@@ -1,8 +1,8 @@
-# Rule Engine Refactoring & Evolution Design Document
+# CodeGuard Refactoring & Evolution Design Document
 
 ## 1. Purpose
 
-This document defines the refactoring and architectural evolution required for the existing deterministic rule engine.
+This document defines the refactoring and architectural evolution required for the existing deterministic CodeGuard.
 
 The initial implementation established a generic rule engine with:
 
@@ -745,12 +745,12 @@ This keeps the system honest about what it is actually analysing.
 
 Roslyn should remain the primary mechanism for C# semantic analysis.
 
-However, the core rule engine should not depend directly on Roslyn concepts everywhere.
+However, the core of CodeGuard should not depend directly on Roslyn concepts everywhere.
 
 The architecture should be:
 
 ```text
-                  Rule Engine
+                   CodeGuard
                        │
                        ▼
               Analysis Abstractions
@@ -762,9 +762,9 @@ The architecture should be:
 
 Roslyn is responsible for providing C# semantic information.
 
-The rule engine is responsible for evaluating organisational requirements against that information.
+CodeGuard is responsible for evaluating organisational requirements against that information.
 
-This separation allows the rule engine to remain focused on governance rather than becoming a second Roslyn framework.
+This separation allows CodeGuard to remain focused on governance rather than becoming a second Roslyn framework.
 
 ---
 
@@ -789,7 +789,7 @@ Analysis Session
     └── Repository Index
             │
             ▼
-        Rule Engine
+         CodeGuard
             │
             ├── Rule 1
             ├── Rule 2
@@ -958,7 +958,7 @@ Run all rule tests
         └── 3 failed
 ```
 
-This should become a core part of developing the rule engine.
+This should become a core part of developing CodeGuard.
 
 ---
 
@@ -1046,7 +1046,7 @@ The output should be deterministic and stable.
 
 # 16. AI Integration Considerations
 
-The rule engine is intended to provide deterministic validation for AI-assisted development.
+CodeGuard is intended to provide deterministic validation for AI-assisted development.
 
 The AI should not be responsible for determining whether a deterministic rule has passed.
 
@@ -1059,7 +1059,7 @@ AI Agent
 Generate / Modify Code
     │
     ▼
-Deterministic Rule Engine
+Deterministic CodeGuard
     │
     ├── PASS
     │
@@ -1077,7 +1077,7 @@ Deterministic Rule Engine
 
 The AI can interpret diagnostics and make changes.
 
-The rule engine remains the authority for deterministic requirements.
+CodeGuard remains the authority for deterministic requirements.
 
 This creates a useful separation:
 
@@ -1087,7 +1087,7 @@ AI
     → Reason
     → Remediate
 
-Rule Engine
+CodeGuard
     → Validate
     → Enforce
     → Explain
@@ -1098,7 +1098,7 @@ Human
     → Govern
 ```
 
-The rule engine should therefore optimise diagnostics for machine consumption as well as human consumption.
+CodeGuard should therefore optimise diagnostics for machine consumption as well as human consumption.
 
 ---
 
