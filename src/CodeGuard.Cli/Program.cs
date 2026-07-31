@@ -22,5 +22,6 @@ var rootCommand = new RootCommand("Deterministic engineering rules and analysis 
 rootCommand.Subcommands.Add(ValidateCommand.Build());
 rootCommand.Subcommands.Add(RulesCommand.Build());
 rootCommand.Subcommands.Add(SetupCommand.Build());
+rootCommand.Subcommands.Add(InfoCommand.Build());
 
 return await rootCommand.Parse(args).InvokeAsync();

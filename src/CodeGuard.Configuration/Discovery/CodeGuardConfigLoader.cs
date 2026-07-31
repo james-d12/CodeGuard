@@ -25,7 +25,7 @@ public static class CodeGuardConfigLoader
             return Deserializer.Deserialize<CodeGuardConfig>(File.ReadAllText(explicitConfigPath));
         }
 
-        var configPath = Path.Combine(repoRoot, DefaultConfigRelativePath);
+        var configPath = ResolveConfigFilePath(repoRoot, null);
         if (!File.Exists(configPath))
         {
             return DefaultConfig;
@@ -34,6 +34,10 @@ public static class CodeGuardConfigLoader
         var yaml = File.ReadAllText(configPath);
         return Deserializer.Deserialize<CodeGuardConfig>(yaml);
     }
+
+    /// <summary>The config file path <see cref="LoadOrDefault(string,string?)"/> would read from, without loading it.</summary>
+    public static string ResolveConfigFilePath(string repoRoot, string? explicitConfigPath) =>
+        explicitConfigPath ?? Path.Combine(repoRoot, DefaultConfigRelativePath);
 
     private static CodeGuardConfig DefaultConfig { get; } = new()
     {

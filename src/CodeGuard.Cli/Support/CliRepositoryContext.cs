@@ -17,11 +17,17 @@ namespace CodeGuard.Cli.Support;
 ///   3. `&lt;repoRoot&gt;/.codeguard/config.yml`, if present (unchanged existing behavior).
 ///   4. A prior `codeguard setup` run's global settings, if the above yield no rules paths.
 ///   5. The hardcoded `["rules"]` fallback already baked into CodeGuardConfigLoader.
+///
+/// <see cref="RulesProvenance"/>/<see cref="ConfigFilePath"/>/<see cref="GlobalSettings"/> record
+/// which of the above actually won, for `codeguard info` to report back to the user.
 /// </summary>
 public sealed class CliRepositoryContext
 {
     public required string RepoRoot { get; init; }
     public required RepositoryLayout Layout { get; init; }
+    public required RulesSourceProvenance RulesProvenance { get; init; }
+    public required string ConfigFilePath { get; init; }
+    public GlobalSettings? GlobalSettings { get; init; }
 
     /// <param name="globalSettingsRoot">
     /// Overrides where tier 4 looks for a prior `setup` run's <c>settings.yml</c> and git cache
@@ -33,7 +39,14 @@ public sealed class CliRepositoryContext
         string? path, string? configPath, string? rulesSource = null, string? branch = null, string? globalSettingsRoot = null)
     {
         var repoRoot = Path.GetFullPath(path ?? Directory.GetCurrentDirectory());
+        var configFilePath = CodeGuardConfigLoader.ResolveConfigFilePath(repoRoot, configPath);
         var config = CodeGuardConfigLoader.LoadOrDefault(repoRoot, configPath);
+
+        var provenance = rulesSource is not null
+            ? RulesSourceProvenance.CliOverride
+            : File.Exists(configFilePath)
+                ? RulesSourceProvenance.RepositoryConfig
+                : RulesSourceProvenance.Default;
 
         if (rulesSource is not null)
         {
@@ -43,20 +56,29 @@ public sealed class CliRepositoryContext
 
         var layout = new RepositoryDiscovery().Resolve(repoRoot, config);
 
+        GlobalSettings? globalSettings = null;
         if (rulesSource is null && layout.RulesPaths.Count == 0)
         {
             var settingsRoot = globalSettingsRoot ?? GlobalSettingsPaths.ResolveRoot();
-            var globalSettings = GlobalSettingsStore.Load(GlobalSettingsPaths.SettingsFilePath(settingsRoot));
+            globalSettings = GlobalSettingsStore.Load(GlobalSettingsPaths.SettingsFilePath(settingsRoot));
             if (globalSettings is not null)
             {
                 var globalPath = RuleSourceResolver.ResolveToLocalPath(
                     globalSettings.Location, globalSettings.Branch, globalSettings.Kind, cacheRootOverride: globalSettingsRoot);
                 config = WithRules(config, [globalPath]);
                 layout = new RepositoryDiscovery().Resolve(repoRoot, config);
+                provenance = RulesSourceProvenance.GlobalSettings;
             }
         }
 
-        return new CliRepositoryContext { RepoRoot = repoRoot, Layout = layout };
+        return new CliRepositoryContext
+        {
+            RepoRoot = repoRoot,
+            Layout = layout,
+            RulesProvenance = provenance,
+            ConfigFilePath = configFilePath,
+            GlobalSettings = globalSettings
+        };
     }
 
     public IReadOnlyList<RuleDefinition> LoadRules() =>
