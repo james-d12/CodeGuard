@@ -3,12 +3,12 @@ using CodeGuard.Cli.Tests;
 
 namespace CodeGuard.Cli.Tests.Rules;
 
-/// <summary>Covers the `rules check` command end-to-end via its System.CommandLine `Command`, and the
+/// <summary>Covers the `rules validate` command end-to-end via its System.CommandLine `Command`, and the
 /// pre-flight gate `validate` shares with it (docs/done/RULE_VALIDATION_PLAN.md).</summary>
 [Collection(ConsoleOutputCollection.Name)]
-public class CheckCommandTests : IDisposable
+public class ValidateCommandTests : IDisposable
 {
-    private readonly string _rulesDir = Directory.CreateTempSubdirectory("rulesengine-checkrules-").FullName;
+    private readonly string _rulesDir = Directory.CreateTempSubdirectory("rulesengine-rulesvalidate-").FullName;
 
     [Fact]
     public async Task Run_AllRulesValid_ExitsZeroAndReportsAllPassed()
@@ -16,7 +16,7 @@ public class CheckCommandTests : IDisposable
         WriteRuleFile("a.yml", RuleYaml("DDD-ENTITY-001"));
         WriteRuleFile("b.yml", RuleYaml("DDD-ENTITY-002"));
 
-        var (exitCode, output) = await RunCheckRules();
+        var (exitCode, output) = await RunValidateRules();
 
         Assert.Equal(0, exitCode);
         Assert.Contains("Checked 2 rule files: 2 passed, 0 failed.", output);
@@ -35,7 +35,7 @@ public class CheckCommandTests : IDisposable
                   type: "Contoso.Domain.Entity<TId>"
             """);
 
-        var (exitCode, output) = await RunCheckRules();
+        var (exitCode, output) = await RunValidateRules();
 
         Assert.Equal(1, exitCode);
         Assert.Contains("Checked 1 rule file: 0 passed, 1 failed.", output);
@@ -48,7 +48,7 @@ public class CheckCommandTests : IDisposable
         WriteRuleFile("a.yml", RuleYaml("DDD-ENTITY-001"));
         WriteRuleFile("b.yml", RuleYaml("DDD-ENTITY-001"));
 
-        var (exitCode, output) = await RunCheckRules();
+        var (exitCode, output) = await RunValidateRules();
 
         Assert.Equal(1, exitCode);
         Assert.Contains("Duplicate rule id 'DDD-ENTITY-001'", output);
@@ -67,7 +67,7 @@ public class CheckCommandTests : IDisposable
                   type: "Contoso.Domain.Entity<TId>"
             """);
 
-        var (exitCode, output) = await RunCheckRules(["--format", "json"]);
+        var (exitCode, output) = await RunValidateRules(["--format", "json"]);
 
         Assert.Equal(1, exitCode);
         Assert.Contains("\"isValid\": false", output);
@@ -77,10 +77,10 @@ public class CheckCommandTests : IDisposable
     public async Task Run_NoRulesConfigured_ExitsOneAndPrintsHint()
     {
         using var globalSettings = new IsolatedGlobalSettingsScope();
-        var repoDir = Directory.CreateTempSubdirectory("codeguard-check-norules-repo-").FullName;
+        var repoDir = Directory.CreateTempSubdirectory("codeguard-rulesvalidate-norules-repo-").FullName;
         try
         {
-            var (exitCode, _, error) = await RunCheckRulesRaw(["--path", repoDir]);
+            var (exitCode, _, error) = await RunValidateRulesRaw(["--path", repoDir]);
 
             Assert.Equal(1, exitCode);
             Assert.Contains("No rules directory is configured.", error);
@@ -93,7 +93,7 @@ public class CheckCommandTests : IDisposable
         }
     }
 
-    private static async Task<(int ExitCode, string Output, string Error)> RunCheckRulesRaw(IReadOnlyList<string> args)
+    private static async Task<(int ExitCode, string Output, string Error)> RunValidateRulesRaw(IReadOnlyList<string> args)
     {
         var originalOut = Console.Out;
         var originalError = Console.Error;
@@ -103,7 +103,7 @@ public class CheckCommandTests : IDisposable
         Console.SetError(errorWriter);
         try
         {
-            var exitCode = await CheckCommand.Build().Parse(args.ToArray()).InvokeAsync();
+            var exitCode = await ValidateCommand.Build().Parse(args.ToArray()).InvokeAsync();
             return (exitCode, outWriter.ToString(), errorWriter.ToString());
         }
         finally
@@ -113,7 +113,7 @@ public class CheckCommandTests : IDisposable
         }
     }
 
-    private async Task<(int ExitCode, string Output)> RunCheckRules(IReadOnlyList<string>? extraArgs = null)
+    private async Task<(int ExitCode, string Output)> RunValidateRules(IReadOnlyList<string>? extraArgs = null)
     {
         var args = new List<string> { "--rules-source", _rulesDir };
         if (extraArgs is not null)
@@ -126,7 +126,7 @@ public class CheckCommandTests : IDisposable
         Console.SetOut(writer);
         try
         {
-            var exitCode = await CheckCommand.Build().Parse(args.ToArray()).InvokeAsync();
+            var exitCode = await ValidateCommand.Build().Parse(args.ToArray()).InvokeAsync();
             return (exitCode, writer.ToString());
         }
         finally

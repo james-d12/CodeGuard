@@ -122,7 +122,7 @@ public static class InfoCommand
         if (report.Issues.Count > 0)
         {
             Console.WriteLine(
-                $"  Invalid:  {report.Issues.Count} rule file(s) failed to parse - run `codeguard rules check` for details.");
+                $"  Invalid:  {report.Issues.Count} rule file(s) failed to parse - run `codeguard rules validate` for details.");
         }
 
         Console.WriteLine();

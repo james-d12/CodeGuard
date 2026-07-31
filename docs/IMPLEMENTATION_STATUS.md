@@ -167,8 +167,9 @@ future rule needs it, you'll need to add a
 All four commands live in `CodeGuard/CodeGuard.Cli/Commands/`, share `--path`/`--config`
 resolution via `Support/CliRepositoryContext.cs`, and are composed in `Program.cs`. **Note:**
 the table below documents the original PR7 command names; `list-rules`/`explain-rule`/`check-rules`
-were later regrouped under a `rules` subcommand (`rules list`/`rules explain`/`rules check`) — see
-"Post-v1 addition: `rules` subcommand group + `rules create`" below.
+were later regrouped under a `rules` subcommand (`rules list`/`rules explain`/`rules validate`,
+the last renamed from `rules check`) — see "Post-v1 addition: `rules` subcommand group + `rules
+create`" below.
 
 | Command | Options | Notes |
 |---|---|---|
@@ -259,9 +260,23 @@ document is serialized to YAML via a new `CodeGuard.Configuration.Writing.RuleYa
 (wrapping `YamlDotNet.Serialization.SerializerBuilder`), keeping the `YamlDotNet` dependency
 confined to `CodeGuard.Configuration` rather than adding it to `CodeGuard.Cli` directly. Before
 reporting success, it runs the same `CliRepositoryContext.ValidateRules()` (`RuleFileLoader
-.ValidateDirectories`) that `rules check`/`validate`'s pre-flight gate use, against the rules
+.ValidateDirectories`) that `rules validate`/`validate`'s pre-flight gate use, against the rules
 directory including the newly written file — catching schema errors and duplicate-ID conflicts
 before the user walks away thinking the rule is good.
+
+### Post-v1 addition: `rules check` → `rules validate`
+
+Further naming-convention pass on the `rules` subcommand group: `rules check` was renamed to
+`rules validate`, matching `rules list`/`rules explain`/`rules create`'s single-verb style and using
+the same word this repo already uses for the top-level `validate` command's own name (the two remain
+functionally distinct — `rules validate` only checks rule YAML structural correctness, no analysis
+model or MSBuild involved, while top-level `validate` runs the full analysis engine against a
+target repo's source and includes the same rule-set check as an unconditional pre-flight step).
+Command file `Cli/Commands/Rules/CheckCommand.cs` → `Rules/ValidateCommand.cs`, class
+`Rules.CheckCommand` → `Rules.ValidateCommand`, test file/class
+`Cli.Tests/Rules/CheckCommandTests.cs` → `Rules/ValidateCommandTests.cs`. Clean break, no alias for
+the old `rules check` name — consistent with the earlier `check-rules` → `rules check` rename above,
+since the tool is still pre-1.0.
 
 ## The 11 starter rules
 

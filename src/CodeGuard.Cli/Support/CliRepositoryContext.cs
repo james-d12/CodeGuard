@@ -90,7 +90,7 @@ public sealed class CliRepositoryContext
     /// <summary>
     /// Non-throwing counterpart to <see cref="LoadRules"/>/<see cref="LoadRulesWithSource"/> -
     /// validates every configured rule file and reports every problem found instead of throwing on
-    /// the first one. Used by `rules check` and `validate`'s pre-flight rule-set gate
+    /// the first one. Used by `rules validate` and `validate`'s pre-flight rule-set gate
     /// (`docs/done/RULE_VALIDATION_PLAN.md`).
     /// </summary>
     public RuleSetValidationReport ValidateRules() =>
@@ -98,7 +98,7 @@ public sealed class CliRepositoryContext
 
     /// <summary>
     /// Shared guard for every command that needs at least one resolved rules directory before
-    /// proceeding (`rules check`/`list`/`explain`/`create`, `validate`). Centralizes the message so
+    /// proceeding (`rules validate`/`list`/`explain`/`create`, `validate`). Centralizes the message so
     /// it can't drift between commands - previously only `rules create` had this check.
     /// </summary>
     public bool TryRequireRulesConfigured(TextWriter errorWriter)

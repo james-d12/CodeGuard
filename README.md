@@ -42,18 +42,18 @@ If you've installed the tool (see [Installation](#installation)), run commands d
 | `validate` | Validate a repository against configured rules |
 | `rules list` | List rules discovered from the configured rule directories |
 | `rules explain <ruleId>` | Print full metadata and source YAML for a single rule |
-| `rules check` | Validate a set of rule YAML files for structural correctness |
+| `rules validate` | Validate a set of rule YAML files for structural correctness (not run against a repository) |
 | `rules create` | Interactively scaffold a new rule YAML file |
 | `setup` | Configure the rules source (a directory or git repo) used across all repos |
 
-Common options shared by `validate`/`rules list`/`rules explain`/`rules check`/`rules create`:
+Common options shared by `validate`/`rules list`/`rules explain`/`rules validate`/`rules create`:
 `--path` (repo root, default cwd), `--config` (explicit `.codeguard/config.yml`),
 `--rules-source` (ad-hoc rules directory or git URL, bypassing config entirely — see below),
 `--branch` (git branch for `--rules-source`). `validate` additionally supports `--format
 console|json|sarif|html`, `--output <file>`, `--rule <id>` (repeatable, restricts evaluation),
 `--solution <file>` (repeatable, restricts analysis to specific `.sln`/`.slnx` files),
 `--severity-threshold`, `--fail-on`. `rules list` supports `--format table|json`, `--tag`, and
-`--enabled-only`. `rules check` supports `--format console|json`. `setup` supports `--source`,
+`--enabled-only`. `rules validate` supports `--format console|json`. `setup` supports `--source`,
 `--branch`, and `--type directory|git` (see below).
 
 Examples (installed tool):

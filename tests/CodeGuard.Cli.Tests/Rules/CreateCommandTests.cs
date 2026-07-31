@@ -6,7 +6,7 @@ namespace CodeGuard.Cli.Tests.Rules;
 /// <summary>
 /// Covers the interactive `rules create` scaffold end-to-end: scripts stdin via
 /// <see cref="Console.SetIn(TextReader)"/> (symmetric to the existing <see cref="Console.SetOut(TextWriter)"/>
-/// redirection convention in <see cref="CheckCommandTests"/>) to walk through the prompts
+/// redirection convention in <see cref="ValidateCommandTests"/>) to walk through the prompts
 /// deterministically.
 /// </summary>
 [Collection(ConsoleOutputCollection.Name)]

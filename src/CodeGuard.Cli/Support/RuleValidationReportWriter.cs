@@ -3,7 +3,7 @@ using CodeGuard.Configuration.Validation;
 
 namespace CodeGuard.Cli.Support;
 
-/// <summary>Renders a <see cref="RuleSetValidationReport"/>, shared by `rules check` and `validate`'s pre-flight gate.</summary>
+/// <summary>Renders a <see cref="RuleSetValidationReport"/>, shared by `rules validate` and `validate`'s pre-flight gate.</summary>
 public static class RuleValidationReportWriter
 {
     private static readonly JsonSerializerOptions JsonOptions = new()

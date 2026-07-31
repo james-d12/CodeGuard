@@ -3,7 +3,7 @@ using CodeGuard.Cli.Support;
 
 namespace CodeGuard.Cli.Commands.Rules;
 
-public static class CheckCommand
+public static class ValidateCommand
 {
     public static Command Build()
     {
@@ -20,10 +20,11 @@ public static class CheckCommand
         formatOption.AcceptOnlyFromAmong("console", "json");
 
         var command = new Command(
-            "check",
+            "validate",
             "Validate a set of rule YAML files for structural correctness (schema conformance, known " +
-            "selector/assertion/analyzer kinds, no duplicate rule ids) without evaluating them against a repository. " +
-            "Use --rules-source to point directly at a folder; otherwise checks whatever this repo is configured to use.");
+            "selector/assertion/analyzer kinds, no duplicate rule ids) without evaluating them against a repository " +
+            "(that's what the top-level `validate` command does). Use --rules-source to point directly at a folder; " +
+            "otherwise validates whatever this repo is configured to use.");
         command.Add(pathOption);
         command.Add(configOption);
         command.Add(rulesSourceOption);
