@@ -1,0 +1,18 @@
+using CodeGuard.Analysis.AnalysisModel;
+
+namespace CodeGuard.Analysis.Providers;
+
+public sealed class AnalysisModelBuilder(IEnumerable<IAnalysisProvider> providers)
+{
+    public async Task<RepositoryModel> BuildAsync(string rootPath, CancellationToken cancellationToken = default)
+    {
+        var context = new AnalysisModelBuilderContext(rootPath);
+
+        foreach (var provider in providers)
+        {
+            await provider.ContributeAsync(context, cancellationToken);
+        }
+
+        return context.Build();
+    }
+}

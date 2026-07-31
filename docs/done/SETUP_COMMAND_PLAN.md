@@ -1,34 +1,34 @@
 # Setup Command Plan — configuring where the CLI reads rules from
 
 > Status: **done**. Implemented as designed below: `GlobalSettings`/`GlobalSettingsPaths`/
-> `GlobalSettingsStore` under `src/RulesEngine.Configuration/GlobalConfig/` (namespace
-> `RulesEngine.Configuration.GlobalConfig` — not `GlobalSettings`, to avoid a type/namespace name
-> collision), `GitRuleSourceSync`/`RuleSourceResolver`/`SetupCommand` under `src/RulesEngine.Cli/`,
+> `GlobalSettingsStore` under `src/CodeGuard.Configuration/GlobalConfig/` (namespace
+> `CodeGuard.Configuration.GlobalConfig` — not `GlobalSettings`, to avoid a type/namespace name
+> collision), `GitRuleSourceSync`/`RuleSourceResolver`/`SetupCommand` under `src/CodeGuard.Cli/`,
 > the precedence change in `CliRepositoryContext.Resolve`, and `--rules-source`/`--branch` added to
-> every command via `CommonOptions`. Covered by `tests/RulesEngine.Configuration.Tests/GlobalConfig/`
-> and the new `tests/RulesEngine.Cli.Tests/` project (git-sync tests run against a throwaway local
+> every command via `CommonOptions`. Covered by `tests/CodeGuard.Configuration.Tests/GlobalConfig/`
+> and the new `tests/CodeGuard.Cli.Tests/` project (git-sync tests run against a throwaway local
 > `git init` repo). Kept for design rationale.
 
 ## Context
 
-Today, `rules-engine validate` (and `list-rules`/`explain-rule`/`list-standards`) find rules purely
-through `.rulesengine/config.yml`'s `repository.rules` paths, resolved relative to the target repo
-by `RepositoryDiscovery.ResolveExisting` (`src/RulesEngine.Configuration/Discovery/RepositoryDiscovery.cs`).
-If no config file exists, `RulesEngineConfigLoader` falls back to a hardcoded
-`Repository.Rules = ["rules"]` default (`src/RulesEngine.Configuration/Discovery/RulesEngineConfigLoader.cs:38`)
-that only resolves to anything for RuleEngine's own dogfooding checkout (which happens to have a
-`rules/` folder). Point this tool at any *other* repo with no `.rulesengine/config.yml`, and
+Today, `codeguard validate` (and `list-rules`/`explain-rule`/`list-standards`) find rules purely
+through `.codeguard/config.yml`'s `repository.rules` paths, resolved relative to the target repo
+by `RepositoryDiscovery.ResolveExisting` (`src/CodeGuard.Configuration/Discovery/RepositoryDiscovery.cs`).
+If no config file exists, `CodeGuardConfigLoader` falls back to a hardcoded
+`Repository.Rules = ["rules"]` default (`src/CodeGuard.Configuration/Discovery/CodeGuardConfigLoader.cs:38`)
+that only resolves to anything for CodeGuard's own dogfooding checkout (which happens to have a
+`rules/` folder). Point this tool at any *other* repo with no `.codeguard/config.yml`, and
 `ResolveExisting` silently filters out the non-existent `rules` path — you get **zero rules
 evaluated, with no error**, which is a bad first-run experience.
 
-The existing workaround is visible in this repo's own `.rulesengine/config.external.yml`: hand-write
+The existing workaround is visible in this repo's own `.codeguard/config.external.yml`: hand-write
 a config with an absolute path to a rules checkout. That works, but it means every repo you want to
 validate needs its own hand-authored config file pointing at wherever you happen to keep the rules
 repo checked out locally — not the "easy to use CLI" experience wanted here.
 
 This doc proposes two complementary features to fix that:
 
-1. **`rules-engine setup`** — an interactive (or scriptable) command that lets you point the CLI at
+1. **`codeguard setup`** — an interactive (or scriptable) command that lets you point the CLI at
    a rules source *once* — a local directory, or a git repo it clones and keeps up to date — stored
    outside any project repo, in the OS-appropriate user/app-data location. After running it,
    `validate` works against any target repo without per-repo configuration.
@@ -36,7 +36,7 @@ This doc proposes two complementary features to fix that:
    `validate` (or any command) directly at a rules folder or repo URL for a one-off run, no
    persisted state required.
 
-Both are additive — nothing about the existing `.rulesengine/config.yml` schema or behavior for
+Both are additive — nothing about the existing `.codeguard/config.yml` schema or behavior for
 this repo changes.
 
 ## Design decisions
@@ -48,7 +48,7 @@ If `validate` silently re-fetched/pulled the configured rules repo on every run,
 invocations could produce different violations over time as the upstream rules change underneath
 you — worst of all inside CI, where reproducibility matters most.
 
-**Decision**: only `rules-engine setup`, run explicitly, checks for and pulls updates. Every other
+**Decision**: only `codeguard setup`, run explicitly, checks for and pulls updates. Every other
 command reads whatever is currently materialized on disk (in the local directory, or the git cache),
 with no network calls and no implicit mutation. Refreshing the rule set is always a deliberate
 action (`setup` again), never a side effect of validating.
@@ -67,9 +67,9 @@ give macOS users a non-native, XDG-flavored path.
 
 | OS | Root directory |
 |---|---|
-| Windows | `%APPDATA%\RulesEngine` |
-| macOS | `~/Library/Application Support/RulesEngine` |
-| Linux | `$XDG_CONFIG_HOME/rules-engine` (falls back to `~/.config/rules-engine`) |
+| Windows | `%APPDATA%\CodeGuard` |
+| macOS | `~/Library/Application Support/CodeGuard` |
+| Linux | `$XDG_CONFIG_HOME/codeguard` (falls back to `~/.config/codeguard`) |
 
 Since CI (`.github/workflows/ci.yml`) only runs on `ubuntu-latest`, the Windows/macOS branches can
 never get real coverage by running the actual OS. **The resolver must be written as a pure function**
@@ -80,8 +80,8 @@ A thin public wrapper supplies the real values at the call site.
 
 ### 3. New config layer — parallel to, not merged with, the existing one
 
-A new module under `src/RulesEngine.Configuration/GlobalSettings/`, deliberately separate from
-`RulesEngineConfig`/`RulesEngineConfigLoader` (which stay exactly as they are — per-repo, checked
+A new module under `src/CodeGuard.Configuration/GlobalSettings/`, deliberately separate from
+`CodeGuardConfig`/`CodeGuardConfigLoader` (which stay exactly as they are — per-repo, checked
 into the target repo, describing *that repo's* rules/skills/agents/source/tests layout):
 
 - **`GlobalSettingsPaths`** — the cross-platform root resolver above, plus a helper that derives the
@@ -102,7 +102,7 @@ into the target repo, describing *that repo's* rules/skills/agents/source/tests 
   ```
 - **`GlobalSettingsStore`** — `Load`/`Save` against `<root>/settings.yml`, using the same
   `YamlDotNet` `DeserializerBuilder().WithNamingConvention(CamelCaseNamingConvention.Instance)`
-  convention `RulesEngineConfigLoader` already uses, for consistency.
+  convention `CodeGuardConfigLoader` already uses, for consistency.
 
 Sketch of `settings.yml`:
 
@@ -121,14 +121,14 @@ location: /home/james/rules-checkouts/our-engineering-rules
 
 ### 4. Resolution precedence
 
-Implemented in `CliRepositoryContext.Resolve` (`src/RulesEngine.Cli/Support/CliRepositoryContext.cs`)
+Implemented in `CliRepositoryContext.Resolve` (`src/CodeGuard.Cli/Support/CliRepositoryContext.cs`)
 — already the shared composition point every command (`validate`, `list-rules`, `explain-rule`,
 `list-standards`) calls through, so this is the one place that needs to change:
 
 1. **`--rules-source` CLI flag**, if passed — highest precedence; the most explicit statement of
    intent ("use exactly this, right now"). See §6.
 2. `--config` explicit path (unchanged).
-3. `<repoRoot>/.rulesengine/config.yml`, if present (unchanged).
+3. `<repoRoot>/.codeguard/config.yml`, if present (unchanged).
 4. **New**: if neither of the above exists or yields any rules, and `GlobalSettingsStore` has a
    configured source (i.e. `setup` has been run at some point), synthesize
    `Repository.Rules = [ resolvedSourcePath ]`. Only `Rules` comes from global settings —
@@ -159,7 +159,7 @@ asking, consistent with this project's general caution around destructive git op
 - **Directory-kind sources**: no sync step at all — always read live from the given path, since
   there's nothing to clone or fetch.
 
-### 6. `rules-engine setup` command shape
+### 6. `codeguard setup` command shape
 
 - **Interactive by default**: prompts for a rules source (local directory path or git URL), and —
   only if the source looks like a git URL — a branch (leave blank to track the repo's default
@@ -187,12 +187,12 @@ For "I can't be bothered to configure anything, just validate this directory aga
 folder/repo of rules, right now":
 
 ```
-rules-engine validate --path . --rules-source https://github.com/org/rules-repo.git
-rules-engine validate --path . --rules-source ../local-rules-checkout
+codeguard validate --path . --rules-source https://github.com/org/rules-repo.git
+codeguard validate --path . --rules-source ../local-rules-checkout
 ```
 
 - Add `--rules-source <path-or-url>` (and optional `--branch <name>`) to `CommonOptions`
-  (`src/RulesEngine.Cli/Support/CommonOptions.cs`), alongside `--path`/`--config`, so it's available
+  (`src/CodeGuard.Cli/Support/CommonOptions.cs`), alongside `--path`/`--config`, so it's available
   uniformly wherever `CliRepositoryContext` is used.
 - Shares the same kind-detection and the same content-addressed cache directory derivation from
   `GlobalSettingsPaths` as `setup` (proposed shared helper: `RuleSourceResolver`, used by both
@@ -212,8 +212,8 @@ rules-engine validate --path . --rules-source ../local-rules-checkout
 
 ### 8. Where the `git` shelling lives
 
-`src/RulesEngine.Cli/Support/GitRuleSourceSync.cs` — process execution (`Process.Start("git", ...)`)
-is a CLI-level concern. Keeping it out of `RulesEngine.Configuration` preserves that project's
+`src/CodeGuard.Cli/Support/GitRuleSourceSync.cs` — process execution (`Process.Start("git", ...)`)
+is a CLI-level concern. Keeping it out of `CodeGuard.Configuration` preserves that project's
 current shape (pure YAML/file-system config resolution, no external process dependencies),
 consistent with the dependency-direction discipline CLAUDE.md documents for the rest of the
 solution.
@@ -243,12 +243,12 @@ underneath:
 ## Proposed file/module layout
 
 ```
-src/RulesEngine.Configuration/GlobalSettings/
+src/CodeGuard.Configuration/GlobalSettings/
   GlobalSettings.cs            # RuleSourceKind enum + GlobalSettings model
   GlobalSettingsPaths.cs        # cross-platform root + cache-dir resolver (pure function)
   GlobalSettingsStore.cs        # YAML load/save
 
-src/RulesEngine.Cli/
+src/CodeGuard.Cli/
   Commands/SetupCommand.cs
   Support/GitRuleSourceSync.cs  # git clone/fetch/rev-parse/pull --ff-only wrapper
   Support/RuleSourceResolver.cs # shared kind-detection + cache-path logic (SetupCommand + CliRepositoryContext)
@@ -256,11 +256,11 @@ src/RulesEngine.Cli/
   Support/CliRepositoryContext.cs  # + precedence tier 1 and tier 4 (§4)
   Program.cs                    # + rootCommand.Subcommands.Add(SetupCommand.Build())
 
-tests/RulesEngine.Configuration.Tests/
+tests/CodeGuard.Configuration.Tests/
   GlobalSettingsPathsTests.cs
   GlobalSettingsStoreTests.cs
 
-tests/RulesEngine.Cli.Tests/            # new test project, or folded into an existing one
+tests/CodeGuard.Cli.Tests/            # new test project, or folded into an existing one
   CliRepositoryContextTests.cs
   GitRuleSourceSyncTests.cs
 ```
@@ -278,10 +278,10 @@ tests/RulesEngine.Cli.Tests/            # new test project, or folded into an ex
 ## Verification (once this moves to implementation)
 
 - `dotnet build` / `dotnet test` — the usual full-solution gate (per CLAUDE.md).
-- Manual smoke test of the full loop: `rules-engine setup --source <a small test git repo>`, confirm
+- Manual smoke test of the full loop: `codeguard setup --source <a small test git repo>`, confirm
   `settings.yml` and the cache directory appear under the right OS-specific root, confirm
-  `rules-engine validate --path <some other local repo>` picks up the rules with zero per-repo
+  `codeguard validate --path <some other local repo>` picks up the rules with zero per-repo
   config; re-run `setup` and confirm it reports "already up to date"; make a commit on the source
   repo and re-run `setup` again to confirm it fast-forwards.
-- Manual smoke test of the ad-hoc path: `rules-engine validate --path . --rules-source
-  <path-or-url>` against a repo with no `.rulesengine/config.yml` at all and no prior `setup` run.
+- Manual smoke test of the ad-hoc path: `codeguard validate --path . --rules-source
+  <path-or-url>` against a repo with no `.codeguard/config.yml` at all and no prior `setup` run.

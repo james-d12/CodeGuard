@@ -23,10 +23,10 @@
 
 **Wave 0 — `must_exist`/`must_not_exist`** (generic cardinality assertions, shipped standalone
 ahead of call-site work per user decision):
-- `src/RulesEngine.Evaluation/Assertions/{MustExistAssertion,MustNotExistAssertion,SelectorTemplateResolver}.cs`
-- `src/RulesEngine.Configuration/Parsing/{MustExistAssertionParser,MustNotExistAssertionParser}.cs`
+- `src/CodeGuard.Evaluation/Assertions/{MustExistAssertion,MustNotExistAssertion,SelectorTemplateResolver}.cs`
+- `src/CodeGuard.Configuration/Parsing/{MustExistAssertionParser,MustNotExistAssertionParser}.cs`
 - Design: assertion holds a raw `JsonObject` selector template + a `Func<JsonObject, ITargetSelector>`
-  factory (closed over `SelectorParserRegistry` at parse time, so `RulesEngine.Evaluation` never
+  factory (closed over `SelectorParserRegistry` at parse time, so `CodeGuard.Evaluation` never
   references Configuration). `SelectorTemplateResolver` substitutes `${PropertyName}` string leaves
   via reflection over the outer candidate (e.g. `${FullName}` on a `TypeModel`).
 - `DefaultParsers.CreateAssertionRegistry` now takes a `SelectorParserRegistry` parameter (both
@@ -35,23 +35,23 @@ ahead of call-site work per user decision):
   `skill.eventhandler.unit-test-status-coverage`, which needs no placeholder scoping at all).
 
 **Wave 1 — `CallSiteModel` + syntax extraction + `call_site` + `must_match_argument`**:
-- `src/RulesEngine.Analysis/AnalysisModel/CallSiteModel.cs` — `CallSiteKind` enum
+- `src/CodeGuard.Analysis/AnalysisModel/CallSiteModel.cs` — `CallSiteKind` enum
   (Invocation/ObjectCreation/MemberAccess), `CallSiteArgument(Index, LiteralValue, IsLiteral)`,
   `CallSiteModel(...)` with trailing optional `EnclosingComparisonOperator`/`EnclosingComparisonValue`
   (added specifically to reclassify `BlockingCountPatternAnalyzer`'s `.Count() > 0` half as
   declarative — see below).
-- `src/RulesEngine.Analysis/AnalysisModel/SyntaxFacts.cs` — `SwitchModel`, `ThrowSiteModel`,
+- `src/CodeGuard.Analysis/AnalysisModel/SyntaxFacts.cs` — `SwitchModel`, `ThrowSiteModel`,
   `MutationSiteModel`, `TryBlockModel`, `MethodBodyShapeModel` (all 5 Wave-3a fact types, defined
   now so `RepositoryModel`'s breaking change only happened once — see Risk 6 in the plan).
 - `RepositoryModel` now has **10** positional params:
   `(RootPath, Solutions, Files, CallSites, Switches, ThrowSites, MutationSites, TryBlocks, MethodBodyShapes, Diagnostics)`.
   Every direct construction across the test suite was mechanically updated (sed-based batch fix,
   twice — once for the first 6 new lists in Wave 1, once more for `Diagnostics` in Wave 2).
-  `tests/RulesEngine.Evaluation.Tests/TestModels.cs` has both the original
+  `tests/CodeGuard.Evaluation.Tests/TestModels.cs` has both the original
   `Repository(params ProjectModel[])` (unchanged signature, back-fills the new lists with `[]`) and
   a new `RepositoryWithFacts(projects?, files?, callSites?, switches?, throwSites?, mutationSites?, tryBlocks?, methodBodyShapes?, diagnostics?)`
   helper (all optional named params) — **use this one for all Wave 3 analyzer tests**.
-- `src/RulesEngine.Analyzers.Roslyn/{RoslynSyntaxFactExtractor,SyntaxFactWalker,SyntaxFactSink}.cs`
+- `src/CodeGuard.Analyzers.Roslyn/{RoslynSyntaxFactExtractor,SyntaxFactWalker,SyntaxFactSink}.cs`
   — a new whole-syntax-tree walk (sibling to `RoslynTypeExtractor`'s existing symbol-only walk, not
   an extension of it — Program.cs top-level statements have no natural home in a per-`IMethodSymbol`
   walk). `SyntaxFactWalker` currently implements all the visitors needed for Waves 1 AND 3a in one
@@ -60,14 +60,14 @@ ahead of call-site work per user decision):
   `VisitMemberAccessExpression` (Wave 1), plus `VisitSwitchStatement`, `VisitSwitchExpression`,
   `VisitThrowStatement`, `VisitThrowExpression`, `VisitAssignmentExpression`, `VisitTryStatement`,
   `VisitMethodDeclaration` (Wave 3a — **already done, not just reserved**). All confirmed working via
-  `tests/RulesEngine.Analyzers.Roslyn.Tests/RoslynSyntaxFactExtractorTests.cs` (29 tests, including a
+  `tests/CodeGuard.Analyzers.Roslyn.Tests/RoslynSyntaxFactExtractorTests.cs` (29 tests, including a
   spike test proving `semanticModel.GetEnclosingSymbol` resolves correctly for Program.cs top-level
   statements — Risk 2 from the plan is resolved, confirmed working).
-- `src/RulesEngine.Evaluation/Selectors/CallSiteSelector.cs` + parser — `kind: call_site`, filters
+- `src/CodeGuard.Evaluation/Selectors/CallSiteSelector.cs` + parser — `kind: call_site`, filters
   `site_kind`/`invoked_member`/`target_type`/`project`/`containing_method`/`containing_type`, plus
   `argument_index`+`argument_is_literal` and `enclosing_comparison` (both added specifically for the
   two reclassification wins below).
-- `src/RulesEngine.Evaluation/Assertions/MustMatchArgumentAssertion.cs` + parser — `{index, pattern}`.
+- `src/CodeGuard.Evaluation/Assertions/MustMatchArgumentAssertion.cs` + parser — `{index, pattern}`.
 - `RuleEvaluator.ExtractLocation` extended with a `CallSiteModel` case.
 - **Two custom analyzers from the original Phase B4 table were reclassified as declarative** (per
   Risk 3 in the plan — attempted before writing bespoke classes, both succeeded):
@@ -86,7 +86,7 @@ ahead of call-site work per user decision):
 design; **reworked mid-Wave-3 after user feedback that the first 2 Batch-1 analyzers hardcoded
 org-specific namespace prefixes in C#, violating "rules are declarative YAML, engine stays generic"**
 — see the note right after this list):
-- `src/RulesEngine.RuleModel/Analyzers/{ICustomAnalyzer,AnalyzerViolation}.cs` — placed in
+- `src/CodeGuard.RuleModel/Analyzers/{ICustomAnalyzer,AnalyzerViolation}.cs` — placed in
   `RuleModel` (not Evaluation/Configuration) so both `Core` and `Configuration` can reference it
   without breaking the dependency graph. (`CustomAnalyzerRegistry` from the original Wave 2 design
   was deleted in the rework below — superseded by `AnalyzerParserRegistry`.)
@@ -109,9 +109,9 @@ org-specific namespace prefixes in C#, violating "rules are declarative YAML, en
   ever run — a test confirms this (`LoadFromFile_WithAnalyzerAndTarget_ThrowsSchemaValidationException`).
 - `ExplainRuleCommand` prints `Analyzer: {name}` (now `rule.Analyzer.Name`) instead of
   `Target kind:`/`Assertions:` when `rule.Analyzer is not null`.
-- `RoslynDiagnosticPassthroughAnalyzer` (`src/RulesEngine.Evaluation/Analyzers/`) — reads
+- `RoslynDiagnosticPassthroughAnalyzer` (`src/CodeGuard.Evaluation/Analyzers/`) — reads
   `RepositoryModel.Diagnostics` (populated by a new `RoslynDiagnosticExtractor.cs` in
-  `RulesEngine.Analyzers.Roslyn`, wired into `MsBuildAnalysisProvider`). **Important
+  `CodeGuard.Analyzers.Roslyn`, wired into `MsBuildAnalysisProvider`). **Important
   scope-narrowing decision**: the plan's Risk 1 spike was run for real —
   `Microsoft.CodeAnalysis.CSharp.CodeStyle` (needed for IDE0005/IDE0011/IDE0161) resolves fine at
   the pinned 4.10.0 version, but its DLLs only exist under the NuGet package's `analyzers/` asset
@@ -142,12 +142,12 @@ model)` only), unlike selectors/assertions which are *constructed from* their YA
 analyzer needing scope had nowhere to get it from except hardcoding it. Fix chosen (of two options
 presented — "per-analyzer config params" over "generic scope filter"): mirror the
 selector/assertion pattern exactly. New files:
-- `src/RulesEngine.Configuration/Parsing/IAnalyzerParser.cs` — `Kind` + `Parse(JsonObject) ->
+- `src/CodeGuard.Configuration/Parsing/IAnalyzerParser.cs` — `Kind` + `Parse(JsonObject) ->
   ICustomAnalyzer`, mirrors `ISelectorParser`.
-- `src/RulesEngine.Configuration/Parsing/AnalyzerParserRegistry.cs` — dispatches on the analyzer
+- `src/CodeGuard.Configuration/Parsing/AnalyzerParserRegistry.cs` — dispatches on the analyzer
   node's `kind` property, mirrors `SelectorParserRegistry`.
 - One parser class per analyzer kind (e.g. `NoBusinessExceptionsAnalyzerParser`,
-  `SingleCatchBlockAnalyzerParser`) in `RulesEngine.Configuration.Parsing`, each constructing a
+  `SingleCatchBlockAnalyzerParser`) in `CodeGuard.Configuration.Parsing`, each constructing a
   fresh, rule-specific instance from that rule's YAML.
 - `NoBusinessExceptionsAnalyzer`/`SingleCatchBlockAnalyzer` now take a `namespacePattern`
   constructor param (glob, matched via `GlobMatcher.IsMatch` per this repo's existing
@@ -216,16 +216,16 @@ context — nothing below needed further changes for Wave 4.
 
 ### The remaining analyzers, with concrete design notes (so the next session doesn't have to re-derive them)
 
-All go in `src/RulesEngine.Evaluation/Analyzers/`, all `ICustomAnalyzer`, all registered in
-`src/RulesEngine.Configuration/Parsing/DefaultAnalyzers.cs`. Tests go in
-`tests/RulesEngine.Evaluation.Tests/Analyzers/<Name>Tests.cs` using
+All go in `src/CodeGuard.Evaluation/Analyzers/`, all `ICustomAnalyzer`, all registered in
+`src/CodeGuard.Configuration/Parsing/DefaultAnalyzers.cs`. Tests go in
+`tests/CodeGuard.Evaluation.Tests/Analyzers/<Name>Tests.cs` using
 `TestModels.RepositoryWithFacts(...)` (see Wave 1 notes above) — no Roslyn needed for analyzer-logic
 tests, only for the extraction-side tests already written in
 `RoslynSyntaxFactExtractorTests.cs`.
 
 **Batch 1 — done:**
 1. ~~`SwitchExhaustiveAuditVersionAnalyzer`~~ — done, tested
-   (`tests/RulesEngine.Evaluation.Tests/Analyzers/SwitchExhaustiveAuditVersionAnalyzerTests.cs`),
+   (`tests/CodeGuard.Evaluation.Tests/Analyzers/SwitchExhaustiveAuditVersionAnalyzerTests.cs`),
    registered (parser kind `"switch-exhaustive-audit-version"`, no params). Already generic — no
    rework needed.
 2. ~~`NoBusinessExceptionsAnalyzer`~~ (`skill.domain.no-business-exceptions`) — done, tested,
@@ -245,7 +245,7 @@ tests, only for the extraction-side tests already written in
 
 **Batch 2 — done:**
 5. ~~`MemberOrderingAnalyzer`~~ (`coding.type.member-ordering`) — done, tested
-   (`tests/RulesEngine.Evaluation.Tests/Analyzers/MemberOrderingAnalyzerTests.cs`), parser kind
+   (`tests/CodeGuard.Evaluation.Tests/Analyzers/MemberOrderingAnalyzerTests.cs`), parser kind
    `"member-ordering"`, no params (the Fields=0/Constructors=1/Properties=2/Methods=3 rank
    convention is an engine-level default, not org-specific, so it's a hardcoded constant in the
    class by design — this is the one Batch-2/3 analyzer the "take it from YAML" rule doesn't apply
@@ -285,12 +285,12 @@ tests, only for the extraction-side tests already written in
    parser kind `"typename-consistency"`, takes 4 **required** YAML params (`const_type`,
    `const_name`, `yaml_file_pattern`, `yaml_field_path` — no sane repo-agnostic defaults for any of
    them, parser throws if any are omitted). `<PackageReference Include="YamlDotNet" Version="18.1.0" />`
-   was added to `RulesEngine.Evaluation.csproj` (same version already pinned in
-   `RulesEngine.Configuration.csproj`). Compares a C# `const` field's value (via
+   was added to `CodeGuard.Evaluation.csproj` (same version already pinned in
+   `CodeGuard.Configuration.csproj`). Compares a C# `const` field's value (via
    `FieldModel.ConstantValue`, added earlier this session) against a dotted-path field in a matching
    YAML file, read via a small new `YamlFieldPath.Resolve` helper
-   (`src/RulesEngine.Evaluation/Analyzers/YamlFieldPath.cs`) that walks `YamlDotNet.RepresentationModel`
-   nodes directly — **deliberately not** reusing `RulesEngine.Configuration`'s
+   (`src/CodeGuard.Evaluation/Analyzers/YamlFieldPath.cs`) that walks `YamlDotNet.RepresentationModel`
+   nodes directly — **deliberately not** reusing `CodeGuard.Configuration`'s
    `YamlDocumentReader`/full YAML-to-`JsonNode` conversion, since that class is `internal` to
    `Configuration` and this only needed scalar lookup by dotted path, not full JSON conversion.
 10. ~~`DbUpBootstrapAnalyzer`~~ (`skill.reporting.dbup-bootstrap`) — done, tested, parser kind
@@ -309,7 +309,7 @@ tests, only for the extraction-side tests already written in
 
 ### Wave 3 completion checklist — all done
 
-1. ~~Register all remaining analyzer parsers~~ — `src/RulesEngine.Configuration/Parsing/DefaultAnalyzers.cs`'s
+1. ~~Register all remaining analyzer parsers~~ — `src/CodeGuard.Configuration/Parsing/DefaultAnalyzers.cs`'s
    `CreateRegistry()` lists all 11 parsers using the **final** names from the genericity-pass table
    above (the original Wave 2 `roslyn-diagnostic-passthrough` plus all 10 Wave 3 analyzers).
 2. ~~`dotnet build && dotnet test`~~ — 0 errors, **246 tests passing** (197 at the start of Wave 3;

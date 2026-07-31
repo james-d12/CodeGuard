@@ -36,8 +36,8 @@ jobs:
       - name: Run Tests
         run: dotnet test --no-build -c Release
 
-      - name: Pack Rules-Engine Tool Package
-        run: dotnet pack src/RulesEngine.Cli/RulesEngine.Cli.csproj -c Release -o ./nupkg --no-build
+      - name: Pack CodeGuard Tool Package
+        run: dotnet pack src/CodeGuard.Cli/CodeGuard.Cli.csproj -c Release -o ./nupkg --no-build
 
       - name: Verify Package Contains No Rule-Authoring Content
         run: ./scripts/verify-nupkg-contents.sh ./nupkg/*.nupkg

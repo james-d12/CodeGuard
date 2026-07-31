@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <ItemGroup>
+        <ProjectReference Include="..\CodeGuard.Analysis\CodeGuard.Analysis.csproj" />
+        <ProjectReference Include="..\CodeGuard.RuleModel\CodeGuard.RuleModel.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="YamlDotNet" Version="18.1.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="CodeGuard.Evaluation.Tests" />
+    </ItemGroup>
+
+</Project>

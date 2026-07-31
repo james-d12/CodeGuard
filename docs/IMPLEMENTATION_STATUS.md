@@ -1,4 +1,4 @@
-# RuleEngine Implementation Status
+# CodeGuard Implementation Status
 
 This file is a handoff summary for picking up work on this repository in a new session/agent.
 It was written after implementing PR1–PR7 of the approved implementation plan. **Read this
@@ -7,8 +7,8 @@ the code alone.
 
 ## Essential reading (in this order)
 
-1. `RuleEngine/PRIMITIVES.md` — the original design/requirements doc for this whole project.
-2. The approved implementation plan: `/home/james/.claude/plans/reading-the-ruleengine-primitives-md-pla-imperative-quail.md`
+1. `CodeGuard/PRIMITIVES.md` — the original design/requirements doc for this whole project.
+2. The approved implementation plan: `/home/james/.claude/plans/reading-the-codeguard-primitives-md-pla-imperative-quail.md`
    (11 sections: primitive vocabulary, starter rule set, analysis model, Roslyn/MSBuild
    integration, rule schema, repository discovery, project structure, CLI, results model, test
    strategy, and an 8-PR incremental plan). This file (`IMPLEMENTATION_STATUS.md`) tracks
@@ -33,10 +33,10 @@ verified manually throughout this project). Verify it end-to-end the first time 
 pushed to a GitHub remote.
 
 The v1 plan is now fully implemented. The only outstanding, deliberately separate work is the
-`RuleEngine/REFACTORING.md` architectural-evolution proposal — see below.
+`CodeGuard/REFACTORING.md` architectural-evolution proposal — see below.
 
 There is also a separate, much larger **architectural evolution** proposal in
-`RuleEngine/REFACTORING.md` (Selector/Predicate/Assertion/Diagnostic separation, analysis
+`CodeGuard/REFACTORING.md` (Selector/Predicate/Assertion/Diagnostic separation, analysis
 sessions with caching, rule versioning/lifecycle, a custom-analyzer escape hatch, rule fixture
 testing, etc.). The user explicitly deferred that in favor of finishing PR7 first — it has **not**
 been started. Read it before proposing any further architectural changes, but treat it as a
@@ -45,22 +45,22 @@ separate initiative from the PR1–PR8 plan, not something to blend into it oppo
 ## Verifying the current state
 
 ```bash
-cd /home/james/Dev/RuleEngine
+cd /home/james/Dev/CodeGuard
 dotnet build          # should succeed, 0 errors (14 pre-existing NU1903 advisory warnings, see above)
 dotnet test           # should show 81 passed across 6 test projects, 0 failed
-dotnet run --project RuleEngine/RulesEngine.Cli -- list-rules       # works against this repo's own rules/
-dotnet run --project RuleEngine/RulesEngine.Cli -- explain-rule DDD-ENTITY-001
-dotnet run --project RuleEngine/RulesEngine.Cli -- validate   # see "Known limitation" below — self-validation still crashes
+dotnet run --project CodeGuard/CodeGuard.Cli -- list-rules       # works against this repo's own rules/
+dotnet run --project CodeGuard/CodeGuard.Cli -- explain-rule DDD-ENTITY-001
+dotnet run --project CodeGuard/CodeGuard.Cli -- validate   # see "Known limitation" below — self-validation still crashes
 ```
 
 ## Architecture overview
 
 ```
-RuleEngine.sln
+CodeGuard.sln
 Directory.Build.props          # net10.0, Nullable enable, ImplicitUsings enable, LangVersion latest
 global.json                    # pins SDK to 10.0.100 (rollForward: latestFeature) — read by CI (PR8)
 .github/workflows/ci.yml       # dotnet restore/build/test on push/PR to main + workflow_dispatch (PR8)
-.rulesengine/config.yml        # repository discovery config for THIS repo (PR6)
+.codeguard/config.yml        # repository discovery config for THIS repo (PR6)
 
 rules/                         # the 11 illustrative starter rules (YAML), all tagged illustrative: true
   ddd/                         # 7 files — entity, aggregate, event, command-handler rules
@@ -68,35 +68,35 @@ rules/                         # the 11 illustrative starter rules (YAML), all t
   csharp/                      # 1 file — namespace convention rule
   schema/rule.schema.json      # JSON Schema (2020-12) for rule YAML files
 
-RuleEngine/
+CodeGuard/
   PRIMITIVES.md                 # original design doc — do not edit
   REFACTORING.md                # separate, much larger architectural-evolution proposal — not started, see above
-  RulesEngine.Cli/               # System.CommandLine-based CLI (net10.0 exe, AssemblyName=rules-engine)
+  CodeGuard.Cli/               # System.CommandLine-based CLI (net10.0 exe, AssemblyName=codeguard)
     Program.cs                  #   MSBuildLocator bootstrap + composes RootCommand from Commands/
     Commands/                   #   ValidateCommand, ListRulesCommand, ExplainRuleCommand
     Support/                    #   CliRepositoryContext (shared --path/--config resolution), CommonOptions
-  RulesEngine.Core/              # RuleEvaluator, ValidationResult/Violation (Core.Evaluation, Core.Results)
-  RulesEngine.RuleModel/         # RuleDefinition, Severity, EnforcementClassification;
+  CodeGuard.Core/              # RuleEvaluator, ValidationResult/Violation (Core.Evaluation, Core.Results)
+  CodeGuard.RuleModel/         # RuleDefinition, Severity, EnforcementClassification;
                                  #   ITargetSelector/IAssertion/IConditionNode interfaces;
                                  #   AndCondition/OrCondition/NotCondition
-  RulesEngine.Analysis/          # Provider-agnostic analysis model (RepositoryModel, ProjectModel,
+  CodeGuard.Analysis/          # Provider-agnostic analysis model (RepositoryModel, ProjectModel,
                                  #   TypeModel, etc. in AnalysisModel/) + IAnalysisProvider,
                                  #   AnalysisModelBuilderContext, AnalysisModelBuilder (Providers/)
-  RulesEngine.Evaluation/        # Concrete executable selectors/assertions (see table below) + GlobMatcher
-  RulesEngine.Configuration/     # YAML rule loading/parsing/validation + repository discovery (see below)
-  RulesEngine.Reporting/         # IViolationReporter + Console/Json/Sarif reporters (Console/, Json/, Sarif/)
-  RulesEngine.Analyzers.Roslyn/  # RoslynTypeExtractor: CSharpCompilation -> IReadOnlyList<TypeModel>
-  RulesEngine.Analyzers.MSBuild/ # MsBuildAnalysisProvider: MSBuildWorkspace + Microsoft.Build.Evaluation -> ProjectModel (+ Types via Roslyn)
-  RulesEngine.Analyzers.Repository/ # RepositoryFileProvider: walks the filesystem -> FileModel (no Roslyn/MSBuild)
+  CodeGuard.Evaluation/        # Concrete executable selectors/assertions (see table below) + GlobMatcher
+  CodeGuard.Configuration/     # YAML rule loading/parsing/validation + repository discovery (see below)
+  CodeGuard.Reporting/         # IViolationReporter + Console/Json/Sarif reporters (Console/, Json/, Sarif/)
+  CodeGuard.Analyzers.Roslyn/  # RoslynTypeExtractor: CSharpCompilation -> IReadOnlyList<TypeModel>
+  CodeGuard.Analyzers.MSBuild/ # MsBuildAnalysisProvider: MSBuildWorkspace + Microsoft.Build.Evaluation -> ProjectModel (+ Types via Roslyn)
+  CodeGuard.Analyzers.Repository/ # RepositoryFileProvider: walks the filesystem -> FileModel (no Roslyn/MSBuild)
 
 tests/
-  RulesEngine.Core.Tests/            (9 tests)  — RuleEvaluator, Console/Json/Sarif violation reporters
-  RulesEngine.Evaluation.Tests/      (41 tests) — every selector/assertion + And/Or/Not composition
-  RulesEngine.Configuration.Tests/   (15 tests) — RuleFileLoader (incl. source-tracking), RepositoryDiscovery,
-                                                    RulesEngineConfigLoader (incl. explicit --config path)
-  RulesEngine.Analyzers.Roslyn.Tests/(12 tests) — RoslynTypeExtractor against in-memory source snippets
-  RulesEngine.Analyzers.Repository.Tests/ (1 test) — RepositoryFileProvider walk + directory exclusions
-  RulesEngine.IntegrationTests/      (3 tests)  — full pipeline against a real fixture solution, incl.
+  CodeGuard.Core.Tests/            (9 tests)  — RuleEvaluator, Console/Json/Sarif violation reporters
+  CodeGuard.Evaluation.Tests/      (41 tests) — every selector/assertion + And/Or/Not composition
+  CodeGuard.Configuration.Tests/   (15 tests) — RuleFileLoader (incl. source-tracking), RepositoryDiscovery,
+                                                    CodeGuardConfigLoader (incl. explicit --config path)
+  CodeGuard.Analyzers.Roslyn.Tests/(12 tests) — RoslynTypeExtractor against in-memory source snippets
+  CodeGuard.Analyzers.Repository.Tests/ (1 test) — RepositoryFileProvider walk + directory exclusions
+  CodeGuard.IntegrationTests/      (3 tests)  — full pipeline against a real fixture solution, incl.
                                                     JSON/SARIF reporter output shape
     Fixtures/SimpleDomainSolution/   — real 3-project .sln (Contoso.Domain/Application/Infrastructure)
                                         used ONLY by MsBuildAnalysisProvider at test-time, not built by the main solution
@@ -105,30 +105,30 @@ tests/
 ### Dependency direction between the core projects
 
 ```
-RulesEngine.Analysis  (no dependencies — pure model + provider abstraction)
+CodeGuard.Analysis  (no dependencies — pure model + provider abstraction)
   ^
-  |-- RulesEngine.RuleModel  (selector/assertion/condition interfaces; depends on Analysis)
+  |-- CodeGuard.RuleModel  (selector/assertion/condition interfaces; depends on Analysis)
   |     ^
-  |     |-- RulesEngine.Evaluation  (concrete selectors/assertions; depends on RuleModel + Analysis)
-  |     |-- RulesEngine.Core        (RuleEvaluator; depends on RuleModel + Analysis, NOT Evaluation)
+  |     |-- CodeGuard.Evaluation  (concrete selectors/assertions; depends on RuleModel + Analysis)
+  |     |-- CodeGuard.Core        (RuleEvaluator; depends on RuleModel + Analysis, NOT Evaluation)
   |
-  |-- RulesEngine.Analyzers.Roslyn   (depends on Analysis only; pure Roslyn, no MSBuild)
+  |-- CodeGuard.Analyzers.Roslyn   (depends on Analysis only; pure Roslyn, no MSBuild)
   |     ^
-  |     |-- RulesEngine.Analyzers.MSBuild (depends on Analysis + Analyzers.Roslyn + Microsoft.CodeAnalysis.Workspaces.MSBuild)
+  |     |-- CodeGuard.Analyzers.MSBuild (depends on Analysis + Analyzers.Roslyn + Microsoft.CodeAnalysis.Workspaces.MSBuild)
   |
-  |-- RulesEngine.Analyzers.Repository (depends on Analysis only; pure filesystem walk, no Roslyn/MSBuild)
+  |-- CodeGuard.Analyzers.Repository (depends on Analysis only; pure filesystem walk, no Roslyn/MSBuild)
 
-RulesEngine.Reporting     depends on Core (transitively RuleModel, for Severity in the SARIF level mapping)
+CodeGuard.Reporting     depends on Core (transitively RuleModel, for Severity in the SARIF level mapping)
                           + Sarif.Sdk package (SarifViolationReporter; System.Text.Json only for Json one)
-RulesEngine.Configuration depends on Analysis + RuleModel + Evaluation (needs concrete selector/assertion classes to construct from YAML)
-RulesEngine.Cli           depends on everything (Core, RuleModel, Analysis, Evaluation, Reporting, Configuration,
+CodeGuard.Configuration depends on Analysis + RuleModel + Evaluation (needs concrete selector/assertion classes to construct from YAML)
+CodeGuard.Cli           depends on everything (Core, RuleModel, Analysis, Evaluation, Reporting, Configuration,
                           Analyzers.MSBuild, Analyzers.Repository)
 ```
 
 ## Selectors and assertions implemented (v1 scope)
 
-Every selector/assertion has both a concrete `RulesEngine.Evaluation` class and a
-`RulesEngine.Configuration.Parsing` YAML parser, registered in `DefaultParsers.cs`. **Extend
+Every selector/assertion has both a concrete `CodeGuard.Evaluation` class and a
+`CodeGuard.Configuration.Parsing` YAML parser, registered in `DefaultParsers.cs`. **Extend
 both together** — a new assertion isn't usable from YAML until its parser is registered there.
 
 | YAML `kind` | Evaluation class | Parser params |
@@ -151,20 +151,20 @@ both together** — a new assertion isn't usable from YAML until its parser is r
 | `must_not_reference_project` | `MustNotReferenceProjectAssertion` | `name` |
 | `must_not_depend_on` | `MustNotDependOnAssertion` | `type` (scans base type/interfaces/method signatures) |
 
-All pattern matching uses `RulesEngine.Evaluation.GlobMatcher` (only `*` wildcard supported, via
+All pattern matching uses `CodeGuard.Evaluation.GlobMatcher` (only `*` wildcard supported, via
 `Regex.Escape` + `.*` substitution). **Important:** patterns are matched with `GlobMatcher`, not
 exact string equality — this matters for generic base types (see Gotcha #1 below).
 
-`AndCondition`/`OrCondition`/`NotCondition` exist in `RulesEngine.RuleModel.Conditions` and are
+`AndCondition`/`OrCondition`/`NotCondition` exist in `CodeGuard.RuleModel.Conditions` and are
 unit-tested, but **there is no YAML parsing for `when`/`and`/`or`/`not` yet** — no starter rule
 needs it, so it was deliberately deferred (not stubbed); PR7 didn't end up needing it either. If a
 future rule needs it, you'll need to add a
-`ConditionParserRegistry` in `RulesEngine.Configuration.Parsing` and wire `when:` parsing into
+`ConditionParserRegistry` in `CodeGuard.Configuration.Parsing` and wire `when:` parsing into
 `RuleDocumentParser`, plus add `"when"` to `rules/schema/rule.schema.json`.
 
 ## CLI commands (PR7)
 
-All four commands live in `RuleEngine/RulesEngine.Cli/Commands/`, share `--path`/`--config`
+All four commands live in `CodeGuard/CodeGuard.Cli/Commands/`, share `--path`/`--config`
 resolution via `Support/CliRepositoryContext.cs`, and are composed in `Program.cs`.
 
 | Command | Options | Notes |
@@ -173,18 +173,18 @@ resolution via `Support/CliRepositoryContext.cs`, and are composed in `Program.c
 | `list-rules` | `--path`, `--config`, `--format table\|json`, `--tag` (repeatable, any-match), `--enabled-only` | Pure rule loading — no analysis model, no Roslyn/MSBuild, so this is cheap for an agent to call before generating code. |
 | `explain-rule <ruleId>` | `--path`, `--config` | Uses `RuleFileLoader.LoadFromDirectoriesWithSource` to find the backing YAML file, then prints parsed metadata plus the **raw YAML source verbatim** (rather than trying to introspect configured selector/assertion parameters, which `ITargetSelector`/`IAssertion` don't expose beyond `Kind` — see decision #5 below). |
 
-`RulesEngineConfigLoader.LoadOrDefault` now has a two-argument overload
+`CodeGuardConfigLoader.LoadOrDefault` now has a two-argument overload
 (`repoRoot, explicitConfigPath`) backing `--config`; the original one-argument overload still
 exists and delegates to it with `null`.
 
 ### Post-v1 addition: `--format html` and directory-aware `--output`
 
-`validate --format` also accepts `html` (`RulesEngine.Reporting.Html.HtmlViolationReporter`) — a
+`validate --format` also accepts `html` (`CodeGuard.Reporting.Html.HtmlViolationReporter`) — a
 single self-contained file (inline CSS/JS, no external requests) with client-side severity/rule-id/
 project/message filtering, meant to be opened in a browser or published as a CI artifact.
 
 `--output` now accepts a directory as well as an exact file path
-(`RulesEngine.Cli.Support.ReportOutputPathResolver`, tested in `ReportOutputPathResolverTests.cs`
+(`CodeGuard.Cli.Support.ReportOutputPathResolver`, tested in `ReportOutputPathResolverTests.cs`
 following the same pure-function-of-its-inputs pattern as `ColorSupport`): if the value is an
 existing directory, or ends in a path separator, a default filename derived from `--format` is
 appended (`validation-report.html`/`.json`/`.sarif`/`.txt`). Either way, `ValidateCommand` now
@@ -198,7 +198,7 @@ Design doc: `docs/done/RULE_VALIDATION_PLAN.md`. Before this, a broken rule YAML
 `validate` against a repo with one bad rule file crashed with a raw .NET stack trace instead of a
 clean report, and there was no way to check a folder of rule YAML in isolation.
 
-- `RuleFileLoader` (`RulesEngine.Configuration/Loading/RuleFileLoader.cs`) gained a non-throwing core:
+- `RuleFileLoader` (`CodeGuard.Configuration/Loading/RuleFileLoader.cs`) gained a non-throwing core:
   `TryLoadFromFile` (schema-validate-then-parse, catching `RuleSchemaValidationException`/
   `RuleParsingException`/`RuleLoadException` into an error list instead of throwing) and
   `ValidateDirectories` (walks a rule-file set, collects **every** file's issues plus duplicate-ID
@@ -207,9 +207,9 @@ clean report, and there was no way to check a folder of rule YAML in isolation.
   throw on the first problem) but are now implemented on top of this non-throwing core, so there is
   a single parsing pass shared by every caller — no drift between "what `check-rules` approves" and
   "what `validate` actually loads."
-- New `CliRepositoryContext.ValidateRules()` (`RulesEngine.Cli/Support/CliRepositoryContext.cs`)
+- New `CliRepositoryContext.ValidateRules()` (`CodeGuard.Cli/Support/CliRepositoryContext.cs`)
   exposes `ValidateDirectories` for the configured rule paths, parallel to `LoadRules()`.
-- New `check-rules` command (`RulesEngine.Cli/Commands/CheckRulesCommand.cs`): validates a rule set
+- New `check-rules` command (`CodeGuard.Cli/Commands/CheckRulesCommand.cs`): validates a rule set
   for structural correctness only (schema conformance, unknown selector/assertion/analyzer `kind`,
   `target`/`assertions` vs `analyzer` mutual exclusivity, duplicate rule IDs) with no analysis model
   and no MSBuild involved. Shares `--path`/`--config`/`--rules-source`/`--branch` resolution with
@@ -218,11 +218,11 @@ clean report, and there was no way to check a folder of rule YAML in isolation.
   not violations).
 - `validate` (`ValidateCommand.cs`) now calls `context.ValidateRules()` unconditionally before
   building the `AnalysisModel`/touching `MsBuildAnalysisProvider`; on any issue it prints the same
-  report (`RulesEngine.Cli/Support/RuleValidationReportWriter.cs`, shared with `check-rules`) and
+  report (`CodeGuard.Cli/Support/RuleValidationReportWriter.cs`, shared with `check-rules`) and
   returns exit code `1` — no `--skip-rule-validation` escape hatch, since the check is cheap and a
   broken ruleset should never silently or crashily proceed past it.
 - Tests: `RuleFileLoaderTests` covers `ValidateDirectories` aggregation directly;
-  `RulesEngine.Cli.Tests` gained `CheckRulesCommandTests` and `ValidateCommandPreflightTests`
+  `CodeGuard.Cli.Tests` gained `CheckRulesCommandTests` and `ValidateCommandPreflightTests`
   (invoking the actual `Command` via `Build().Parse(...).InvokeAsync()` and redirecting
   `Console.Out`). Both new CLI test classes share a `[Collection(ConsoleOutputCollection.Name)]` —
   xUnit parallelizes different test classes by default, and two classes independently swapping the
@@ -262,11 +262,11 @@ All under `rules/`, all illustrative (`Contoso.*` namespace, `illustrative: true
    `MsBuildAnalysisProvider.cs`. This removed the need to pin `Microsoft.CodeAnalysis.CSharp(.Workspaces)`
    to 4.10.0 (previously required because `Buildalyzer.Workspaces` depended on
    `Microsoft.CodeAnalysis.Workspaces.Common` 4.10.0, and mixing Roslyn generations in one process
-   throws `TypeLoadException`) — `RulesEngine.Analyzers.Roslyn.csproj` and
-   `RulesEngine.Analyzers.MSBuild.csproj` now use **5.6.0** (latest), matched by
+   throws `TypeLoadException`) — `CodeGuard.Analyzers.Roslyn.csproj` and
+   `CodeGuard.Analyzers.MSBuild.csproj` now use **5.6.0** (latest), matched by
    `Microsoft.CodeAnalysis.Workspaces.MSBuild` 5.6.0. Keep all three in the same Roslyn generation
    if you bump one.
-   - `RulesEngine.Analyzers.MSBuild.csproj` still has `Microsoft.Build`/`Microsoft.Build.Framework`
+   - `CodeGuard.Analyzers.MSBuild.csproj` still has `Microsoft.Build`/`Microsoft.Build.Framework`
      `PackageReference`s with `ExcludeAssets="runtime" PrivateAssets="all"` at `17.11.48`, required
      by `Microsoft.Build.Locator`'s own build-time check (`MSBL001`) — much shorter list than
      Buildalyzer needed (~12 entries), since `Microsoft.CodeAnalysis.Workspaces.MSBuild`'s own
@@ -289,25 +289,25 @@ All under `rules/`, all illustrative (`Contoso.*` namespace, `illustrative: true
    `IReadOnlyList<IAssertion> Assertions`, `IConditionNode? When`) rather than separate "Definition"
    DTOs that get resolved at evaluation time. This was a deliberate PR1 simplification versus the
    original plan sketch (which had `TargetSelectorDefinition`/`AssertionDefinition` DTOs) —
-   `RulesEngine.Configuration.Parsing` builds these executable instances directly from YAML via
+   `CodeGuard.Configuration.Parsing` builds these executable instances directly from YAML via
    `SelectorParserRegistry`/`AssertionParserRegistry`, there's no intermediate DTO layer. Keep
    this consistent if you extend the schema.
 
-6. **Known limitation — CLI self-analysis (partially resolved).** `rules-engine validate` run
-   against **this tool's own currently-running solution** (`RuleEngine.sln`) used to reliably crash
+6. **Known limitation — CLI self-analysis (partially resolved).** `codeguard validate` run
+   against **this tool's own currently-running solution** (`CodeGuard.sln`) used to reliably crash
    with `System.InvalidOperationException: Sequence contains no elements` inside
    `MsBuildAnalysisProvider.ContributeAsync`, because Buildalyzer's default design-time build ran
    `Clean;Build`, and when Buildalyzer's "common output directory" happened to be this CLI's own
    `bin/` folder, an earlier project's `Clean` step deleted `Buildalyzer.Logger.dll`, which a later
    project's spawned MSBuild process then couldn't find.
    - **This specific crash is fixed** by the Buildalyzer→`MSBuildWorkspace` migration (see gotcha
-     #2) — confirmed empirically by running `rules-engine validate` against `RuleEngine.sln` after
+     #2) — confirmed empirically by running `codeguard validate` against `CodeGuard.sln` after
      the swap. `MSBuildWorkspace`'s design-time build runs in a separate out-of-process BuildHost
      and does no `Clean;Build` sequencing across projects, so this class of shared-output-directory
      collision no longer occurs.
    - **However, self-analysis still doesn't complete end-to-end.** It now gets much further — past
      type extraction — and crashes in `NoPureDelegationOverrideAnalyzer.Analyze`
-     (`src/RulesEngine.Evaluation/Analyzers/NoPureDelegationOverrideAnalyzer.cs`):
+     (`src/CodeGuard.Evaluation/Analyzers/NoPureDelegationOverrideAnalyzer.cs`):
      `model.Solutions.SelectMany(...).SelectMany(p => p.Types).ToDictionary(t => t.FullName)`
      assumes a type's `FullName` is unique across the *entire* repository, but every test project in
      this solution gets an SDK-generated `AutoGeneratedProgram` stub type with an identical name, so
@@ -319,7 +319,7 @@ All under `rules/`, all illustrative (`Contoso.*` namespace, `illustrative: true
      `.ToDictionary(t => t.FullName)` across `model.Solutions.SelectMany(s => s.Projects)` likely has
      the same latent bug.
    - Still does **not** affect validating any other repository without this same-name collision —
-     proven by `RulesEngine.IntegrationTests` (a real, separate 3-project solution analyzed
+     proven by `CodeGuard.IntegrationTests` (a real, separate 3-project solution analyzed
      correctly, real violations detected).
 
 7. **`dotnet sln add` auto-adds transitively referenced projects** in this SDK version — you'll
@@ -338,7 +338,7 @@ All under `rules/`, all illustrative (`Contoso.*` namespace, `illustrative: true
    note/error.
 
 9. **MSBuildLocator must be registered exactly once per process, via a single choke point.**
-   `RulesEngine.IntegrationTests` has two test classes that each need MSBuild (via
+   `CodeGuard.IntegrationTests` has two test classes that each need MSBuild (via
    `MSBuildWorkspace` and `Microsoft.Build.Evaluation.Project`).
    Originally each had its own `static` constructor guarded by
    `if (!MSBuildLocator.IsRegistered) MSBuildLocator.RegisterDefaults();` — this is **not** safe
@@ -346,7 +346,7 @@ All under `rules/`, all illustrative (`Contoso.*` namespace, `illustrative: true
    parallel by default, and the two independent static-constructor check-then-act races threw
    `InvalidOperationException: MSBuild assemblies were already loaded`. Fixed by moving the
    registration into a single `[ModuleInitializer]` method
-   (`RulesEngine.IntegrationTests/MsBuildLocatorInitializer.cs`), which the runtime guarantees
+   (`CodeGuard.IntegrationTests/MsBuildLocatorInitializer.cs`), which the runtime guarantees
    runs exactly once, before any type in the assembly is used. If you add a third test class that
    needs MSBuild, it gets this for free — don't add another per-class static constructor.
 
@@ -385,7 +385,7 @@ All under `rules/`, all illustrative (`Contoso.*` namespace, `illustrative: true
   target repo) on the 97 generated rules — so `list-standards` produced ~60 mostly-singleton groups
   instead of a meaningful category list. `Documentation` (`IReadOnlyList<string>`) remains on
   `RuleDefinition` as the intended doc-reference field but is unpopulated by any current rule file.
-- Everything in `RuleEngine/REFACTORING.md` (analysis sessions/caching, rule versioning and
+- Everything in `CodeGuard/REFACTORING.md` (analysis sessions/caching, rule versioning and
   lifecycle states, the Selector/Predicate/Assertion/Diagnostic split, a custom-analyzer escape
   hatch, rule fixture testing) — a deliberately separate, larger initiative the user chose not to
   start yet. See "Where things stand" above.

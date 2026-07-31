@@ -1197,37 +1197,37 @@ An example:
 
 ```text
 src/
-└── RuleEngine/
+└── CodeGuard/
     │
-    ├── RuleEngine.Core/
+    ├── CodeGuard.Core/
     │   ├── Rules/
     │   ├── Diagnostics/
     │   ├── Results/
     │   └── Execution/
     │
-    ├── RuleEngine.Analysis/
+    ├── CodeGuard.Analysis/
     │   ├── Sessions/
     │   ├── CSharp/
     │   ├── DotNet/
     │   └── Repository/
     │
-    ├── RuleEngine.Analysis.Roslyn/
+    ├── CodeGuard.Analysis.Roslyn/
     │   ├── Workspace/
     │   ├── Compilation/
     │   ├── Symbols/
     │   ├── Dependencies/
     │   └── Indexing/
     │
-    ├── RuleEngine.Analysis.MSBuild/
+    ├── CodeGuard.Analysis.MSBuild/
     │   ├── Projects/
     │   ├── Packages/
     │   └── References/
     │
-    ├── RuleEngine.Analysis.Repository/
+    ├── CodeGuard.Analysis.Repository/
     │   ├── Files/
     │   └── Directories/
     │
-    ├── RuleEngine.Primitives/
+    ├── CodeGuard.Primitives/
     │   ├── Selection/
     │   ├── Predicates/
     │   │   ├── Types/
@@ -1238,22 +1238,22 @@ src/
     │   │
     │   └── Logic/
     │
-    ├── RuleEngine.Declarative/
+    ├── CodeGuard.Declarative/
     │   ├── Loading/
     │   ├── Parsing/
     │   ├── Composition/
     │   └── Evaluation/
     │
-    ├── RuleEngine.Analyzers/
+    ├── CodeGuard.Analyzers/
     │   ├── Abstractions/
     │   └── Execution/
     │
-    ├── RuleEngine.Configuration/
+    ├── CodeGuard.Configuration/
     │   ├── Schema/
     │   ├── Serialization/
     │   └── Validation/
     │
-    └── RuleEngine.Cli/
+    └── CodeGuard.Cli/
         ├── Commands/
         ├── Output/
         └── Formatting/

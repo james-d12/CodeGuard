@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <PackageReference Include="JsonSchema.Net" Version="9.4.0" />
+    <PackageReference Include="YamlDotNet" Version="18.1.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\CodeGuard.Analysis\CodeGuard.Analysis.csproj" />
+    <ProjectReference Include="..\CodeGuard.RuleModel\CodeGuard.RuleModel.csproj" />
+    <ProjectReference Include="..\CodeGuard.Evaluation\CodeGuard.Evaluation.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Validation\Schemas\rule.schema.json" />
+  </ItemGroup>
+
+</Project>

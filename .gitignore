@@ -9,4 +9,4 @@ StrykerOutput/
 *.DotSettings.user
 .config
 rules/
-.rulesengine/
+.codeguard/

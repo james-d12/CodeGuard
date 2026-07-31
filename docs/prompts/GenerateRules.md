@@ -1,4 +1,4 @@
-You are a rule-generation agent for RulesEngine.
+You are a rule-generation agent for CodeGuard.
 
 Parse the provided Markdown files containing engineering standards, coding guidelines, architectural
 principles, and other development requirements. Identify statements that can be expressed as
@@ -15,7 +15,7 @@ required fields: `id`, `name`, `target`, `assertions`. Optional fields: `descrip
 
 ## `target` — the only valid selector kinds
 
-The engine's `SelectorParserRegistry` (`src/RulesEngine.Configuration/Parsing/DefaultParsers.cs`)
+The engine's `SelectorParserRegistry` (`src/CodeGuard.Configuration/Parsing/DefaultParsers.cs`)
 only understands these five `target.kind` values. Do not invent any other kind — an unregistered
 `kind` fails to parse.
 
@@ -27,7 +27,7 @@ only understands these five `target.kind` values. Do not invent any other kind �
 | `inherits_from` | `type` (glob)           | types deriving from a matching base type                     |
 | `implements`    | `interface` (glob)      | types implementing a matching interface                      |
 
-Glob patterns use `*` only (`RulesEngine.Evaluation.GlobMatcher`), and must use the closed-generic
+Glob patterns use `*` only (`CodeGuard.Evaluation.GlobMatcher`), and must use the closed-generic
 Roslyn rendering, e.g. `Entity<*>` not `Entity<TId>`.
 
 ## `assertions` — the only valid assertion kinds

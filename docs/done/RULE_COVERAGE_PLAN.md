@@ -81,14 +81,14 @@ point's first (and, for now, only) consumers.
 - Represent negation through explicit `must_not_*` counterparts, consistent with this codebase's
   existing convention (`must_reference_package`/`must_not_reference_package`, etc.) rather than
   introducing a new negation mechanism.
-- Keep Roslyn/MSBuild concerns inside their existing analyzer projects; `RulesEngine.RuleModel` and
-  `RulesEngine.Analysis` stay plain-POCO, dependency-free (per `CLAUDE.md`'s architecture invariants).
+- Keep Roslyn/MSBuild concerns inside their existing analyzer projects; `CodeGuard.RuleModel` and
+  `CodeGuard.Analysis` stay plain-POCO, dependency-free (per `CLAUDE.md`'s architecture invariants).
 - Reuse the compiler's own analyzers instead of reimplementing style/formatting checks (§2.3, §9).
 - Custom analyzers operate over the same pure `RepositoryModel` as declarative rules (extended with the
   new `CallSiteModel`/`FieldModel` facts) — not raw Roslyn `Compilation` objects — so the existing
   "Analysis has zero Roslyn dependency" boundary holds even for custom analyzer code. The one exception
   is the Roslyn-diagnostic-passthrough analyzer (below), which necessarily needs a live `Compilation`
-  and is scoped to live in `RulesEngine.Analyzers.Roslyn` for that reason.
+  and is scoped to live in `CodeGuard.Analyzers.Roslyn` for that reason.
 
 ---
 
@@ -97,7 +97,7 @@ point's first (and, for now, only) consumers.
 No dependency on call-site analysis or the custom-analyzer extension point — pure extensions to the
 existing symbol-level model and selector/assertion pattern.
 
-## Phase A1 — Analysis-model extensions (`src/RulesEngine.Analysis`, `src/RulesEngine.Analyzers.Roslyn`)
+## Phase A1 — Analysis-model extensions (`src/CodeGuard.Analysis`, `src/CodeGuard.Analyzers.Roslyn`)
 
 Extend the existing model records (additive, non-breaking) so the data the new primitives need actually
 exists:
@@ -118,13 +118,13 @@ All additions are populated during the existing symbol-level extraction pass; no
 ## Phase A2 — Wire `when`/`and`/`or`/`not` into the YAML parser
 
 `AndCondition`/`OrCondition`/`NotCondition`/`IConditionNode` already exist and are unit-tested
-(`src/RulesEngine.RuleModel/Conditions/`) but nothing parses them from YAML (`CLAUDE.md` gotcha,
+(`src/CodeGuard.RuleModel/Conditions/`) but nothing parses them from YAML (`CLAUDE.md` gotcha,
 confirmed still true). Add a `ConditionParserRegistry` (mirrors `SelectorParserRegistry`) in
-`RulesEngine.Configuration/Parsing/`, wire it into `RuleDocumentParser` for a `when:` block, and add
+`CodeGuard.Configuration/Parsing/`, wire it into `RuleDocumentParser` for a `when:` block, and add
 `when`/`and`/`or`/`not` to `rules/schema/rule.schema.json`. Several Stage A rules are conditional
 ("if a class implements X, then...") and need this.
 
-## Phase A3 — New selector kinds (`src/RulesEngine.Evaluation/Selectors`, registered in `DefaultParsers.cs`)
+## Phase A3 — New selector kinds (`src/CodeGuard.Evaluation/Selectors`, registered in `DefaultParsers.cs`)
 
 | kind | candidates | filters |
 |---|---|---|
@@ -138,7 +138,7 @@ confirmed still true). Add a `ConditionParserRegistry` (mirrors `SelectorParserR
 
 (`call_site` is added in Stage B, once `CallSiteModel` exists.)
 
-## Phase A4 — New assertion kinds (`src/RulesEngine.Evaluation/Assertions`)
+## Phase A4 — New assertion kinds (`src/CodeGuard.Evaluation/Assertions`)
 
 Grouped by what they unlock:
 
@@ -209,14 +209,14 @@ never bodies) — additive to the existing extraction pass, not a new provider.
 
 ## Phase B3 — Custom analyzer extension point
 
-- `ICustomAnalyzer` in `RulesEngine.RuleModel` (same placement rationale as `ITargetSelector`/
+- `ICustomAnalyzer` in `CodeGuard.RuleModel` (same placement rationale as `ITargetSelector`/
   `IAssertion` — Core depends on the interface, not the implementation): `string Name { get; }`,
   `IEnumerable<AnalyzerViolation> Analyze(RepositoryModel model)`.
 - `RuleDefinition` gains an optional `AnalyzerName: string?`, mutually exclusive with `Target`/
   `Assertions` (schema: `oneOf [{required:[target,assertions]}, {required:[analyzer]}]`).
-- `CustomAnalyzerRegistry` in `RulesEngine.Configuration/Parsing/`, resolved the same way selector/
+- `CustomAnalyzerRegistry` in `CodeGuard.Configuration/Parsing/`, resolved the same way selector/
   assertion parsers are.
-- `RuleEvaluator` (`RulesEngine.Core`) branches: if `AnalyzerName` is set, resolve and invoke the
+- `RuleEvaluator` (`CodeGuard.Core`) branches: if `AnalyzerName` is set, resolve and invoke the
   analyzer directly instead of the selector→assertion pipeline, mapping its violations into the same
   `Violation` shape used everywhere else (unified diagnostics, per `REFACTORING.md` §3.5).
 
@@ -269,13 +269,13 @@ implementation" scope is honest about what "all" excludes and why.
 
 New model/selector/assertion/analyzer classes get unit tests following the existing per-class test
 pattern (e.g. `MustInheritFromAssertionTests` → new `MustHaveModifierAssertionTests`,
-`MethodSelectorTests`, etc.) in the matching test project (`RulesEngine.Evaluation.Tests`,
-`RulesEngine.Configuration.Tests`, `RulesEngine.Core.Tests` for the Stage B analyzer-branch behavior).
+`MethodSelectorTests`, etc.) in the matching test project (`CodeGuard.Evaluation.Tests`,
+`CodeGuard.Configuration.Tests`, `CodeGuard.Core.Tests` for the Stage B analyzer-branch behavior).
 
 **After Stage A:**
 - `dotnet build` stays 0 errors; `dotnet test` stays green (new tests added, none of the existing 81
   should change behavior since all additions are additive).
-- `dotnet run --project src/RulesEngine.Cli -- list-rules` shows the ~70 new Stage A rules loading
+- `dotnet run --project src/CodeGuard.Cli -- list-rules` shows the ~70 new Stage A rules loading
   without error, alongside the existing 16.
 - Spot-check a few Stage A rules with `explain-rule`, and run `validate` against a small scratch fixture
   repo (not this repo itself, per the documented self-analysis limitation) exercising a passing and

@@ -25,8 +25,8 @@
         <Authors>james</Authors>
         <Copyright>Copyright 2026 james</Copyright>
         <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
-        <PackageProjectUrl>https://github.com/james-d12/RuleEngine</PackageProjectUrl>
-        <RepositoryUrl>https://github.com/james-d12/RuleEngine</RepositoryUrl>
+        <PackageProjectUrl>https://github.com/james-d12/CodeGuard</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/james-d12/CodeGuard</RepositoryUrl>
     </PropertyGroup>
 
 </Project>

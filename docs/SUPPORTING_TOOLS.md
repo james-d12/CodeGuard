@@ -15,7 +15,7 @@ The supporting tooling should make rules easy to evolve while preventing drift, 
 The rule engine ecosystem consists of the following commands:
 
 ```text
-rule-engine
+codeguard
     |
     ├── validate
     ├── explain
@@ -36,13 +36,13 @@ Execute rules against a target repository and produce validation results.
 ## Usage
 
 ```bash
-rule-engine validate
+codeguard validate
 ```
 
 or:
 
 ```bash
-rule-engine validate --path ./src
+codeguard validate --path ./src
 ```
 
 ## Responsibilities
@@ -109,7 +109,7 @@ Developers should understand:
 ## Usage
 
 ```bash
-rule-engine explain DDD-001
+codeguard explain DDD-001
 ```
 
 ## Example
@@ -155,7 +155,7 @@ Rules should be treated as production code and require confidence when changed.
 ## Usage
 
 ```bash
-rule-engine test
+codeguard test
 ```
 
 ## Test Structure
@@ -211,7 +211,7 @@ Rules are critical business assets and should have quality controls.
 ## Usage
 
 ```bash
-rule-engine lint
+codeguard lint
 ```
 
 ## Checks
@@ -328,7 +328,7 @@ Useful for developing new rules.
 ## Usage
 
 ```bash
-rule-engine inspect
+codeguard inspect
 ```
 
 ## Example

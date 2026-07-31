@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <ItemGroup>
+        <ProjectReference Include="..\CodeGuard.Analysis\CodeGuard.Analysis.csproj" />
+    </ItemGroup>
+
+</Project>

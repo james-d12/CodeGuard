@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <AssemblyName>codeguard</AssemblyName>
+        <IsPublishable>true</IsPublishable>
+    </PropertyGroup>
+
+    <!-- dotnet tool packaging: `dotnet tool install -g CodeGuard` installs the `codeguard` command. -->
+    <!-- Version is derived from git tags (e.g. v0.1.0) by MinVer below - do not add a <Version> property. -->
+    <PropertyGroup>
+        <IsPackable>true</IsPackable>
+        <PackAsTool>true</PackAsTool>
+        <ToolCommandName>codeguard</ToolCommandName>
+        <PackageId>CodeGuard</PackageId>
+        <Description>Deterministic analysis/validation engine for enforcing engineering standards (DDD, architecture layering, C# conventions) against .NET repositories.</Description>
+        <PackageTags>dotnet-tool;static-analysis;roslyn;ddd;architecture;code-quality</PackageTags>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <MinVerTagPrefix>v</MinVerTagPrefix>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\CodeGuard.Core\CodeGuard.Core.csproj" />
+        <ProjectReference Include="..\CodeGuard.RuleModel\CodeGuard.RuleModel.csproj" />
+        <ProjectReference Include="..\CodeGuard.Analysis\CodeGuard.Analysis.csproj" />
+        <ProjectReference Include="..\CodeGuard.Evaluation\CodeGuard.Evaluation.csproj" />
+        <ProjectReference Include="..\CodeGuard.Reporting\CodeGuard.Reporting.csproj" />
+        <ProjectReference Include="..\CodeGuard.Configuration\CodeGuard.Configuration.csproj" />
+        <ProjectReference Include="..\CodeGuard.Analyzers.MSBuild\CodeGuard.Analyzers.MSBuild.csproj" />
+        <ProjectReference Include="..\CodeGuard.Analyzers.Repository\CodeGuard.Analyzers.Repository.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="System.CommandLine" Version="3.0.0-preview.6.26359.118" />
+      <PackageReference Include="MinVer" Version="7.0.0" PrivateAssets="All" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Include="..\..\README.md" Pack="true" PackagePath="README.md" />
+    </ItemGroup>
+
+</Project>

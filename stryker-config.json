@@ -1,7 +1,7 @@
 {
   "stryker-config": {
-    "solution": "RuleEngine.sln",
-    "mutate": ["**/*.cs", "!src/RulesEngine.Cli/**/*.cs"],
+    "solution": "CodeGuard.sln",
+    "mutate": ["**/*.cs", "!src/CodeGuard.Cli/**/*.cs"],
     "reporters": ["progress", "html", "json"],
     "thresholds": {
       "high": 80,

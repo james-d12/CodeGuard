@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <ItemGroup>
+        <ProjectReference Include="..\CodeGuard.Core\CodeGuard.Core.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Sarif.Sdk" Version="5.5.0" />
+    </ItemGroup>
+
+</Project>
