@@ -73,6 +73,46 @@ public class CheckCommandTests : IDisposable
         Assert.Contains("\"isValid\": false", output);
     }
 
+    [Fact]
+    public async Task Run_NoRulesConfigured_ExitsOneAndPrintsHint()
+    {
+        using var globalSettings = new IsolatedGlobalSettingsScope();
+        var repoDir = Directory.CreateTempSubdirectory("codeguard-check-norules-repo-").FullName;
+        try
+        {
+            var (exitCode, _, error) = await RunCheckRulesRaw(["--path", repoDir]);
+
+            Assert.Equal(1, exitCode);
+            Assert.Contains("No rules directory is configured.", error);
+            Assert.Contains("codeguard setup", error);
+            Assert.Contains("--rules-source", error);
+        }
+        finally
+        {
+            Directory.Delete(repoDir, recursive: true);
+        }
+    }
+
+    private static async Task<(int ExitCode, string Output, string Error)> RunCheckRulesRaw(IReadOnlyList<string> args)
+    {
+        var originalOut = Console.Out;
+        var originalError = Console.Error;
+        var outWriter = new StringWriter();
+        var errorWriter = new StringWriter();
+        Console.SetOut(outWriter);
+        Console.SetError(errorWriter);
+        try
+        {
+            var exitCode = await CheckCommand.Build().Parse(args.ToArray()).InvokeAsync();
+            return (exitCode, outWriter.ToString(), errorWriter.ToString());
+        }
+        finally
+        {
+            Console.SetOut(originalOut);
+            Console.SetError(originalError);
+        }
+    }
+
     private async Task<(int ExitCode, string Output)> RunCheckRules(IReadOnlyList<string>? extraArgs = null)
     {
         var args = new List<string> { "--rules-source", _rulesDir };

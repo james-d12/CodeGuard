@@ -32,6 +32,11 @@ public static class ExplainCommand
                 parseResult.GetValue(rulesSourceOption),
                 parseResult.GetValue(branchOption));
 
+            if (!context.TryRequireRulesConfigured(Console.Error))
+            {
+                return Task.FromResult(1);
+            }
+
             var ruleId = parseResult.GetValue(ruleIdArgument)!;
             var entries = context.LoadRulesWithSource();
             var entry = entries.FirstOrDefault(e => e.Rule.Id == ruleId);

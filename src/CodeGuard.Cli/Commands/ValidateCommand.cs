@@ -93,6 +93,11 @@ public static class ValidateCommand
                 parseResult.GetValue(rulesSourceOption),
                 parseResult.GetValue(branchOption));
 
+            if (!context.TryRequireRulesConfigured(Console.Error))
+            {
+                return 1;
+            }
+
             var ruleReport = context.ValidateRules();
             if (!ruleReport.IsValid)
             {

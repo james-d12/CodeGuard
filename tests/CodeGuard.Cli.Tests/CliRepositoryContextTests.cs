@@ -1,4 +1,5 @@
 using CodeGuard.Cli.Support;
+using CodeGuard.Configuration.Discovery;
 using CodeGuard.Configuration.GlobalConfig;
 
 namespace CodeGuard.Cli.Tests;
@@ -75,6 +76,40 @@ public class CliRepositoryContextTests : IDisposable
         var context = CliRepositoryContext.Resolve(_repoRoot, configPath: null, globalSettingsRoot: _globalSettingsRoot);
 
         Assert.Empty(context.Layout.RulesPaths);
+    }
+
+    [Fact]
+    public void TryRequireRulesConfigured_ReturnsFalseAndWritesHint_WhenNoRulesPaths()
+    {
+        var context = new CliRepositoryContext
+        {
+            RepoRoot = _repoRoot,
+            Layout = new RepositoryLayout([], [], [], [], [], [])
+        };
+        var writer = new StringWriter();
+
+        var result = context.TryRequireRulesConfigured(writer);
+
+        Assert.False(result);
+        Assert.Contains("No rules directory is configured.", writer.ToString());
+        Assert.Contains("codeguard setup", writer.ToString());
+        Assert.Contains("--rules-source", writer.ToString());
+    }
+
+    [Fact]
+    public void TryRequireRulesConfigured_ReturnsTrueAndWritesNothing_WhenRulesPathsPresent()
+    {
+        var context = new CliRepositoryContext
+        {
+            RepoRoot = _repoRoot,
+            Layout = new RepositoryLayout([], [CreateRulesDir("configured")], [], [], [], [])
+        };
+        var writer = new StringWriter();
+
+        var result = context.TryRequireRulesConfigured(writer);
+
+        Assert.True(result);
+        Assert.Equal("", writer.ToString());
     }
 
     private string CreateRulesDir(string name)

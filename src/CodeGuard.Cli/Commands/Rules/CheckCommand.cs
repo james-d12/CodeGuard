@@ -38,6 +38,11 @@ public static class CheckCommand
                 parseResult.GetValue(rulesSourceOption),
                 parseResult.GetValue(branchOption));
 
+            if (!context.TryRequireRulesConfigured(Console.Error))
+            {
+                return Task.FromResult(1);
+            }
+
             var report = context.ValidateRules();
 
             if (parseResult.GetValue(formatOption) == "json")

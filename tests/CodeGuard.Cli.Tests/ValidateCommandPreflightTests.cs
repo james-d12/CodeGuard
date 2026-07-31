@@ -49,6 +49,41 @@ public class ValidateCommandPreflightTests : IDisposable
         Assert.Contains("not_a_real_kind", output);
     }
 
+    [Fact]
+    public async Task Validate_NoRulesConfigured_ExitsOneAndPrintsHint()
+    {
+        using var globalSettings = new IsolatedGlobalSettingsScope();
+        var repoDirWithNoConfig = Directory.CreateTempSubdirectory("codeguard-validate-norules-repo-").FullName;
+        try
+        {
+            var originalOut = Console.Out;
+            var originalError = Console.Error;
+            var outWriter = new StringWriter();
+            var errorWriter = new StringWriter();
+            Console.SetOut(outWriter);
+            Console.SetError(errorWriter);
+            int exitCode;
+            try
+            {
+                exitCode = await ValidateCommand.Build().Parse(["--path", repoDirWithNoConfig]).InvokeAsync();
+            }
+            finally
+            {
+                Console.SetOut(originalOut);
+                Console.SetError(originalError);
+            }
+
+            Assert.Equal(1, exitCode);
+            Assert.Contains("No rules directory is configured.", errorWriter.ToString());
+            Assert.Contains("codeguard setup", errorWriter.ToString());
+            Assert.Contains("--rules-source", errorWriter.ToString());
+        }
+        finally
+        {
+            Directory.Delete(repoDirWithNoConfig, recursive: true);
+        }
+    }
+
     public void Dispose()
     {
         Directory.Delete(_rulesDir, recursive: true);

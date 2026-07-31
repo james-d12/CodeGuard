@@ -74,6 +74,24 @@ public sealed class CliRepositoryContext
     public RuleSetValidationReport ValidateRules() =>
         RuleFileLoader.CreateDefault().ValidateDirectories(Layout.RulesPaths);
 
+    /// <summary>
+    /// Shared guard for every command that needs at least one resolved rules directory before
+    /// proceeding (`rules check`/`list`/`explain`/`create`, `validate`). Centralizes the message so
+    /// it can't drift between commands - previously only `rules create` had this check.
+    /// </summary>
+    public bool TryRequireRulesConfigured(TextWriter errorWriter)
+    {
+        if (Layout.RulesPaths.Count > 0)
+        {
+            return true;
+        }
+
+        errorWriter.WriteLine(
+            "No rules directory is configured. Run 'codeguard setup', pass --rules-source, " +
+            "or add a .codeguard/config.yml with a rules path.");
+        return false;
+    }
+
     private static CodeGuardConfig WithRules(CodeGuardConfig source, IReadOnlyList<string> rules) => new()
     {
         Repository = new RepositoryConfig

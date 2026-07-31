@@ -56,6 +56,11 @@ public static class ListCommand
                 parseResult.GetValue(rulesSourceOption),
                 parseResult.GetValue(branchOption));
 
+            if (!context.TryRequireRulesConfigured(Console.Error))
+            {
+                return Task.FromResult(1);
+            }
+
             var rules = context.LoadRules().AsEnumerable();
 
             var tags = parseResult.GetValue(tagOption) ?? [];

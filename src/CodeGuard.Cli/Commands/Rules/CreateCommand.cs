@@ -68,11 +68,8 @@ public static class CreateCommand
                 parseResult.GetValue(rulesSourceOption),
                 parseResult.GetValue(branchOption));
 
-            if (context.Layout.RulesPaths.Count == 0)
+            if (!context.TryRequireRulesConfigured(Console.Error))
             {
-                Console.Error.WriteLine(
-                    "No rules directory is configured. Run 'codeguard setup', pass --rules-source, " +
-                    "or add a .codeguard/config.yml with a rules path.");
                 return Task.FromResult(1);
             }
 
