@@ -15,6 +15,7 @@ public class JsonViolationReporterTests
             RulesEvaluated: 1,
             RulesPassed: 0,
             RulesFailed: 1,
+            RulesErrored: 0,
             Violations:
             [
                 new Violation(
@@ -29,6 +30,7 @@ public class JsonViolationReporterTests
                     Remediation: "Inherit from Contoso.Domain.Entity<TId>.",
                     DocumentationReferences: [])
             ],
+            EvaluationErrors: [],
             EvaluatedAtUtc: DateTimeOffset.UtcNow);
 
         var writer = new StringWriter();
@@ -52,8 +54,8 @@ public class JsonViolationReporterTests
     public async Task WriteAsync_OmitsNullFields()
     {
         var result = new ValidationResult(
-            ValidationStatus.Passed, RulesEvaluated: 1, RulesPassed: 1, RulesFailed: 0,
-            Violations: [], EvaluatedAtUtc: DateTimeOffset.UtcNow);
+            ValidationStatus.Passed, RulesEvaluated: 1, RulesPassed: 1, RulesFailed: 0, RulesErrored: 0,
+            Violations: [], EvaluationErrors: [], EvaluatedAtUtc: DateTimeOffset.UtcNow);
 
         var writer = new StringWriter();
         await new JsonViolationReporter().WriteAsync(result, writer);
@@ -62,5 +64,29 @@ public class JsonViolationReporterTests
         using var document = JsonDocument.Parse(output);
         Assert.Equal("passed", document.RootElement.GetProperty("status").GetString());
         Assert.Empty(document.RootElement.GetProperty("violations").EnumerateArray());
+    }
+
+    [Fact]
+    public async Task WriteAsync_IncludesEvaluationErrors()
+    {
+        var result = new ValidationResult(
+            ValidationStatus.PartiallyEvaluated, RulesEvaluated: 1, RulesPassed: 0, RulesFailed: 0, RulesErrored: 1,
+            Violations: [],
+            EvaluationErrors: [new RuleEvaluationError("BROKEN-001", "System.InvalidOperationException", "boom", "at Foo.Bar()")],
+            EvaluatedAtUtc: DateTimeOffset.UtcNow);
+
+        var writer = new StringWriter();
+        await new JsonViolationReporter().WriteAsync(result, writer);
+        var output = writer.ToString();
+
+        using var document = JsonDocument.Parse(output);
+        Assert.Equal("partiallyEvaluated", document.RootElement.GetProperty("status").GetString());
+        Assert.Equal(1, document.RootElement.GetProperty("rulesErrored").GetInt32());
+
+        var error = document.RootElement.GetProperty("evaluationErrors")[0];
+        Assert.Equal("BROKEN-001", error.GetProperty("ruleId").GetString());
+        Assert.Equal("System.InvalidOperationException", error.GetProperty("exceptionType").GetString());
+        Assert.Equal("boom", error.GetProperty("message").GetString());
+        Assert.Equal("at Foo.Bar()", error.GetProperty("stackTrace").GetString());
     }
 }

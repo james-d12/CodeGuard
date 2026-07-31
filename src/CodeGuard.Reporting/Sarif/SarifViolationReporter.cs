@@ -29,7 +29,15 @@ public sealed class SarifViolationReporter : IViolationReporter
                     Rules = rules
                 }
             },
-            Results = result.Violations.Select(ToSarifResult).ToList()
+            Results = result.Violations.Select(ToSarifResult).ToList(),
+            Invocations =
+            [
+                new Invocation
+                {
+                    ExecutionSuccessful = result.EvaluationErrors.Count == 0,
+                    ToolExecutionNotifications = result.EvaluationErrors.Select(ToSarifNotification).ToList()
+                }
+            ]
         };
 
         var log = new SarifLog
@@ -64,6 +72,13 @@ public sealed class SarifViolationReporter : IViolationReporter
 
         return result;
     }
+
+    private static Notification ToSarifNotification(RuleEvaluationError error) => new()
+    {
+        Level = FailureLevel.Error,
+        Message = new Message($"{error.ExceptionType}: {error.Message}", null, null, null, null),
+        Descriptor = new ReportingDescriptorReference { Id = error.RuleId }
+    };
 
     private static Location ToLocation(Violation violation) => new()
     {

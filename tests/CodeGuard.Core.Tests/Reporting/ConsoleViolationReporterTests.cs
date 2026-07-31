@@ -14,6 +14,7 @@ public class ConsoleViolationReporterTests
             RulesEvaluated: 1,
             RulesPassed: 0,
             RulesFailed: 1,
+            RulesErrored: 0,
             Violations:
             [
                 new Violation(
@@ -28,6 +29,7 @@ public class ConsoleViolationReporterTests
                     Remediation: "Inherit from Contoso.Domain.Entity<TId>.",
                     DocumentationReferences: [])
             ],
+            EvaluationErrors: [],
             EvaluatedAtUtc: DateTimeOffset.UtcNow);
 
         var writer = new StringWriter();
@@ -37,7 +39,7 @@ public class ConsoleViolationReporterTests
         Assert.Contains("[Error] DDD-ENTITY-001:", output);
         Assert.Contains("LegacyThing.cs(5,14)", output);
         Assert.Contains("remediation: Inherit from Contoso.Domain.Entity<TId>.", output);
-        Assert.Contains("Rules evaluated: 1, passed: 0, failed: 1", output);
+        Assert.Contains("Rules evaluated: 1, passed: 0, failed: 1, errored: 0", output);
         Assert.Contains("Status: Failed", output);
     }
 
@@ -45,8 +47,8 @@ public class ConsoleViolationReporterTests
     public async Task WriteAsync_PrintsSummaryOnly_WhenNoViolations()
     {
         var result = new ValidationResult(
-            ValidationStatus.Passed, RulesEvaluated: 1, RulesPassed: 1, RulesFailed: 0,
-            Violations: [], EvaluatedAtUtc: DateTimeOffset.UtcNow);
+            ValidationStatus.Passed, RulesEvaluated: 1, RulesPassed: 1, RulesFailed: 0, RulesErrored: 0,
+            Violations: [], EvaluationErrors: [], EvaluatedAtUtc: DateTimeOffset.UtcNow);
 
         var writer = new StringWriter();
         await new ConsoleViolationReporter().WriteAsync(result, writer);
@@ -80,11 +82,30 @@ public class ConsoleViolationReporterTests
         Assert.DoesNotContain("[", output, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public async Task WriteAsync_PrintsEvaluationErrors()
+    {
+        var result = new ValidationResult(
+            ValidationStatus.PartiallyEvaluated, RulesEvaluated: 1, RulesPassed: 0, RulesFailed: 0, RulesErrored: 1,
+            Violations: [],
+            EvaluationErrors: [new RuleEvaluationError("BROKEN-001", "System.InvalidOperationException", "boom", null)],
+            EvaluatedAtUtc: DateTimeOffset.UtcNow);
+
+        var writer = new StringWriter();
+        await new ConsoleViolationReporter().WriteAsync(result, writer);
+        var output = writer.ToString();
+
+        Assert.Contains("Rules evaluated: 1, passed: 0, failed: 0, errored: 1", output);
+        Assert.Contains("Rules that could not be evaluated:", output);
+        Assert.Contains("BROKEN-001: System.InvalidOperationException: boom", output);
+    }
+
     private static ValidationResult SingleErrorResult() => new(
         Status: ValidationStatus.Failed,
         RulesEvaluated: 1,
         RulesPassed: 0,
         RulesFailed: 1,
+        RulesErrored: 0,
         Violations:
         [
             new Violation(
@@ -99,5 +120,6 @@ public class ConsoleViolationReporterTests
                 Remediation: "Inherit from Contoso.Domain.Entity<TId>.",
                 DocumentationReferences: [])
         ],
+        EvaluationErrors: [],
         EvaluatedAtUtc: DateTimeOffset.UtcNow);
 }

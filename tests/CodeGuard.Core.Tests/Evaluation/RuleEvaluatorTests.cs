@@ -6,6 +6,7 @@ using CodeGuard.Evaluation.Selectors;
 using CodeGuard.RuleModel.Analyzers;
 using CodeGuard.RuleModel.Assertions;
 using CodeGuard.RuleModel.Rules;
+using CodeGuard.RuleModel.Selectors;
 
 namespace CodeGuard.Core.Tests.Evaluation;
 
@@ -229,5 +230,170 @@ public class RuleEvaluatorTests
 
         Assert.Equal(ValidationStatus.Passed, result.Status);
         Assert.Equal(1, result.RulesPassed);
+    }
+
+    private sealed class ThrowingAssertion : IAssertion
+    {
+        public string Kind => "throwing";
+
+        public AssertionOutcome Evaluate(object candidate, RepositoryModel model) =>
+            throw new InvalidOperationException("assertion boom");
+    }
+
+    private sealed class FailsThenThrowsAssertion : IAssertion
+    {
+        private int _calls;
+
+        public string Kind => "fails_then_throws";
+
+        public AssertionOutcome Evaluate(object candidate, RepositoryModel model)
+        {
+            _calls++;
+            return _calls == 1
+                ? AssertionOutcome.Failure("first candidate fails")
+                : throw new InvalidOperationException("assertion boom on second candidate");
+        }
+    }
+
+    private sealed class ThrowingSelector : ITargetSelector
+    {
+        public string Kind => "throwing";
+
+        public IEnumerable<object> SelectCandidates(RepositoryModel model)
+        {
+            yield return new object();
+            throw new InvalidOperationException("selector boom");
+        }
+    }
+
+    private sealed class ThrowingAnalyzer : ICustomAnalyzer
+    {
+        public string Name => "throwing-analyzer";
+
+        public IEnumerable<AnalyzerViolation> Analyze(RepositoryModel model)
+        {
+            yield return new AnalyzerViolation("first violation", "Foo.cs", 1, null);
+            throw new InvalidOperationException("analyzer boom");
+        }
+    }
+
+    [Fact]
+    public void Evaluate_CapturesEvaluationError_WhenAssertionThrows_AndContinuesWithNextRule()
+    {
+        var model = BuildModel(CreateEntityType("LegacyThing", baseType: null));
+        var throwingRule = new RuleDefinition
+        {
+            Id = "THROWING-001",
+            Name = "Throwing rule",
+            Target = new ClassInNamespaceSelector("Contoso.Domain.Entities"),
+            Assertions = [new ThrowingAssertion()]
+        };
+        var rules = new[] { throwingRule, CreateEntityInheritsRule() };
+
+        var result = new RuleEvaluator().Evaluate(rules, model);
+
+        Assert.Equal(2, result.RulesEvaluated);
+        Assert.Equal(1, result.RulesErrored);
+        Assert.Equal(0, result.RulesPassed);
+        Assert.Equal(1, result.RulesFailed);
+
+        var error = Assert.Single(result.EvaluationErrors);
+        Assert.Equal("THROWING-001", error.RuleId);
+        Assert.Equal(typeof(InvalidOperationException).FullName, error.ExceptionType);
+        Assert.Equal("assertion boom", error.Message);
+
+        Assert.Equal(ValidationStatus.PartiallyEvaluated, result.Status);
+        var violation = Assert.Single(result.Violations);
+        Assert.Equal("DDD-ENTITY-001", violation.RuleId);
+    }
+
+    [Fact]
+    public void Evaluate_CapturesEvaluationError_WhenSelectorThrowsLazily_AndDiscardsPartialViolations()
+    {
+        var model = BuildModel(CreateEntityType("Order", EntityBaseType));
+        var rule = new RuleDefinition
+        {
+            Id = "THROWING-SELECTOR-001",
+            Name = "Throwing selector rule",
+            Target = new ThrowingSelector(),
+            Assertions = [new AlwaysFailsAssertion()]
+        };
+
+        var result = new RuleEvaluator().Evaluate([rule], model);
+
+        Assert.Equal(1, result.RulesErrored);
+        Assert.Empty(result.Violations);
+        var error = Assert.Single(result.EvaluationErrors);
+        Assert.Equal("THROWING-SELECTOR-001", error.RuleId);
+    }
+
+    [Fact]
+    public void Evaluate_CapturesEvaluationError_WhenAnalyzerThrowsLazily_AndDiscardsPartialViolations()
+    {
+        var model = new RepositoryModel(".", [], [], [], [], [], [], [], [], []);
+        var rule = new RuleDefinition
+        {
+            Id = "THROWING-ANALYZER-001",
+            Name = "Throwing analyzer rule",
+            Analyzer = new ThrowingAnalyzer()
+        };
+
+        var result = new RuleEvaluator().Evaluate([rule], model);
+
+        Assert.Equal(1, result.RulesErrored);
+        Assert.Empty(result.Violations);
+        var error = Assert.Single(result.EvaluationErrors);
+        Assert.Equal("THROWING-ANALYZER-001", error.RuleId);
+        Assert.Equal(ValidationStatus.PartiallyEvaluated, result.Status);
+    }
+
+    [Fact]
+    public void Evaluate_DiscardsPartialViolations_WhenLaterCandidateAssertionThrows()
+    {
+        var model = BuildModel(
+            CreateEntityType("First", baseType: null),
+            CreateEntityType("Second", baseType: null));
+        var rule = new RuleDefinition
+        {
+            Id = "PARTIAL-001",
+            Name = "Partial rule",
+            Target = new ClassInNamespaceSelector("Contoso.Domain.Entities"),
+            Assertions = [new FailsThenThrowsAssertion()]
+        };
+
+        var result = new RuleEvaluator().Evaluate([rule], model);
+
+        Assert.Equal(1, result.RulesErrored);
+        Assert.Empty(result.Violations);
+        Assert.Equal("PARTIAL-001", Assert.Single(result.EvaluationErrors).RuleId);
+    }
+
+    [Fact]
+    public void Evaluate_RuleCounts_SumToRulesEvaluated_WhenMixOfPassFailAndError()
+    {
+        var model = BuildModel(CreateEntityType("Order", EntityBaseType));
+        var passingRule = CreateEntityInheritsRule();
+        var failingRule = new RuleDefinition
+        {
+            Id = "FAIL-001",
+            Name = "Failing rule",
+            Target = new RepositorySelector(),
+            Assertions = [new AlwaysFailsAssertion()]
+        };
+        var erroringRule = new RuleDefinition
+        {
+            Id = "ERROR-001",
+            Name = "Erroring rule",
+            Target = new RepositorySelector(),
+            Assertions = [new ThrowingAssertion()]
+        };
+
+        var result = new RuleEvaluator().Evaluate([passingRule, failingRule, erroringRule], model);
+
+        Assert.Equal(3, result.RulesEvaluated);
+        Assert.Equal(1, result.RulesPassed);
+        Assert.Equal(1, result.RulesFailed);
+        Assert.Equal(1, result.RulesErrored);
+        Assert.Equal(result.RulesEvaluated, result.RulesPassed + result.RulesFailed + result.RulesErrored);
     }
 }

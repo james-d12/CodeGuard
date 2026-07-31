@@ -30,7 +30,17 @@ public sealed class ConsoleViolationReporter(bool useColor = false) : IViolation
 
         await writer.WriteLineAsync();
         await writer.WriteLineAsync(
-            $"Rules evaluated: {result.RulesEvaluated}, passed: {result.RulesPassed}, failed: {result.RulesFailed}");
+            $"Rules evaluated: {result.RulesEvaluated}, passed: {result.RulesPassed}, failed: {result.RulesFailed}, errored: {result.RulesErrored}");
         await writer.WriteLineAsync($"Status: {result.Status}");
+
+        if (result.EvaluationErrors.Count > 0)
+        {
+            await writer.WriteLineAsync();
+            await writer.WriteLineAsync("Rules that could not be evaluated:");
+            foreach (var error in result.EvaluationErrors.OrderBy(e => e.RuleId, StringComparer.Ordinal))
+            {
+                await writer.WriteLineAsync($"  {error.RuleId}: {error.ExceptionType}: {error.Message}");
+            }
+        }
     }
 }

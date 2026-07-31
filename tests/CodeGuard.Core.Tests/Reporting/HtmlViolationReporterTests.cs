@@ -14,6 +14,7 @@ public class HtmlViolationReporterTests
             RulesEvaluated: 1,
             RulesPassed: 0,
             RulesFailed: 1,
+            RulesErrored: 0,
             Violations:
             [
                 new Violation(
@@ -28,6 +29,7 @@ public class HtmlViolationReporterTests
                     Remediation: null,
                     DocumentationReferences: [])
             ],
+            EvaluationErrors: [],
             EvaluatedAtUtc: DateTimeOffset.UtcNow);
 
         var writer = new StringWriter();
@@ -48,6 +50,7 @@ public class HtmlViolationReporterTests
             RulesEvaluated: 1,
             RulesPassed: 0,
             RulesFailed: 1,
+            RulesErrored: 0,
             Violations:
             [
                 new Violation(
@@ -62,6 +65,7 @@ public class HtmlViolationReporterTests
                     Remediation: null,
                     DocumentationReferences: [])
             ],
+            EvaluationErrors: [],
             EvaluatedAtUtc: DateTimeOffset.UtcNow);
 
         var writer = new StringWriter();
@@ -84,6 +88,7 @@ public class HtmlViolationReporterTests
             RulesEvaluated: 3,
             RulesPassed: 2,
             RulesFailed: 1,
+            RulesErrored: 0,
             Violations:
             [
                 new Violation(
@@ -98,13 +103,14 @@ public class HtmlViolationReporterTests
                     Remediation: null,
                     DocumentationReferences: [])
             ],
+            EvaluationErrors: [],
             EvaluatedAtUtc: DateTimeOffset.UtcNow);
 
         var writer = new StringWriter();
         await new HtmlViolationReporter().WriteAsync(result, writer);
         var output = writer.ToString();
 
-        Assert.Contains("Rules evaluated: 3, passed: 2, failed: 1", output);
+        Assert.Contains("Rules evaluated: 3, passed: 2, failed: 1, errored: 0", output);
         Assert.Contains("Status: Failed", output);
     }
 
@@ -112,8 +118,8 @@ public class HtmlViolationReporterTests
     public async Task WriteAsync_PrintsEmptyState_WhenNoViolations()
     {
         var result = new ValidationResult(
-            ValidationStatus.Passed, RulesEvaluated: 1, RulesPassed: 1, RulesFailed: 0,
-            Violations: [], EvaluatedAtUtc: DateTimeOffset.UtcNow);
+            ValidationStatus.Passed, RulesEvaluated: 1, RulesPassed: 1, RulesFailed: 0, RulesErrored: 0,
+            Violations: [], EvaluationErrors: [], EvaluatedAtUtc: DateTimeOffset.UtcNow);
 
         var writer = new StringWriter();
         await new HtmlViolationReporter().WriteAsync(result, writer);
@@ -127,8 +133,8 @@ public class HtmlViolationReporterTests
     public async Task WriteAsync_IsFullySelfContained()
     {
         var result = new ValidationResult(
-            ValidationStatus.Passed, RulesEvaluated: 1, RulesPassed: 1, RulesFailed: 0,
-            Violations: [], EvaluatedAtUtc: DateTimeOffset.UtcNow);
+            ValidationStatus.Passed, RulesEvaluated: 1, RulesPassed: 1, RulesFailed: 0, RulesErrored: 0,
+            Violations: [], EvaluationErrors: [], EvaluatedAtUtc: DateTimeOffset.UtcNow);
 
         var writer = new StringWriter();
         await new HtmlViolationReporter().WriteAsync(result, writer);
@@ -144,8 +150,8 @@ public class HtmlViolationReporterTests
     public async Task WriteAsync_ProducesWellFormedShell()
     {
         var result = new ValidationResult(
-            ValidationStatus.Passed, RulesEvaluated: 1, RulesPassed: 1, RulesFailed: 0,
-            Violations: [], EvaluatedAtUtc: DateTimeOffset.UtcNow);
+            ValidationStatus.Passed, RulesEvaluated: 1, RulesPassed: 1, RulesFailed: 0, RulesErrored: 0,
+            Violations: [], EvaluationErrors: [], EvaluatedAtUtc: DateTimeOffset.UtcNow);
 
         var writer = new StringWriter();
         await new HtmlViolationReporter().WriteAsync(result, writer);
@@ -154,6 +160,25 @@ public class HtmlViolationReporterTests
         Assert.StartsWith("<!DOCTYPE html>", output);
         Assert.Equal(1, CountOccurrences(output, "<style>"));
         Assert.Equal(1, CountOccurrences(output, "<script>"));
+    }
+
+    [Fact]
+    public async Task WriteAsync_IncludesEvaluationErrorsSection()
+    {
+        var result = new ValidationResult(
+            ValidationStatus.PartiallyEvaluated, RulesEvaluated: 1, RulesPassed: 0, RulesFailed: 0, RulesErrored: 1,
+            Violations: [],
+            EvaluationErrors: [new RuleEvaluationError("BROKEN-001", "System.InvalidOperationException", "boom", null)],
+            EvaluatedAtUtc: DateTimeOffset.UtcNow);
+
+        var writer = new StringWriter();
+        await new HtmlViolationReporter().WriteAsync(result, writer);
+        var output = writer.ToString();
+
+        Assert.Contains("Rules that could not be evaluated", output);
+        Assert.Contains("BROKEN-001", output);
+        Assert.Contains("System.InvalidOperationException: boom", output);
+        Assert.Contains("Rules evaluated: 1, passed: 0, failed: 0, errored: 1", output);
     }
 
     private static int CountOccurrences(string haystack, string needle)

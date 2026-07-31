@@ -15,6 +15,7 @@ public class SarifViolationReporterTests
             RulesEvaluated: 1,
             RulesPassed: 0,
             RulesFailed: 1,
+            RulesErrored: 0,
             Violations:
             [
                 new Violation(
@@ -29,6 +30,7 @@ public class SarifViolationReporterTests
                     Remediation: "Inherit from Contoso.Domain.Entity<TId>.",
                     DocumentationReferences: [])
             ],
+            EvaluationErrors: [],
             EvaluatedAtUtc: DateTimeOffset.UtcNow);
 
         var writer = new StringWriter();
@@ -60,13 +62,14 @@ public class SarifViolationReporterTests
     public async Task WriteAsync_MapsSeverityToSarifLevel()
     {
         var result = new ValidationResult(
-            ValidationStatus.Failed, RulesEvaluated: 1, RulesPassed: 0, RulesFailed: 1,
+            ValidationStatus.Failed, RulesEvaluated: 1, RulesPassed: 0, RulesFailed: 1, RulesErrored: 0,
             Violations:
             [
                 new Violation("RULE-INFO", Severity.Info, "info message", null, null, null, null, null, null, []),
                 new Violation("RULE-WARN", Severity.Warning, "warning message", null, null, null, null, null, null, []),
                 new Violation("RULE-CRIT", Severity.Critical, "critical message", null, null, null, null, null, null, [])
             ],
+            EvaluationErrors: [],
             EvaluatedAtUtc: DateTimeOffset.UtcNow);
 
         var writer = new StringWriter();
@@ -80,5 +83,28 @@ public class SarifViolationReporterTests
         Assert.False(results[1].TryGetProperty("level", out _));
         Assert.Equal("error", results[2].GetProperty("level").GetString());
         Assert.False(results[0].TryGetProperty("locations", out _));
+    }
+
+    [Fact]
+    public async Task WriteAsync_MapsEvaluationErrorsToToolExecutionNotifications()
+    {
+        var result = new ValidationResult(
+            ValidationStatus.PartiallyEvaluated, RulesEvaluated: 1, RulesPassed: 0, RulesFailed: 0, RulesErrored: 1,
+            Violations: [],
+            EvaluationErrors: [new RuleEvaluationError("BROKEN-001", "System.InvalidOperationException", "boom", null)],
+            EvaluatedAtUtc: DateTimeOffset.UtcNow);
+
+        var writer = new StringWriter();
+        await new SarifViolationReporter().WriteAsync(result, writer);
+
+        using var document = JsonDocument.Parse(writer.ToString());
+        var invocation = document.RootElement.GetProperty("runs")[0].GetProperty("invocations")[0];
+
+        Assert.False(invocation.GetProperty("executionSuccessful").GetBoolean());
+        var notification = invocation.GetProperty("toolExecutionNotifications")[0];
+        Assert.Equal("BROKEN-001", notification.GetProperty("descriptor").GetProperty("id").GetString());
+        Assert.Equal("error", notification.GetProperty("level").GetString());
+        Assert.Contains("System.InvalidOperationException", notification.GetProperty("message").GetProperty("text").GetString());
+        Assert.Contains("boom", notification.GetProperty("message").GetProperty("text").GetString());
     }
 }

@@ -7,13 +7,16 @@ public sealed record ValidationResult(
     int RulesEvaluated,
     int RulesPassed,
     int RulesFailed,
+    int RulesErrored,
     IReadOnlyList<Violation> Violations,
+    IReadOnlyList<RuleEvaluationError> EvaluationErrors,
     DateTimeOffset EvaluatedAtUtc);
 
 public enum ValidationStatus
 {
     Passed,
-    Failed
+    Failed,
+    PartiallyEvaluated
 }
 
 public sealed record Violation(
@@ -27,3 +30,10 @@ public sealed record Violation(
     string? Project,
     string? Remediation,
     IReadOnlyList<string> DocumentationReferences);
+
+/// <summary>A rule whose selector/assertion/analyzer threw instead of producing a pass/fail result.</summary>
+public sealed record RuleEvaluationError(
+    string RuleId,
+    string ExceptionType,
+    string Message,
+    string? StackTrace);

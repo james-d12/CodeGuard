@@ -15,30 +15,52 @@ public sealed class RuleEvaluator : IRuleEvaluator
     public ValidationResult Evaluate(IReadOnlyList<RuleDefinition> rules, RepositoryModel model)
     {
         var violations = new List<Violation>();
+        var evaluationErrors = new List<RuleEvaluationError>();
         var rulesPassed = 0;
         var rulesFailed = 0;
+        var rulesErrored = 0;
         var rulesEvaluated = 0;
 
         foreach (var rule in rules.Where(r => r.Enabled))
         {
             rulesEvaluated++;
+            var ruleViolations = new List<Violation>();
 
-            var ruleFailed = rule.Analyzer is not null
-                ? EvaluateAnalyzerRule(rule, model, violations)
-                : EvaluateSelectorRule(rule, model, violations);
-
-            if (ruleFailed)
+            try
             {
-                rulesFailed++;
+                var ruleFailed = rule.Analyzer is not null
+                    ? EvaluateAnalyzerRule(rule, model, ruleViolations)
+                    : EvaluateSelectorRule(rule, model, ruleViolations);
+
+                if (ruleFailed)
+                {
+                    rulesFailed++;
+                }
+                else
+                {
+                    rulesPassed++;
+                }
+
+                violations.AddRange(ruleViolations);
             }
-            else
+            catch (Exception ex)
             {
-                rulesPassed++;
+                // Isolation boundary: selectors/assertions/analyzers are user-authored (via YAML `kind`
+                // lookups), so one rule's bug must not abort every other rule's evaluation. Any partial
+                // violations already found for this rule are discarded - the rule couldn't be fully
+                // evaluated, so its result is unreliable.
+                rulesErrored++;
+                evaluationErrors.Add(new RuleEvaluationError(
+                    rule.Id, ex.GetType().FullName ?? ex.GetType().Name, ex.Message, ex.StackTrace));
             }
         }
 
-        var status = violations.Count == 0 ? ValidationStatus.Passed : ValidationStatus.Failed;
-        return new ValidationResult(status, rulesEvaluated, rulesPassed, rulesFailed, violations, DateTimeOffset.UtcNow);
+        var status = evaluationErrors.Count > 0
+            ? ValidationStatus.PartiallyEvaluated
+            : violations.Count == 0 ? ValidationStatus.Passed : ValidationStatus.Failed;
+
+        return new ValidationResult(
+            status, rulesEvaluated, rulesPassed, rulesFailed, rulesErrored, violations, evaluationErrors, DateTimeOffset.UtcNow);
     }
 
     private static bool EvaluateAnalyzerRule(RuleDefinition rule, RepositoryModel model, List<Violation> violations)

@@ -27,6 +27,7 @@ public sealed class HtmlViolationReporter : IViolationReporter
         sb.Append("</head>\n<body>\n");
 
         AppendHeader(sb, result, violations);
+        AppendEvaluationErrors(sb, result.EvaluationErrors);
         AppendFilters(sb);
         AppendTable(sb, violations);
 
@@ -44,7 +45,9 @@ public sealed class HtmlViolationReporter : IViolationReporter
         sb.Append("<h1>Validation Report</h1>\n");
         sb.Append($"<div class=\"status {statusClass}\">Status: {Esc(result.Status.ToString())}</div>\n");
         sb.Append("<div class=\"summary\">");
-        sb.Append($"Rules evaluated: {result.RulesEvaluated}, passed: {result.RulesPassed}, failed: {result.RulesFailed}");
+        sb.Append(
+            $"Rules evaluated: {result.RulesEvaluated}, passed: {result.RulesPassed}, " +
+            $"failed: {result.RulesFailed}, errored: {result.RulesErrored}");
         sb.Append($" &mdash; generated {Esc(result.EvaluatedAtUtc.ToString("O"))}");
         sb.Append("</div>\n");
 
@@ -57,6 +60,25 @@ public sealed class HtmlViolationReporter : IViolationReporter
 
         sb.Append("</div>\n");
         sb.Append("</header>\n");
+    }
+
+    private static void AppendEvaluationErrors(StringBuilder sb, IReadOnlyList<RuleEvaluationError> errors)
+    {
+        if (errors.Count == 0)
+        {
+            return;
+        }
+
+        sb.Append("<section class=\"evaluation-errors\">\n");
+        sb.Append("<h2>Rules that could not be evaluated</h2>\n<ul>\n");
+        foreach (var error in errors.OrderBy(e => e.RuleId, StringComparer.Ordinal))
+        {
+            sb.Append("<li>");
+            sb.Append($"<strong>{Esc(error.RuleId)}</strong>: {Esc(error.ExceptionType)}: {Esc(error.Message)}");
+            sb.Append("</li>\n");
+        }
+
+        sb.Append("</ul>\n</section>\n");
     }
 
     private static void AppendFilters(StringBuilder sb)
@@ -134,6 +156,9 @@ public sealed class HtmlViolationReporter : IViolationReporter
         .badge-warning { background: #9a6700; }
         .badge-error { background: #cf222e; }
         .badge-critical { background: #8250df; font-weight: bold; }
+        .evaluation-errors { border: 1px solid #cf222e; border-radius: 0.3rem; padding: 0.5rem 1rem; margin-bottom: 1rem; }
+        .evaluation-errors h2 { font-size: 1rem; margin: 0 0 0.4rem; }
+        .evaluation-errors ul { margin: 0; padding-left: 1.2rem; }
         .filters { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; margin-bottom: 1rem; }
         .filters label { white-space: nowrap; }
         table { border-collapse: collapse; width: 100%; }

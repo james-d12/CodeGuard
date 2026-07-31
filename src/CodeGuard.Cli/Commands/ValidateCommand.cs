@@ -164,7 +164,8 @@ public static class ValidateCommand
             }
 
             var failOnThreshold = ParseSeverity(parseResult.GetValue(failOnOption)!);
-            return result.Violations.Any(v => v.Severity >= failOnThreshold) ? 1 : 0;
+            var hasQualifyingViolations = result.Violations.Any(v => v.Severity >= failOnThreshold);
+            return hasQualifyingViolations || result.EvaluationErrors.Count > 0 ? 1 : 0;
         });
 
         return command;
@@ -184,8 +185,10 @@ public static class ValidateCommand
         {
             Violations = filteredViolations,
             RulesFailed = rulesFailed,
-            RulesPassed = result.RulesEvaluated - rulesFailed,
-            Status = filteredViolations.Count == 0 ? ValidationStatus.Passed : ValidationStatus.Failed
+            RulesPassed = result.RulesEvaluated - rulesFailed - result.RulesErrored,
+            Status = result.EvaluationErrors.Count > 0
+                ? ValidationStatus.PartiallyEvaluated
+                : filteredViolations.Count == 0 ? ValidationStatus.Passed : ValidationStatus.Failed
         };
     }
 
