@@ -59,6 +59,10 @@
         "maxProperties": 1,
         "additionalProperties": true
       }
+    },
+    "tests": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/testCase" }
     }
   },
   "$defs": {
@@ -72,6 +76,16 @@
         "not": { "$ref": "#/$defs/whenNode" }
       },
       "additionalProperties": true
+    },
+    "testCase": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "setup", "expect"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "setup": { "type": "object", "minProperties": 1, "additionalProperties": true },
+        "expect": { "type": "string", "enum": ["pass", "fail"] }
+      }
     }
   }
 }

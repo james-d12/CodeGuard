@@ -20,6 +20,8 @@ public sealed class RepositoryFileProvider : IAnalysisProvider
             context.AddFile(file);
         }
 
+        context.AddDirectories(EnumerateDirectories(context.RootPath, context.RootPath));
+
         return Task.CompletedTask;
     }
 
@@ -41,6 +43,24 @@ public sealed class RepositoryFileProvider : IAnalysisProvider
             foreach (var file in EnumerateFiles(rootPath, subdirectory))
             {
                 yield return file;
+            }
+        }
+    }
+
+    private static IEnumerable<string> EnumerateDirectories(string rootPath, string directoryPath)
+    {
+        foreach (var subdirectory in Directory.EnumerateDirectories(directoryPath))
+        {
+            if (ExcludedDirectoryNames.Contains(Path.GetFileName(subdirectory)))
+            {
+                continue;
+            }
+
+            yield return Path.GetRelativePath(rootPath, subdirectory);
+
+            foreach (var nested in EnumerateDirectories(rootPath, subdirectory))
+            {
+                yield return nested;
             }
         }
     }

@@ -14,7 +14,7 @@ public sealed class MustHaveDirectoryAssertion(string path) : IAssertion
             return AssertionOutcome.Failure($"'{Kind}' can only be evaluated against the repository.");
         }
 
-        return Directory.Exists(Path.Combine(repository.RootPath, path))
+        return repository.Directories.Any(d => GlobMatcher.IsMatch(d, path))
             ? AssertionOutcome.Success()
             : AssertionOutcome.Failure($"Repository must have a directory at '{path}'.");
     }

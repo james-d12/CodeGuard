@@ -15,7 +15,7 @@ public sealed class MustNotMatchContentAssertion(string pattern) : IAssertion
             return AssertionOutcome.Failure($"'{Kind}' can only be evaluated against files.");
         }
 
-        var content = File.ReadAllText(file.Path);
+        var content = file.Content ?? File.ReadAllText(file.Path);
         return Regex.IsMatch(content, pattern)
             ? AssertionOutcome.Failure($"File '{file.RelativePath}' must not contain content matching '{pattern}'.")
             : AssertionOutcome.Success();
