@@ -184,32 +184,32 @@ public static class SetupCommand
             switch (choice)
             {
                 case "1":
-                {
-                    Console.Write("Directory path: ");
-                    var dir = Console.ReadLine()?.Trim();
-                    if (string.IsNullOrWhiteSpace(dir))
                     {
-                        Console.WriteLine("A value is required.");
-                        continue;
-                    }
+                        Console.Write("Directory path: ");
+                        var dir = Console.ReadLine()?.Trim();
+                        if (string.IsNullOrWhiteSpace(dir))
+                        {
+                            Console.WriteLine("A value is required.");
+                            continue;
+                        }
 
-                    return (RuleSourceKind.Directory, dir, null, false);
-                }
+                        return (RuleSourceKind.Directory, dir, null, false);
+                    }
                 case "2":
-                {
-                    Console.Write("Git URL: ");
-                    var url = Console.ReadLine()?.Trim();
-                    if (string.IsNullOrWhiteSpace(url))
                     {
-                        Console.WriteLine("A value is required.");
-                        continue;
-                    }
+                        Console.Write("Git URL: ");
+                        var url = Console.ReadLine()?.Trim();
+                        if (string.IsNullOrWhiteSpace(url))
+                        {
+                            Console.WriteLine("A value is required.");
+                            continue;
+                        }
 
-                    Console.Write("Branch (blank = repo's default branch): ");
-                    var branchInput = Console.ReadLine()?.Trim();
-                    var branch = string.IsNullOrWhiteSpace(branchInput) ? null : branchInput;
-                    return (RuleSourceKind.Git, url, branch, false);
-                }
+                        Console.Write("Branch (blank = repo's default branch): ");
+                        var branchInput = Console.ReadLine()?.Trim();
+                        var branch = string.IsNullOrWhiteSpace(branchInput) ? null : branchInput;
+                        return (RuleSourceKind.Git, url, branch, false);
+                    }
                 case "3":
                     return (RuleSourceKind.Directory, Path.Combine(settingsRoot, "rules"), null, true);
                 default:
