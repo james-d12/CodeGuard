@@ -1,24 +1,32 @@
 using CodeGuard.Analysis.AnalysisModel;
 using CodeGuard.Analysis.Providers;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace CodeGuard.Analyzers.Repository;
 
-public sealed class RepositoryFileProvider : IAnalysisProvider
+public sealed class RepositoryFileProvider(ILogger<RepositoryFileProvider>? logger = null) : IAnalysisProvider
 {
     private static readonly HashSet<string> ExcludedDirectoryNames = new(StringComparer.OrdinalIgnoreCase)
     {
         "bin", "obj", ".git", ".vs", ".idea", "node_modules"
     };
 
+    private readonly ILogger<RepositoryFileProvider> _logger = logger ?? NullLogger<RepositoryFileProvider>.Instance;
+
     public string Name => "Repository";
 
     public Task ContributeAsync(AnalysisModelBuilderContext context, CancellationToken cancellationToken)
     {
+        var count = 0;
         foreach (var file in EnumerateFiles(context.RootPath, context.RootPath))
         {
             cancellationToken.ThrowIfCancellationRequested();
             context.AddFile(file);
+            count++;
         }
+
+        _logger.LogInformation("Discovered {FileCount} file(s) under {RootPath}", count, context.RootPath);
 
         return Task.CompletedTask;
     }

@@ -1,5 +1,6 @@
 using System.CommandLine;
 using CodeGuard.Cli.Support;
+using Microsoft.Extensions.Logging;
 
 namespace CodeGuard.Cli.Commands.Rules;
 
@@ -11,6 +12,7 @@ public static class ValidateCommand
         var configOption = CommonOptions.CreateConfigOption();
         var rulesSourceOption = CommonOptions.CreateRulesSourceOption();
         var branchOption = CommonOptions.CreateBranchOption();
+        var verbosityOption = CommonOptions.CreateVerbosityOption();
 
         var formatOption = new Option<string>("--format")
         {
@@ -29,15 +31,20 @@ public static class ValidateCommand
         command.Add(configOption);
         command.Add(rulesSourceOption);
         command.Add(branchOption);
+        command.Add(verbosityOption);
         command.Add(formatOption);
 
         command.SetAction((parseResult, _) =>
         {
+            using var loggerFactory = CliLoggerFactory.Create(CliLoggerFactory.ParseVerbosity(parseResult.GetValue(verbosityOption)!));
+            var logger = loggerFactory.CreateLogger(typeof(ValidateCommand));
+
             var context = CliRepositoryContext.Resolve(
                 parseResult.GetValue(pathOption),
                 parseResult.GetValue(configOption),
                 parseResult.GetValue(rulesSourceOption),
-                parseResult.GetValue(branchOption));
+                parseResult.GetValue(branchOption),
+                loggerFactory: loggerFactory);
 
             if (!context.TryRequireRulesConfigured(Console.Error))
             {
@@ -45,6 +52,7 @@ public static class ValidateCommand
             }
 
             var report = context.ValidateRules();
+            logger.LogInformation("Rule set validation: {PassCount} passed, {FailCount} failed", report.Rules.Count, report.Issues.Count);
 
             if (parseResult.GetValue(formatOption) == "json")
             {

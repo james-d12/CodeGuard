@@ -4,6 +4,7 @@ using System.Text.Json.Serialization;
 using CodeGuard.Cli.Support;
 using CodeGuard.Configuration.GlobalConfig;
 using CodeGuard.Configuration.Validation;
+using Microsoft.Extensions.Logging;
 
 namespace CodeGuard.Cli.Commands;
 
@@ -22,6 +23,7 @@ public static class InfoCommand
         var configOption = CommonOptions.CreateConfigOption();
         var rulesSourceOption = CommonOptions.CreateRulesSourceOption();
         var branchOption = CommonOptions.CreateBranchOption();
+        var verbosityOption = CommonOptions.CreateVerbosityOption();
 
         var formatOption = new Option<string>("--format")
         {
@@ -38,10 +40,13 @@ public static class InfoCommand
         command.Add(configOption);
         command.Add(rulesSourceOption);
         command.Add(branchOption);
+        command.Add(verbosityOption);
         command.Add(formatOption);
 
         command.SetAction((parseResult, _) =>
         {
+            using var loggerFactory = CliLoggerFactory.Create(CliLoggerFactory.ParseVerbosity(parseResult.GetValue(verbosityOption)!));
+
             var rulesSourceValue = parseResult.GetValue(rulesSourceOption);
             var branchValue = parseResult.GetValue(branchOption);
 
@@ -49,7 +54,8 @@ public static class InfoCommand
                 parseResult.GetValue(pathOption),
                 parseResult.GetValue(configOption),
                 rulesSourceValue,
-                branchValue);
+                branchValue,
+                loggerFactory: loggerFactory);
 
             // ValidateRules(), not LoadRules()/LoadRulesWithSource(): info must keep working (and say
             // so) when a rule file is malformed, since that's exactly the situation someone runs it to

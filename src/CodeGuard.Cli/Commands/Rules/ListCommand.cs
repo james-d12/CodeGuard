@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using CodeGuard.Cli.Support;
 using CodeGuard.RuleModel.Rules;
+using Microsoft.Extensions.Logging;
 
 namespace CodeGuard.Cli.Commands.Rules;
 
@@ -21,6 +22,7 @@ public static class ListCommand
         var configOption = CommonOptions.CreateConfigOption();
         var rulesSourceOption = CommonOptions.CreateRulesSourceOption();
         var branchOption = CommonOptions.CreateBranchOption();
+        var verbosityOption = CommonOptions.CreateVerbosityOption();
 
         var formatOption = new Option<string>("--format")
         {
@@ -44,17 +46,22 @@ public static class ListCommand
         command.Add(configOption);
         command.Add(rulesSourceOption);
         command.Add(branchOption);
+        command.Add(verbosityOption);
         command.Add(formatOption);
         command.Add(tagOption);
         command.Add(enabledOnlyOption);
 
         command.SetAction((parseResult, cancellationToken) =>
         {
+            using var loggerFactory = CliLoggerFactory.Create(CliLoggerFactory.ParseVerbosity(parseResult.GetValue(verbosityOption)!));
+            var logger = loggerFactory.CreateLogger(typeof(ListCommand));
+
             var context = CliRepositoryContext.Resolve(
                 parseResult.GetValue(pathOption),
                 parseResult.GetValue(configOption),
                 parseResult.GetValue(rulesSourceOption),
-                parseResult.GetValue(branchOption));
+                parseResult.GetValue(branchOption),
+                loggerFactory: loggerFactory);
 
             if (!context.TryRequireRulesConfigured(Console.Error))
             {
@@ -76,6 +83,9 @@ public static class ListCommand
             }
 
             var ruleList = rules.OrderBy(r => r.Id, StringComparer.Ordinal).ToList();
+            logger.LogDebug(
+                "Listed {Count} rule(s) after filtering (tags={TagCount}, enabledOnly={EnabledOnly})",
+                ruleList.Count, tags.Length, parseResult.GetValue(enabledOnlyOption));
 
             if (parseResult.GetValue(formatOption) == "json")
             {

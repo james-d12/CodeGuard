@@ -2,6 +2,8 @@ using CodeGuard.Analysis.AnalysisModel;
 using CodeGuard.Core.Results;
 using CodeGuard.RuleModel.Assertions;
 using CodeGuard.RuleModel.Rules;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace CodeGuard.Core.Evaluation;
 
@@ -10,8 +12,10 @@ public interface IRuleEvaluator
     ValidationResult Evaluate(IReadOnlyList<RuleDefinition> rules, RepositoryModel model);
 }
 
-public sealed class RuleEvaluator : IRuleEvaluator
+public sealed class RuleEvaluator(ILogger<RuleEvaluator>? logger = null) : IRuleEvaluator
 {
+    private readonly ILogger<RuleEvaluator> _logger = logger ?? NullLogger<RuleEvaluator>.Instance;
+
     public ValidationResult Evaluate(IReadOnlyList<RuleDefinition> rules, RepositoryModel model)
     {
         var violations = new List<Violation>();
@@ -21,7 +25,10 @@ public sealed class RuleEvaluator : IRuleEvaluator
         var rulesErrored = 0;
         var rulesEvaluated = 0;
 
-        foreach (var rule in rules.Where(r => r.Enabled))
+        var enabledRules = rules.Where(r => r.Enabled).ToList();
+        _logger.LogInformation("Evaluating {EnabledCount} of {TotalCount} rule(s)", enabledRules.Count, rules.Count);
+
+        foreach (var rule in enabledRules)
         {
             rulesEvaluated++;
             var ruleViolations = new List<Violation>();
@@ -50,6 +57,8 @@ public sealed class RuleEvaluator : IRuleEvaluator
                 // violations already found for this rule are discarded - the rule couldn't be fully
                 // evaluated, so its result is unreliable.
                 rulesErrored++;
+                _logger.LogWarning(ex, "Rule {RuleId} failed to evaluate and was skipped: {ExceptionType}: {Message}",
+                    rule.Id, ex.GetType().Name, ex.Message);
                 evaluationErrors.Add(new RuleEvaluationError(
                     rule.Id, ex.GetType().FullName ?? ex.GetType().Name, ex.Message, ex.StackTrace));
             }
@@ -58,6 +67,10 @@ public sealed class RuleEvaluator : IRuleEvaluator
         var status = evaluationErrors.Count > 0
             ? ValidationStatus.PartiallyEvaluated
             : violations.Count == 0 ? ValidationStatus.Passed : ValidationStatus.Failed;
+
+        _logger.LogInformation(
+            "Evaluation complete: {RulesEvaluated} evaluated, {Passed} passed, {Failed} failed, {Errored} errored, {ViolationCount} violation(s)",
+            rulesEvaluated, rulesPassed, rulesFailed, rulesErrored, violations.Count);
 
         return new ValidationResult(
             status, rulesEvaluated, rulesPassed, rulesFailed, rulesErrored, violations, evaluationErrors, DateTimeOffset.UtcNow);

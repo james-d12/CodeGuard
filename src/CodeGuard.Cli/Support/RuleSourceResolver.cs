@@ -1,4 +1,5 @@
 using CodeGuard.Configuration.GlobalConfig;
+using Microsoft.Extensions.Logging;
 
 namespace CodeGuard.Cli.Support;
 
@@ -16,14 +17,17 @@ public static class RuleSourceResolver
     public static RuleSourceKind DetectKind(string location) =>
         LooksLikeGitUrl(location) ? RuleSourceKind.Git : RuleSourceKind.Directory;
 
-    public static string ResolveToLocalPath(string location, string? branch, RuleSourceKind? kindOverride = null, string? cacheRootOverride = null)
+    public static string ResolveToLocalPath(
+        string location, string? branch, RuleSourceKind? kindOverride = null, string? cacheRootOverride = null, ILogger? logger = null)
     {
         var kind = kindOverride ?? DetectKind(location);
+        logger?.LogDebug("Resolving rules source {Location} (kind={Kind})", location, kind);
 
         if (kind == RuleSourceKind.Directory)
         {
             if (!Directory.Exists(location))
             {
+                logger?.LogError("Rules directory {Location} was not found", location);
                 throw new DirectoryNotFoundException($"Rules directory '{location}' was not found.");
             }
 
@@ -33,7 +37,11 @@ public static class RuleSourceResolver
         var cacheDir = GlobalSettingsPaths.RulesCacheDirectory(cacheRootOverride ?? GlobalSettingsPaths.ResolveRoot(), location);
         if (!Directory.Exists(cacheDir) || !Directory.EnumerateFileSystemEntries(cacheDir).Any())
         {
-            GitRuleSourceSync.Clone(location, branch, cacheDir);
+            GitRuleSourceSync.Clone(location, branch, cacheDir, logger);
+        }
+        else
+        {
+            logger?.LogDebug("Using cached rules source at {CacheDir}", cacheDir);
         }
 
         return cacheDir;
