@@ -1,6 +1,8 @@
 using CodeGuard.Configuration.Parsing;
 using CodeGuard.Configuration.Validation;
 using CodeGuard.RuleModel.Rules;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace CodeGuard.Configuration.Loading;
 
@@ -9,11 +11,14 @@ public sealed class RuleFileLoader(
     AssertionParserRegistry assertionParsers,
     ConditionParserRegistry conditionParsers,
     AnalyzerParserRegistry analyzerParsers,
-    RuleSchemaValidator schemaValidator)
+    RuleSchemaValidator schemaValidator,
+    ILogger<RuleFileLoader>? logger = null)
 {
     private static readonly string[] RuleFileExtensions = [".yml", ".yaml"];
 
-    public static RuleFileLoader CreateDefault()
+    private readonly ILogger<RuleFileLoader> _logger = logger ?? NullLogger<RuleFileLoader>.Instance;
+
+    public static RuleFileLoader CreateDefault(ILogger<RuleFileLoader>? logger = null)
     {
         var selectorParsers = DefaultParsers.CreateSelectorRegistry();
         var assertionParsers = DefaultParsers.CreateAssertionRegistry(selectorParsers);
@@ -22,7 +27,8 @@ public sealed class RuleFileLoader(
             assertionParsers,
             DefaultParsers.CreateConditionRegistry(assertionParsers),
             DefaultAnalyzers.CreateRegistry(),
-            RuleSchemaValidator.CreateDefault());
+            RuleSchemaValidator.CreateDefault(),
+            logger);
     }
 
     public IReadOnlyList<RuleDefinition> LoadFromDirectory(string directoryPath) =>
@@ -76,6 +82,10 @@ public sealed class RuleFileLoader(
             rules.Add((rule, file));
         }
 
+        _logger.LogInformation(
+            "Validated {FileCount} rule file(s): {PassCount} passed, {FailCount} failed",
+            rules.Count + issues.Count, rules.Count, issues.Count);
+
         return new RuleSetValidationReport(rules, issues);
     }
 
@@ -103,6 +113,7 @@ public sealed class RuleFileLoader(
         {
             rule = null;
             errors = ex is RuleSchemaValidationException schemaEx ? schemaEx.Errors : [ex.Message];
+            _logger.LogWarning(ex, "Rule file {FilePath} failed to load: {ErrorCount} error(s)", filePath, errors.Count);
             return false;
         }
     }

@@ -1,6 +1,7 @@
 using System.CommandLine;
 using CodeGuard.Cli.Support;
 using CodeGuard.RuleModel.Rules;
+using Microsoft.Extensions.Logging;
 
 namespace CodeGuard.Cli.Commands.Rules;
 
@@ -12,6 +13,7 @@ public static class ExplainCommand
         var configOption = CommonOptions.CreateConfigOption();
         var rulesSourceOption = CommonOptions.CreateRulesSourceOption();
         var branchOption = CommonOptions.CreateBranchOption();
+        var verbosityOption = CommonOptions.CreateVerbosityOption();
         var ruleIdArgument = new Argument<string>("ruleId")
         {
             Description = "The rule ID to explain, e.g. DDD-ENTITY-001."
@@ -22,15 +24,20 @@ public static class ExplainCommand
         command.Add(configOption);
         command.Add(rulesSourceOption);
         command.Add(branchOption);
+        command.Add(verbosityOption);
         command.Add(ruleIdArgument);
 
         command.SetAction((parseResult, _) =>
         {
+            using var loggerFactory = CliLoggerFactory.Create(CliLoggerFactory.ParseVerbosity(parseResult.GetValue(verbosityOption)!));
+            var logger = loggerFactory.CreateLogger(typeof(ExplainCommand));
+
             var context = CliRepositoryContext.Resolve(
                 parseResult.GetValue(pathOption),
                 parseResult.GetValue(configOption),
                 parseResult.GetValue(rulesSourceOption),
-                parseResult.GetValue(branchOption));
+                parseResult.GetValue(branchOption),
+                loggerFactory: loggerFactory);
 
             if (!context.TryRequireRulesConfigured(Console.Error))
             {
@@ -43,6 +50,7 @@ public static class ExplainCommand
 
             if (entry.Rule is null)
             {
+                logger.LogWarning("Rule {RuleId} not found under {RulesPaths}", ruleId, string.Join(", ", context.Layout.RulesPaths));
                 Console.Error.WriteLine($"Rule '{ruleId}' was not found under {string.Join(", ", context.Layout.RulesPaths)}.");
                 return Task.FromResult(1);
             }

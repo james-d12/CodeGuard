@@ -2,6 +2,7 @@ using System.CommandLine;
 using CodeGuard.Cli.Support;
 using CodeGuard.Configuration.GlobalConfig;
 using CodeGuard.Configuration.Loading;
+using Microsoft.Extensions.Logging;
 
 namespace CodeGuard.Cli.Commands;
 
@@ -52,13 +53,19 @@ public static class SetupCommand
         };
         typeOption.AcceptOnlyFromAmong("directory", "git", "managed");
 
+        var verbosityOption = CommonOptions.CreateVerbosityOption();
+
         var command = new Command("setup", "Configure the rules source used by validate/rules list/etc. across all repos");
         command.Add(sourceOption);
         command.Add(branchOption);
         command.Add(typeOption);
+        command.Add(verbosityOption);
 
         command.SetAction((parseResult, _) =>
         {
+            using var loggerFactory = CliLoggerFactory.Create(CliLoggerFactory.ParseVerbosity(parseResult.GetValue(verbosityOption)!));
+            var logger = loggerFactory.CreateLogger(typeof(SetupCommand));
+
             var suppliedSource = parseResult.GetValue(sourceOption);
             var branch = parseResult.GetValue(branchOption);
             var typeValue = parseResult.GetValue(typeOption);
@@ -68,18 +75,20 @@ public static class SetupCommand
             {
                 if (suppliedSource is not null)
                 {
+                    logger.LogError("--source cannot be combined with --type managed");
                     Console.Error.WriteLine("--source cannot be combined with --type managed.");
                     return Task.FromResult(1);
                 }
 
                 var managedPath = Path.Combine(settingsRoot, "rules");
-                return Task.FromResult(ApplyAndSave(RuleSourceKind.Directory, managedPath, branch: null, createDirectoryIfMissing: true, settingsRoot));
+                return Task.FromResult(ApplyAndSave(RuleSourceKind.Directory, managedPath, branch: null, createDirectoryIfMissing: true, settingsRoot, logger));
             }
 
             if (suppliedSource is not null)
             {
                 if (string.IsNullOrWhiteSpace(suppliedSource))
                 {
+                    logger.LogError("A rules source is required");
                     Console.Error.WriteLine("A rules source is required.");
                     return Task.FromResult(1);
                 }
@@ -91,7 +100,7 @@ public static class SetupCommand
                     _ => RuleSourceResolver.DetectKind(suppliedSource)
                 };
 
-                return Task.FromResult(ApplyAndSave(kind, suppliedSource, branch, createDirectoryIfMissing: false, settingsRoot));
+                return Task.FromResult(ApplyAndSave(kind, suppliedSource, branch, createDirectoryIfMissing: false, settingsRoot, logger));
             }
 
             if (typeValue is "directory" or "git")
@@ -101,6 +110,7 @@ public static class SetupCommand
                 var source = Console.ReadLine()?.Trim();
                 if (string.IsNullOrWhiteSpace(source))
                 {
+                    logger.LogError("A rules source is required");
                     Console.Error.WriteLine("A rules source is required.");
                     return Task.FromResult(1);
                 }
@@ -112,7 +122,7 @@ public static class SetupCommand
                     branch = string.IsNullOrWhiteSpace(branchInput) ? null : branchInput;
                 }
 
-                return Task.FromResult(ApplyAndSave(kind, source, branch, createDirectoryIfMissing: false, settingsRoot));
+                return Task.FromResult(ApplyAndSave(kind, source, branch, createDirectoryIfMissing: false, settingsRoot, logger));
             }
 
             // Bare `codeguard setup`: interactive, status-aware.
@@ -127,17 +137,17 @@ public static class SetupCommand
 
                 if (!wantsUpdate)
                 {
-                    return Task.FromResult(ApplyAndSave(existing.Kind, existing.Location, existing.Branch, createDirectoryIfMissing: false, settingsRoot));
+                    return Task.FromResult(ApplyAndSave(existing.Kind, existing.Location, existing.Branch, createDirectoryIfMissing: false, settingsRoot, logger));
                 }
 
                 Console.WriteLine();
                 var (menuKind, menuSource, menuBranch, menuCreateDir) = PromptForNewSource(settingsRoot);
-                return Task.FromResult(ApplyAndSave(menuKind, menuSource, menuBranch, menuCreateDir, settingsRoot));
+                return Task.FromResult(ApplyAndSave(menuKind, menuSource, menuBranch, menuCreateDir, settingsRoot, logger));
             }
 
             Console.WriteLine("No rules source is configured yet.");
             var (newKind, newSource, newBranch, newCreateDir) = PromptForNewSource(settingsRoot);
-            return Task.FromResult(ApplyAndSave(newKind, newSource, newBranch, newCreateDir, settingsRoot));
+            return Task.FromResult(ApplyAndSave(newKind, newSource, newBranch, newCreateDir, settingsRoot, logger));
         });
 
         return command;
@@ -219,8 +229,11 @@ public static class SetupCommand
         }
     }
 
-    private static int ApplyAndSave(RuleSourceKind kind, string source, string? branch, bool createDirectoryIfMissing, string settingsRoot)
+    private static int ApplyAndSave(
+        RuleSourceKind kind, string source, string? branch, bool createDirectoryIfMissing, string settingsRoot, ILogger? logger = null)
     {
+        logger?.LogInformation("Configuring rules source: kind={Kind}, source={Source}", kind, source);
+
         string resolvedPath;
         if (kind == RuleSourceKind.Directory)
         {
@@ -228,6 +241,7 @@ public static class SetupCommand
             {
                 if (!createDirectoryIfMissing)
                 {
+                    logger?.LogError("Configured rules directory {Source} does not exist", source);
                     Console.Error.WriteLine($"Directory '{source}' was not found.");
                     return 1;
                 }
@@ -243,10 +257,11 @@ public static class SetupCommand
             GitSyncResult syncResult;
             try
             {
-                syncResult = GitRuleSourceSync.SyncOrClone(source, branch, cacheDir);
+                syncResult = GitRuleSourceSync.SyncOrClone(source, branch, cacheDir, logger);
             }
             catch (InvalidOperationException ex)
             {
+                logger?.LogError(ex, "Failed to sync rules source {Source}", source);
                 Console.Error.WriteLine($"Failed to sync '{source}': {ex.Message}");
                 return 1;
             }

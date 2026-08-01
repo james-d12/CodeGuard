@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Logging;
+
 namespace CodeGuard.Cli.Support;
 
 /// <summary>
@@ -11,7 +13,7 @@ public static class SolutionFileLocator
         "bin", "obj", ".git", ".vs", ".idea", "node_modules"
     };
 
-    public static IReadOnlyList<string> Resolve(string repoRoot, IReadOnlyList<string> explicitSolutionPaths)
+    public static IReadOnlyList<string> Resolve(string repoRoot, IReadOnlyList<string> explicitSolutionPaths, ILogger? logger = null)
     {
         if (explicitSolutionPaths.Count > 0)
         {
@@ -19,19 +21,23 @@ public static class SolutionFileLocator
             var missing = resolved.Where(p => !File.Exists(p)).ToList();
             if (missing.Count > 0)
             {
+                logger?.LogError("Solution file(s) not found: {MissingFiles}", string.Join(", ", missing));
                 throw new FileNotFoundException(
                     "Solution file(s) not found: " + string.Join(", ", missing));
             }
 
+            logger?.LogDebug("Using {Count} explicitly specified solution file(s)", resolved.Count);
             return resolved;
         }
 
         var candidates = FindSolutionFiles(repoRoot).ToList();
         if (candidates.Count == 0)
         {
+            logger?.LogError("No .sln or .slnx file found under {RepoRoot}", repoRoot);
             throw new InvalidOperationException($"No .sln or .slnx file found under '{repoRoot}'.");
         }
 
+        logger?.LogDebug("Discovered {Count} solution file(s) under {RepoRoot}", candidates.Count, repoRoot);
         return candidates;
     }
 

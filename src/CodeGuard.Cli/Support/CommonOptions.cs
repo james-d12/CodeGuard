@@ -25,4 +25,27 @@ public static class CommonOptions
     {
         Description = "Git branch to use with --rules-source (default: the repo's default branch). Ignored for a local directory source."
     };
+
+    public static Option<string> CreateVerbosityOption()
+    {
+        var option = new Option<string>("--verbosity")
+        {
+            Description = "Minimum log level written to stderr: debug, information, warning, error, or " +
+                "critical (case-insensitive). Default: information.",
+            DefaultValueFactory = _ => "information"
+        };
+        option.Validators.Add(result =>
+        {
+            var value = result.GetValueOrDefault<string>() ?? "information";
+            try
+            {
+                CliLoggerFactory.ParseVerbosity(value);
+            }
+            catch (FormatException ex)
+            {
+                result.AddError(ex.Message);
+            }
+        });
+        return option;
+    }
 }

@@ -11,6 +11,7 @@ using CodeGuard.Reporting.Html;
 using CodeGuard.Reporting.Json;
 using CodeGuard.Reporting.Sarif;
 using CodeGuard.RuleModel.Rules;
+using Microsoft.Extensions.Logging;
 
 namespace CodeGuard.Cli.Commands;
 
@@ -71,6 +72,8 @@ public static class ValidateCommand
         };
         failOnOption.AcceptOnlyFromAmong("info", "warning", "error", "critical");
 
+        var verbosityOption = CommonOptions.CreateVerbosityOption();
+
         var command = new Command("validate", "Validate the repository against configured rules");
         command.Add(pathOption);
         command.Add(configOption);
@@ -84,23 +87,32 @@ public static class ValidateCommand
         command.Add(solutionOption);
         command.Add(severityThresholdOption);
         command.Add(failOnOption);
+        command.Add(verbosityOption);
 
         command.SetAction(async (parseResult, cancellationToken) =>
         {
+            using var loggerFactory = CliLoggerFactory.Create(CliLoggerFactory.ParseVerbosity(parseResult.GetValue(verbosityOption)!));
+            var logger = loggerFactory.CreateLogger(typeof(ValidateCommand));
+
             var context = CliRepositoryContext.Resolve(
                 parseResult.GetValue(pathOption),
                 parseResult.GetValue(configOption),
                 parseResult.GetValue(rulesSourceOption),
-                parseResult.GetValue(branchOption));
+                parseResult.GetValue(branchOption),
+                loggerFactory: loggerFactory);
 
             if (!context.TryRequireRulesConfigured(Console.Error))
             {
+                logger.LogError("No rules directory is configured for {RepoRoot}", context.RepoRoot);
                 return 1;
             }
 
             var ruleReport = context.ValidateRules();
             if (!ruleReport.IsValid)
             {
+                logger.LogWarning(
+                    "{FailedCount} of {TotalCount} rule file(s) failed validation; aborting before analysis",
+                    ruleReport.Issues.Count, ruleReport.Rules.Count + ruleReport.Issues.Count);
                 RuleValidationReportWriter.WriteConsole(ruleReport, Console.Out);
                 return 1;
             }
@@ -111,19 +123,37 @@ public static class ValidateCommand
             {
                 var selectedSet = new HashSet<string>(selectedRuleIds, StringComparer.Ordinal);
                 rules = rules.Where(r => selectedSet.Contains(r.Id)).ToList();
+                logger.LogDebug(
+                    "Restricted to {SelectedCount} of {TotalCount} rule(s) via --rule: {RuleIds}",
+                    rules.Count, ruleReport.Rules.Count, string.Join(", ", selectedRuleIds));
+            }
+            else
+            {
+                logger.LogDebug("Using all {TotalCount} discovered rule(s) (no --rule filter)", rules.Count);
             }
 
             // Known limitation: if one of the resolved solutions is this tool's own currently-running
             // solution, Buildalyzer's design-time "Clean" step can delete shared output files (such as
             // its own logger assembly) still needed by this process, causing analysis of one of the
             // projects to fail. This doesn't affect validating any other repository.
-            var solutionPaths = SolutionFileLocator.Resolve(context.RepoRoot, parseResult.GetValue(solutionOption) ?? []);
+            var solutionPaths = SolutionFileLocator.Resolve(
+                context.RepoRoot, parseResult.GetValue(solutionOption) ?? [], loggerFactory.CreateLogger(typeof(SolutionFileLocator)));
 
-            var builder = new AnalysisModelBuilder([new RepositoryFileProvider(), new MsBuildAnalysisProvider(solutionPaths)]);
+            logger.LogInformation("Analyzing {SolutionCount} solution(s) under {RepoRoot}", solutionPaths.Count, context.RepoRoot);
+
+            var builder = new AnalysisModelBuilder(
+                [
+                    new RepositoryFileProvider(loggerFactory.CreateLogger<RepositoryFileProvider>()),
+                    new MsBuildAnalysisProvider(solutionPaths, loggerFactory.CreateLogger<MsBuildAnalysisProvider>())
+                ],
+                loggerFactory.CreateLogger<AnalysisModelBuilder>());
             var model = await builder.BuildAsync(context.RepoRoot, cancellationToken);
 
-            var evaluator = new RuleEvaluator();
+            var evaluator = new RuleEvaluator(loggerFactory.CreateLogger<RuleEvaluator>());
             var result = evaluator.Evaluate(rules, model);
+            logger.LogInformation(
+                "Evaluation complete: {RulesEvaluated} rule(s) evaluated, {ViolationCount} violation(s), {ErrorCount} evaluation error(s)",
+                result.RulesEvaluated, result.Violations.Count, result.EvaluationErrors.Count);
 
             var severityThreshold = ParseSeverity(parseResult.GetValue(severityThresholdOption)!);
             result = ApplySeverityThreshold(result, severityThreshold);
@@ -148,6 +178,8 @@ public static class ValidateCommand
                 noColorEnvVar: Environment.GetEnvironmentVariable("NO_COLOR"));
 
             var reporter = CreateReporter(parseResult.GetValue(formatOption)!, useColor);
+
+            logger.LogDebug("Writing {Format} report to {Destination}", parseResult.GetValue(formatOption), outputPath ?? "stdout");
 
             TextWriter writer = outputPath is null ? Console.Out : new StreamWriter(outputPath);
             try

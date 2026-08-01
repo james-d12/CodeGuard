@@ -2,6 +2,7 @@ using System.CommandLine;
 using CodeGuard.Cli.Support;
 using CodeGuard.Configuration.Parsing;
 using CodeGuard.Configuration.Writing;
+using Microsoft.Extensions.Logging;
 
 namespace CodeGuard.Cli.Commands.Rules;
 
@@ -23,6 +24,7 @@ public static class CreateCommand
         var configOption = CommonOptions.CreateConfigOption();
         var rulesSourceOption = CommonOptions.CreateRulesSourceOption();
         var branchOption = CommonOptions.CreateBranchOption();
+        var verbosityOption = CommonOptions.CreateVerbosityOption();
 
         var idOption = new Option<string?>("--id")
         {
@@ -54,6 +56,7 @@ public static class CreateCommand
         command.Add(configOption);
         command.Add(rulesSourceOption);
         command.Add(branchOption);
+        command.Add(verbosityOption);
         command.Add(idOption);
         command.Add(nameOption);
         command.Add(descriptionOption);
@@ -62,11 +65,15 @@ public static class CreateCommand
 
         command.SetAction((parseResult, _) =>
         {
+            using var loggerFactory = CliLoggerFactory.Create(CliLoggerFactory.ParseVerbosity(parseResult.GetValue(verbosityOption)!));
+            var logger = loggerFactory.CreateLogger(typeof(CreateCommand));
+
             var context = CliRepositoryContext.Resolve(
                 parseResult.GetValue(pathOption),
                 parseResult.GetValue(configOption),
                 parseResult.GetValue(rulesSourceOption),
-                parseResult.GetValue(branchOption));
+                parseResult.GetValue(branchOption),
+                loggerFactory: loggerFactory);
 
             if (!context.TryRequireRulesConfigured(Console.Error))
             {
@@ -126,10 +133,12 @@ public static class CreateCommand
             }
 
             File.WriteAllText(filePath, RuleYamlWriter.Serialize(document));
+            logger.LogInformation("Created rule file {FilePath} (id={RuleId})", filePath, id);
 
             var report = context.ValidateRules();
             if (!report.IsValid)
             {
+                logger.LogWarning("Created rule {RuleId} at {FilePath} failed validation: {IssueCount} issue(s)", id, filePath, report.Issues.Count);
                 Console.WriteLine();
                 Console.WriteLine($"Wrote {filePath}, but it did not pass validation:");
                 RuleValidationReportWriter.WriteConsole(report, Console.Out);

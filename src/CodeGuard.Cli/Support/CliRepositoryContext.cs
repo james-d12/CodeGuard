@@ -3,6 +3,8 @@ using CodeGuard.Configuration.GlobalConfig;
 using CodeGuard.Configuration.Loading;
 using CodeGuard.Configuration.Validation;
 using CodeGuard.RuleModel.Rules;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace CodeGuard.Cli.Support;
 
@@ -28,6 +30,7 @@ public sealed class CliRepositoryContext
     public required RulesSourceProvenance RulesProvenance { get; init; }
     public required string ConfigFilePath { get; init; }
     public GlobalSettings? GlobalSettings { get; init; }
+    public ILoggerFactory? LoggerFactory { get; init; }
 
     /// <param name="globalSettingsRoot">
     /// Overrides where tier 4 looks for a prior `setup` run's <c>settings.yml</c> and git cache
@@ -35,10 +38,19 @@ public sealed class CliRepositoryContext
     /// so tests can point this at a temp directory instead of touching the developer's real
     /// machine-wide RuleEngine config - every CLI command call site leaves this at its default.
     /// </param>
+    /// <param name="loggerFactory">
+    /// Used both for this method's own resolution logging and, via the returned context, for every
+    /// <see cref="RuleFileLoader"/> constructed by <see cref="LoadRules"/>/<see cref="LoadRulesWithSource"/>/
+    /// <see cref="ValidateRules"/> - so it's stored as a factory rather than a single <c>ILogger&lt;T&gt;</c>.
+    /// </param>
     public static CliRepositoryContext Resolve(
-        string? path, string? configPath, string? rulesSource = null, string? branch = null, string? globalSettingsRoot = null)
+        string? path, string? configPath, string? rulesSource = null, string? branch = null,
+        string? globalSettingsRoot = null, ILoggerFactory? loggerFactory = null)
     {
+        var logger = loggerFactory?.CreateLogger<CliRepositoryContext>() ?? NullLogger<CliRepositoryContext>.Instance;
+
         var repoRoot = Path.GetFullPath(path ?? Directory.GetCurrentDirectory());
+        logger.LogDebug("Resolving repository context for {RepoRoot}", repoRoot);
         var configFilePath = CodeGuardConfigLoader.ResolveConfigFilePath(repoRoot, configPath);
         var config = CodeGuardConfigLoader.LoadOrDefault(repoRoot, configPath);
 
@@ -50,7 +62,9 @@ public sealed class CliRepositoryContext
 
         if (rulesSource is not null)
         {
-            var overridePath = RuleSourceResolver.ResolveToLocalPath(rulesSource, branch, cacheRootOverride: globalSettingsRoot);
+            logger.LogDebug("Using ad-hoc --rules-source override: {RulesSource} (branch {Branch})", rulesSource, branch ?? "(default)");
+            var overridePath = RuleSourceResolver.ResolveToLocalPath(
+                rulesSource, branch, cacheRootOverride: globalSettingsRoot, logger: loggerFactory?.CreateLogger(typeof(RuleSourceResolver)));
             config = WithRules(config, [overridePath]);
         }
 
@@ -63,13 +77,19 @@ public sealed class CliRepositoryContext
             globalSettings = GlobalSettingsStore.Load(GlobalSettingsPaths.SettingsFilePath(settingsRoot));
             if (globalSettings is not null)
             {
+                logger.LogDebug("No rules paths resolved from repo config; using global settings source {Location}", globalSettings.Location);
                 var globalPath = RuleSourceResolver.ResolveToLocalPath(
-                    globalSettings.Location, globalSettings.Branch, globalSettings.Kind, cacheRootOverride: globalSettingsRoot);
+                    globalSettings.Location, globalSettings.Branch, globalSettings.Kind,
+                    cacheRootOverride: globalSettingsRoot, logger: loggerFactory?.CreateLogger(typeof(RuleSourceResolver)));
                 config = WithRules(config, [globalPath]);
                 layout = new RepositoryDiscovery().Resolve(repoRoot, config);
                 provenance = RulesSourceProvenance.GlobalSettings;
             }
         }
+
+        logger.LogInformation(
+            "Resolved rules source: provenance={Provenance}, repoRoot={RepoRoot}, rulesPaths={RulesPathCount}",
+            provenance, repoRoot, layout.RulesPaths.Count);
 
         return new CliRepositoryContext
         {
@@ -77,15 +97,16 @@ public sealed class CliRepositoryContext
             Layout = layout,
             RulesProvenance = provenance,
             ConfigFilePath = configFilePath,
-            GlobalSettings = globalSettings
+            GlobalSettings = globalSettings,
+            LoggerFactory = loggerFactory
         };
     }
 
     public IReadOnlyList<RuleDefinition> LoadRules() =>
-        RuleFileLoader.CreateDefault().LoadFromDirectories(Layout.RulesPaths);
+        RuleFileLoader.CreateDefault(LoggerFactory?.CreateLogger<RuleFileLoader>()).LoadFromDirectories(Layout.RulesPaths);
 
     public IReadOnlyList<(RuleDefinition Rule, string SourceFile)> LoadRulesWithSource() =>
-        RuleFileLoader.CreateDefault().LoadFromDirectoriesWithSource(Layout.RulesPaths);
+        RuleFileLoader.CreateDefault(LoggerFactory?.CreateLogger<RuleFileLoader>()).LoadFromDirectoriesWithSource(Layout.RulesPaths);
 
     /// <summary>
     /// Non-throwing counterpart to <see cref="LoadRules"/>/<see cref="LoadRulesWithSource"/> -
@@ -94,7 +115,7 @@ public sealed class CliRepositoryContext
     /// (`docs/done/RULE_VALIDATION_PLAN.md`).
     /// </summary>
     public RuleSetValidationReport ValidateRules() =>
-        RuleFileLoader.CreateDefault().ValidateDirectories(Layout.RulesPaths);
+        RuleFileLoader.CreateDefault(LoggerFactory?.CreateLogger<RuleFileLoader>()).ValidateDirectories(Layout.RulesPaths);
 
     /// <summary>
     /// Shared guard for every command that needs at least one resolved rules directory before

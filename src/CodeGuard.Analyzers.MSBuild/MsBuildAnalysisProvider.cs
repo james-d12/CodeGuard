@@ -4,26 +4,36 @@ using Microsoft.CodeAnalysis.MSBuild;
 using CodeGuard.Analysis.AnalysisModel;
 using CodeGuard.Analysis.Providers;
 using CodeGuard.Analyzers.Roslyn;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using RoslynProject = Microsoft.CodeAnalysis.Project;
 
 namespace CodeGuard.Analyzers.MSBuild;
 
-public sealed class MsBuildAnalysisProvider(IReadOnlyList<string> solutionPaths) : IAnalysisProvider
+public sealed class MsBuildAnalysisProvider(IReadOnlyList<string> solutionPaths, ILogger<MsBuildAnalysisProvider>? logger = null) : IAnalysisProvider
 {
+    private readonly ILogger<MsBuildAnalysisProvider> _logger = logger ?? NullLogger<MsBuildAnalysisProvider>.Instance;
+
     public string Name => "MSBuild";
 
     public async Task ContributeAsync(AnalysisModelBuilderContext context, CancellationToken cancellationToken)
     {
+        _logger.LogInformation("Analyzing {SolutionCount} solution(s) via MSBuildWorkspace", solutionPaths.Count);
+
         using var workspace = MSBuildWorkspace.Create();
-        workspace.RegisterWorkspaceFailedHandler(e => context.AddDiagnostics([
-            new DiagnosticModel(
-                Id: "MSBUILD-WORKSPACE",
-                Message: e.Diagnostic.Message,
-                ProjectName: string.Empty,
-                FilePath: string.Empty,
-                Line: 0,
-                Column: 0)
-        ]));
+        workspace.RegisterWorkspaceFailedHandler(e =>
+        {
+            _logger.LogWarning("MSBuild workspace diagnostic: {Message}", e.Diagnostic.Message);
+            context.AddDiagnostics([
+                new DiagnosticModel(
+                    Id: "MSBUILD-WORKSPACE",
+                    Message: e.Diagnostic.Message,
+                    ProjectName: string.Empty,
+                    FilePath: string.Empty,
+                    Line: 0,
+                    Column: 0)
+            ]);
+        });
 
         // A project referenced by more than one solution is only added once, attributed to
         // whichever solution is processed first, so shared projects don't get double-reported.
@@ -31,6 +41,7 @@ public sealed class MsBuildAnalysisProvider(IReadOnlyList<string> solutionPaths)
 
         foreach (var solutionPath in solutionPaths)
         {
+            _logger.LogDebug("Opening solution {SolutionPath}", solutionPath);
             var solution = await workspace.OpenSolutionAsync(solutionPath, cancellationToken: cancellationToken);
 
             var projectModels = new List<ProjectModel>();
@@ -48,6 +59,7 @@ public sealed class MsBuildAnalysisProvider(IReadOnlyList<string> solutionPaths)
                 var (roslynProject, csharpCompilation) = await ChoosePrimaryAsync(group, cancellationToken);
                 if (roslynProject is null || csharpCompilation is null)
                 {
+                    _logger.LogWarning("Project {ProjectPath} produced no usable C# compilation; skipping", projectPath);
                     continue;
                 }
 
@@ -83,6 +95,7 @@ public sealed class MsBuildAnalysisProvider(IReadOnlyList<string> solutionPaths)
                     Types: types));
             }
 
+            _logger.LogInformation("Solution {SolutionPath}: {ProjectCount} project(s) analyzed", solutionPath, projectModels.Count);
             context.AddSolution(new SolutionModel(solutionPath, projectModels));
         }
     }
