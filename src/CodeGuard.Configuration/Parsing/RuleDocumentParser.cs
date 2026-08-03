@@ -54,12 +54,25 @@ public static class RuleDocumentParser
             Documentation = document.GetStringArray("documentation"),
             Enabled = document.GetOptionalBool("enabled", true),
             Illustrative = document.GetOptionalBool("illustrative", false),
+            Tests = ParseTests(document),
             Target = target,
             When = when,
             Assertions = assertions,
             Analyzer = analyzer
         };
     }
+
+    private static IReadOnlyList<RuleTestCase> ParseTests(JsonObject document) =>
+        document["tests"]?.AsArray()
+            .Select(node => ParseTestCase(node!.AsObject()))
+            .ToList()
+        ?? [];
+
+    private static RuleTestCase ParseTestCase(JsonObject node) =>
+        new(
+            node.GetRequiredString("name"),
+            node["setup"]?.AsObject() ?? throw new RuleParsingException("Test case is missing required 'setup'."),
+            EnumParsing.ParseSnakeCase<TestExpectation>(node.GetRequiredString("expect")));
 
     private static Severity ParseSeverity(JsonObject document) =>
         document.GetOptionalString("severity") is { } value

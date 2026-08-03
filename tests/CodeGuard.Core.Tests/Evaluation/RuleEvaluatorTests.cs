@@ -396,4 +396,56 @@ public class RuleEvaluatorTests
         Assert.Equal(1, result.RulesErrored);
         Assert.Equal(result.RulesEvaluated, result.RulesPassed + result.RulesFailed + result.RulesErrored);
     }
+
+    [Fact]
+    public void EvaluateRule_ReturnsNoViolations_ForPassingSelectorRule()
+    {
+        var model = BuildModel(CreateEntityType("Order", EntityBaseType));
+
+        var violations = new RuleEvaluator().EvaluateRule(CreateEntityInheritsRule(), model);
+
+        Assert.Empty(violations);
+    }
+
+    [Fact]
+    public void EvaluateRule_ReturnsViolations_ForFailingSelectorRule()
+    {
+        var model = BuildModel(CreateEntityType("LegacyThing", baseType: null));
+
+        var violations = new RuleEvaluator().EvaluateRule(CreateEntityInheritsRule(), model);
+
+        var violation = Assert.Single(violations);
+        Assert.Equal("DDD-ENTITY-001", violation.RuleId);
+    }
+
+    [Fact]
+    public void EvaluateRule_ReturnsViolations_ForFailingAnalyzerRule()
+    {
+        var model = new RepositoryModel(".", [], [], [], [], [], [], [], [], []);
+        var analyzer = new StubAnalyzer("stub-analyzer", new AnalyzerViolation("bad shape", "Foo.cs", 3, 1));
+        var rule = new RuleDefinition { Id = "ANALYZER-001", Name = "Analyzer rule", Analyzer = analyzer };
+
+        var violations = new RuleEvaluator().EvaluateRule(rule, model);
+
+        var violation = Assert.Single(violations);
+        Assert.Equal("Foo.cs", violation.File);
+    }
+
+    [Fact]
+    public void EvaluateRule_IgnoresEnabledFlag()
+    {
+        var model = BuildModel(CreateEntityType("LegacyThing", baseType: null));
+        var disabledRule = new RuleDefinition
+        {
+            Id = "DDD-ENTITY-001",
+            Name = "Domain entities must inherit from Entity",
+            Enabled = false,
+            Target = new ClassInNamespaceSelector("Contoso.Domain.Entities"),
+            Assertions = [new MustInheritFromAssertion(EntityBaseType)]
+        };
+
+        var violations = new RuleEvaluator().EvaluateRule(disabledRule, model);
+
+        Assert.Single(violations);
+    }
 }

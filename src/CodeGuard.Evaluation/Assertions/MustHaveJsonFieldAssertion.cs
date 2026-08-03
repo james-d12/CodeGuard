@@ -15,7 +15,7 @@ public sealed class MustHaveJsonFieldAssertion(string path, string? equals) : IA
             return AssertionOutcome.Failure($"'{Kind}' can only be evaluated against files.");
         }
 
-        var root = JsonNode.Parse(File.ReadAllText(file.Path));
+        var root = JsonNode.Parse(file.Content ?? File.ReadAllText(file.Path));
         var fieldValue = JsonFieldPath.Resolve(root, path);
 
         if (fieldValue is null)

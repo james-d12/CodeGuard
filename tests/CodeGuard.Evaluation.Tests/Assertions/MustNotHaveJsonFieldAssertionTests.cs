@@ -58,6 +58,14 @@ public sealed class MustNotHaveJsonFieldAssertionTests : IDisposable
         Assert.Equal("'must_not_have_json_field' can only be evaluated against files.", outcome.Message);
     }
 
+    [Fact]
+    public void Evaluate_Passes_UsingVirtualContent_WithNoBackingDiskFile()
+    {
+        var file = new FileModel("virtual/appsettings.json", "appsettings.json", ".json", """{ "profiles": {} }""");
+        var outcome = new MustNotHaveJsonFieldAssertion("profiles.http.applicationUrl", null).Evaluate(file, EmptyModel);
+        Assert.True(outcome.Passed);
+    }
+
     public void Dispose()
     {
         if (File.Exists(_path)) File.Delete(_path);

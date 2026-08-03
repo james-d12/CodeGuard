@@ -31,15 +31,11 @@ public sealed class RuleEvaluator(ILogger<RuleEvaluator>? logger = null) : IRule
         foreach (var rule in enabledRules)
         {
             rulesEvaluated++;
-            var ruleViolations = new List<Violation>();
 
             try
             {
-                var ruleFailed = rule.Analyzer is not null
-                    ? EvaluateAnalyzerRule(rule, model, ruleViolations)
-                    : EvaluateSelectorRule(rule, model, ruleViolations);
-
-                if (ruleFailed)
+                var ruleViolations = EvaluateRule(rule, model);
+                if (ruleViolations.Count > 0)
                 {
                     rulesFailed++;
                 }
@@ -76,13 +72,32 @@ public sealed class RuleEvaluator(ILogger<RuleEvaluator>? logger = null) : IRule
             status, rulesEvaluated, rulesPassed, rulesFailed, rulesErrored, violations, evaluationErrors, DateTimeOffset.UtcNow);
     }
 
-    private static bool EvaluateAnalyzerRule(RuleDefinition rule, RepositoryModel model, List<Violation> violations)
+    /// <summary>
+    /// Evaluates a single rule against <paramref name="model"/>, ignoring <see cref="RuleDefinition.Enabled"/> -
+    /// a caller asking to evaluate a specific rule (e.g. `rules test`) wants that rule evaluated regardless of
+    /// whether it's enabled for whole-repo <see cref="Evaluate"/> runs. Does not catch exceptions; callers that
+    /// need per-rule isolation (like <see cref="Evaluate"/>) handle that themselves.
+    /// </summary>
+    public IReadOnlyList<Violation> EvaluateRule(RuleDefinition rule, RepositoryModel model)
     {
-        var ruleFailed = false;
+        var violations = new List<Violation>();
 
+        if (rule.Analyzer is not null)
+        {
+            EvaluateAnalyzerRule(rule, model, violations);
+        }
+        else
+        {
+            EvaluateSelectorRule(rule, model, violations);
+        }
+
+        return violations;
+    }
+
+    private static void EvaluateAnalyzerRule(RuleDefinition rule, RepositoryModel model, List<Violation> violations)
+    {
         foreach (var analyzerViolation in rule.Analyzer!.Analyze(model))
         {
-            ruleFailed = true;
             violations.Add(new Violation(
                 rule.Id,
                 rule.Severity,
@@ -95,11 +110,9 @@ public sealed class RuleEvaluator(ILogger<RuleEvaluator>? logger = null) : IRule
                 rule.Remediation,
                 rule.Documentation));
         }
-
-        return ruleFailed;
     }
 
-    private static bool EvaluateSelectorRule(RuleDefinition rule, RepositoryModel model, List<Violation> violations)
+    private static void EvaluateSelectorRule(RuleDefinition rule, RepositoryModel model, List<Violation> violations)
     {
         IEnumerable<object> candidates = rule.Target!.SelectCandidates(model);
         if (rule.When is not null)
@@ -107,7 +120,6 @@ public sealed class RuleEvaluator(ILogger<RuleEvaluator>? logger = null) : IRule
             candidates = candidates.Where(candidate => rule.When.Evaluate(candidate, model));
         }
 
-        var ruleFailed = false;
         foreach (var candidate in candidates)
         {
             foreach (var assertion in rule.Assertions!)
@@ -118,12 +130,9 @@ public sealed class RuleEvaluator(ILogger<RuleEvaluator>? logger = null) : IRule
                     continue;
                 }
 
-                ruleFailed = true;
                 violations.Add(CreateViolation(rule, candidate, outcome));
             }
         }
-
-        return ruleFailed;
     }
 
     private static Violation CreateViolation(RuleDefinition rule, object candidate, AssertionOutcome outcome)

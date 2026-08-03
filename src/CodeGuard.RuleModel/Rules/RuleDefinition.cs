@@ -17,6 +17,7 @@ public sealed class RuleDefinition
     public IReadOnlyList<string> Documentation { get; init; } = [];
     public bool Enabled { get; init; } = true;
     public bool Illustrative { get; init; }
+    public IReadOnlyList<RuleTestCase> Tests { get; init; } = [];
 
     public ITargetSelector? Target { get; init; }
     public IConditionNode? When { get; init; }

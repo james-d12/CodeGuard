@@ -39,6 +39,14 @@ public sealed class MustMatchContentAssertionTests : IDisposable
         Assert.Equal("'must_match_content' can only be evaluated against files.", outcome.Message);
     }
 
+    [Fact]
+    public void Evaluate_Passes_UsingVirtualContent_WithNoBackingDiskFile()
+    {
+        var file = new FileModel("virtual/Directory.Build.props", "Directory.Build.props", ".props", "<Nullable>enable</Nullable>");
+        var outcome = new MustMatchContentAssertion("<Nullable>enable</Nullable>").Evaluate(file, EmptyModel);
+        Assert.True(outcome.Passed);
+    }
+
     public void Dispose()
     {
         if (File.Exists(_path)) File.Delete(_path);

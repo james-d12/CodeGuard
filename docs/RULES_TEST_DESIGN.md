@@ -51,21 +51,28 @@ target:
   kind: project
 
 assertions:
-  - dependency:
-      not:
-        project: Infrastructure
+  - must_not_reference_project:
+      name: Infrastructure
 
 tests:
   - name: Domain without Infrastructure dependency
     setup:
-      # virtual analysis state
+      projects:
+        - name: Domain
     expect: pass
 
   - name: Domain depending on Infrastructure
     setup:
-      # virtual analysis state
+      projects:
+        - name: Domain
+          projectReferences: [Infrastructure]
     expect: fail
 ```
+
+(This example uses `must_not_reference_project`, one of the ~35 assertion kinds the engine actually
+implements today — see `DefaultParsers.cs`. Earlier drafts of this document used an illustrative
+`dependency`/`not` shorthand that doesn't correspond to any real selector or assertion kind; treat
+any YAML in this document as the real, current syntax unless stated otherwise.)
 
 A rule and its tests therefore form a single, self-contained specification.
 
@@ -137,29 +144,73 @@ The schema intentionally permits arbitrary properties:
 
 This is deliberate. CodeGuard's rule model is extensible and primitive-driven. The central rule schema should not need to know every possible analysis input.
 
-The exact setup primitives will be defined by the analysis abstractions used by CodeGuard.
+The exact setup primitives are defined by the analysis abstractions used by CodeGuard —
+concretely, `CodeGuard.Analysis`'s `RepositoryModel` (files, directories, solutions → projects →
+types → members, and call sites).
 
-For example, a filesystem-oriented rule might eventually use:
+### v1 setup scope
+
+The initial implementation covers **files, directories, projects/types (with nested methods,
+properties, constructors, fields, and attributes), and call sites**. Together these back the large
+majority of the existing rule set's selector/assertion kinds (`class`, `type`, `record`, `enum`,
+`method`, `property`, `constructor`, `field`, `inherits_from`, `implements`, `project`, `file`,
+`repository`, `call_site`, and the ~35 `must_*` assertion kinds built on them).
+
+Explicitly out of scope for v1 (produces a clear error if a rule needing them is given a test):
+switch statements, throw sites, mutation sites, try blocks, method-body shapes, and raw compiler
+diagnostics — the Roslyn syntax-fact records consumed only by a handful of bespoke `analyzer`-kind
+rules (e.g. `exhaustive_switch`, `no_exceptions`, `catch_clause_count`). These require full
+source-level Roslyn analysis to produce meaningfully, which is a larger, separate effort (see
+"Future extensions" — "Rules that require source-level Roslyn setup"). Add support for a given
+concept only once a real rule needs a test that exercises it.
+
+### Setup shape
+
+Setup uses a two-tier shape: flat shortcuts for the common case, and a full `projects` form when a
+rule genuinely cares about project structure (e.g. project-reference or package-reference rules).
+
+Flat shortcuts — for rules that don't care what project a type or file lives in, everything is
+folded into one synthetic project/solution:
 
 ```yaml
 setup:
   files:
     - path: appsettings.json
+  types:
+    - name: Order
+      namespace: Contoso.Domain
+      baseType: "Entity<Guid>"
+      interfaces: [IAggregateRoot]
+      methods:
+        - name: Create
+  callSites:
+    - invokedMember: Result
+      containingType: Contoso.Domain.Order
 ```
 
-A project/dependency rule might use:
+Full form — for rules whose behaviour depends on project identity or references:
 
 ```yaml
 setup:
   projects:
-    - path: src/Domain
-    - path: src/Infrastructure
-  dependencies:
-    - from: src/Domain
-      to: src/Infrastructure
+    - name: Domain
+    - name: Infrastructure
 ```
+(as used in the `ARCH-DOMAIN-001` example above, where `must_not_reference_project` needs to see
+the actual project graph).
 
-These are illustrative rather than requirements of the initial schema.
+Every field on every setup concept is optional and defaults to a sensible empty value (empty
+string/list, public accessibility, line/column `0`, and so on) — a test only needs to specify the
+handful of fields its rule actually inspects, per the "lowest useful abstraction" principle below.
+
+A small number of existing assertions (`must_have_directory`, `must_match_content`,
+`must_not_match_content`, `must_have_json_field`, `must_not_have_json_field`) originally read the
+real filesystem directly (`Directory.Exists`, `File.ReadAllText`) rather than going through the
+analysis model at all, which would have made any rule using them untestable without physical files.
+`RepositoryModel` gained a `Directories` list and `FileModel` gained an optional `Content` field
+specifically so these assertions can be satisfied virtually; real repository validation is
+unaffected (`Directories` is still collected from the real filesystem, and `Content` is only read
+from disk when a test hasn't supplied it directly).
 
 The test framework should model setup at the **lowest useful abstraction consumed by the rule**, rather than forcing every test to construct a complete fake repository.
 

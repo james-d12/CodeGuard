@@ -26,7 +26,12 @@ public sealed class RepositoryFileProvider(ILogger<RepositoryFileProvider>? logg
             count++;
         }
 
-        _logger.LogInformation("Discovered {FileCount} file(s) under {RootPath}", count, context.RootPath);
+        var directories = EnumerateDirectories(context.RootPath, context.RootPath).ToList();
+        context.AddDirectories(directories);
+
+        _logger.LogInformation(
+            "Discovered {FileCount} file(s) and {DirectoryCount} director(y/ies) under {RootPath}",
+            count, directories.Count, context.RootPath);
 
         return Task.CompletedTask;
     }
@@ -49,6 +54,24 @@ public sealed class RepositoryFileProvider(ILogger<RepositoryFileProvider>? logg
             foreach (var file in EnumerateFiles(rootPath, subdirectory))
             {
                 yield return file;
+            }
+        }
+    }
+
+    private static IEnumerable<string> EnumerateDirectories(string rootPath, string directoryPath)
+    {
+        foreach (var subdirectory in Directory.EnumerateDirectories(directoryPath))
+        {
+            if (ExcludedDirectoryNames.Contains(Path.GetFileName(subdirectory)))
+            {
+                continue;
+            }
+
+            yield return Path.GetRelativePath(rootPath, subdirectory);
+
+            foreach (var nested in EnumerateDirectories(rootPath, subdirectory))
+            {
+                yield return nested;
             }
         }
     }

@@ -11,6 +11,7 @@ public static class RulesCommand
         command.Subcommands.Add(Rules.ListCommand.Build());
         command.Subcommands.Add(Rules.ExplainCommand.Build());
         command.Subcommands.Add(Rules.CreateCommand.Build());
+        command.Subcommands.Add(Rules.TestCommand.Build());
         return command;
     }
 }
