@@ -1,4 +1,5 @@
 using System.CommandLine;
+using System.Diagnostics;
 using CodeGuard.Analysis.Providers;
 using CodeGuard.Cli.Support;
 using CodeGuard.Analyzers.MSBuild;
@@ -74,6 +75,20 @@ public static class ValidateCommand
 
         var verbosityOption = CommonOptions.CreateVerbosityOption();
 
+        var maxParallelismOption = new Option<int?>("--max-parallelism")
+        {
+            Description = "Maximum number of concurrent workers used for project analysis and rule " +
+                "evaluation (default: number of processor cores). Set to 1 to force fully sequential execution."
+        };
+        maxParallelismOption.Validators.Add(result =>
+        {
+            var value = result.GetValueOrDefault<int?>();
+            if (value is <= 0)
+            {
+                result.AddError("--max-parallelism must be a positive integer.");
+            }
+        });
+
         var command = new Command("validate", "Validate the repository against configured rules");
         command.Add(pathOption);
         command.Add(configOption);
@@ -88,6 +103,7 @@ public static class ValidateCommand
         command.Add(severityThresholdOption);
         command.Add(failOnOption);
         command.Add(verbosityOption);
+        command.Add(maxParallelismOption);
 
         command.SetAction(async (parseResult, cancellationToken) =>
         {
@@ -141,19 +157,24 @@ public static class ValidateCommand
 
             logger.LogInformation("Analyzing {SolutionCount} solution(s) under {RepoRoot}", solutionPaths.Count, context.RepoRoot);
 
+            var maxParallelism = parseResult.GetValue(maxParallelismOption);
+
             var builder = new AnalysisModelBuilder(
                 [
                     new RepositoryFileProvider(loggerFactory.CreateLogger<RepositoryFileProvider>()),
-                    new MsBuildAnalysisProvider(solutionPaths, loggerFactory.CreateLogger<MsBuildAnalysisProvider>())
+                    new MsBuildAnalysisProvider(solutionPaths, loggerFactory.CreateLogger<MsBuildAnalysisProvider>(), maxParallelism)
                 ],
                 loggerFactory.CreateLogger<AnalysisModelBuilder>());
+            var buildStopwatch = Stopwatch.StartNew();
             var model = await builder.BuildAsync(context.RepoRoot, cancellationToken);
+            logger.LogInformation("Analysis model built in {ElapsedMs} ms", buildStopwatch.ElapsedMilliseconds);
 
             var evaluator = new RuleEvaluator(loggerFactory.CreateLogger<RuleEvaluator>());
-            var result = evaluator.Evaluate(rules, model);
+            var evaluateStopwatch = Stopwatch.StartNew();
+            var result = evaluator.Evaluate(rules, model, maxParallelism);
             logger.LogInformation(
-                "Evaluation complete: {RulesEvaluated} rule(s) evaluated, {ViolationCount} violation(s), {ErrorCount} evaluation error(s)",
-                result.RulesEvaluated, result.Violations.Count, result.EvaluationErrors.Count);
+                "Evaluation complete in {ElapsedMs} ms: {RulesEvaluated} rule(s) evaluated, {ViolationCount} violation(s), {ErrorCount} evaluation error(s)",
+                evaluateStopwatch.ElapsedMilliseconds, result.RulesEvaluated, result.Violations.Count, result.EvaluationErrors.Count);
 
             var severityThreshold = ParseSeverity(parseResult.GetValue(severityThresholdOption)!);
             result = ApplySeverityThreshold(result, severityThreshold);

@@ -416,6 +416,64 @@ All under `rules/`, all illustrative (`Contoso.*` namespace, `illustrative: true
     - Positional `Argument<T>` is required by default; a missing one produces a parse error before
       the command action ever runs.
 
+11. **Pipeline parallelism (project analysis + rule evaluation) and a BenchmarkDotNet harness were
+    added post-v1**, to speed up `validate`'s two most expensive stages. Read this before touching
+    `MsBuildAnalysisProvider`, `RuleEvaluator`, or `benchmarks/CodeGuard.Benchmarks`:
+    - **`rules/` is gitignored** (`.gitignore:11`) — this repo's real rule set is company-derived
+      content that exists only on this machine, so nothing that needs to build/run/CI on another
+      machine (benchmarks, new tests) may depend on it. `benchmarks/CodeGuard.Benchmarks/
+      SyntheticRuleSetGenerator.cs` replicates the small portable fixture at
+      `tests/CodeGuard.IntegrationTests/Fixtures/ExampleRules/` (11 rules) up to ~110 rules instead,
+      writing the copies to a temp directory and loading them through the normal
+      `RuleFileLoader.CreateDefault().LoadFromDirectory(...)` path.
+    - **`MSBuildWorkspace` is not safe for concurrent use.** `MsBuildAnalysisProvider`'s outer loop
+      over `solutionPaths` and its single shared `workspace` instance stay strictly sequential.
+      Only the *inner* per-project loop is parallelized (`Parallel.ForEachAsync`), because once a
+      `Solution` is loaded it's an immutable snapshot and Roslyn guarantees `Project`/`Compilation`/
+      `SemanticModel` reads on it are safe to fan out across threads. Don't try to parallelize the
+      outer solutions loop or open multiple `MSBuildWorkspace` instances concurrently without
+      re-verifying this.
+    - **Deterministic-fold-after-parallel-compute is the pattern used everywhere here** — both in
+      `MsBuildAnalysisProvider.ContributeAsync` (per-project results written into an indexed
+      `ProjectAnalysisResult?[]` array, then folded into `AnalysisModelBuilderContext`/
+      `projectModels` sequentially in original group order) and in `RuleEvaluator.Evaluate`
+      (per-rule results written into an indexed `RuleOutcome[]` array, then folded into
+      `violations`/`evaluationErrors`/counters sequentially in original rule order). This is
+      deliberate: it avoids `ConcurrentBag`/locking entirely (indexed array writes never contend)
+      **and** keeps output ordering deterministic regardless of which unit of work finishes first,
+      which matters for SARIF/JSON output stability. If you "simplify" either loop back to
+      `ConcurrentBag<T>.Add`, you reintroduce nondeterministic output ordering even though nothing
+      crashes — the `*ParallelismTests` files (see below) exist specifically to catch that.
+    - **`EvaluateProjectMetadata`'s per-call `Microsoft.Build.Evaluation.ProjectCollection`** was
+      flagged as a concurrency risk to verify empirically, not just reason about, since MSBuild's
+      evaluation engine has a history of subtle global-state issues under concurrent evaluation.
+      `tests/CodeGuard.IntegrationTests/MsBuildAnalysisProviderParallelismTests.cs` runs
+      `MsBuildAnalysisProvider` under forced 8-way parallelism against the 3-project
+      `SimpleDomainSolution` fixture, both once (comparing against `maxDegreeOfParallelism: 1`) and
+      across 20 repeated runs (races often don't reproduce on a single run) — no issues found as of
+      this writing. `tests/CodeGuard.Core.Tests/Evaluation/RuleEvaluatorParallelismTests.cs` does
+      the equivalent for `RuleEvaluator` with a synthetic 50-rule set.
+    - **`--max-parallelism <int>`** on `validate` (default: `Environment.ProcessorCount`) threads
+      through to both `MsBuildAnalysisProvider`'s constructor and `RuleEvaluator.Evaluate`. Setting
+      it to `1` forces fully sequential execution — a troubleshooting escape hatch if a concurrency
+      bug ever surfaces in the field, without needing a code revert.
+    - **`benchmarks/CodeGuard.Benchmarks`** (BenchmarkDotNet, run via `scripts/run-benchmarks.sh`,
+      which always forces `-c Release` since Debug JIT output makes timing numbers meaningless -
+      not wired into `dotnet test`/CI, see the script's own header comment for why) benchmarks
+      `AnalysisModelBuilder.BuildAsync` against this repo's own tracked `CodeGuard.sln` (10 real
+      projects — a stand-in for a realistic multi-project repo, since the 3-project
+      `SimpleDomainSolution` fixture is too small to show a parallel speedup) and
+      `RuleEvaluator.Evaluate` against the synthesized rule set above plus a synthetic
+      `RepositoryModel` built directly in `SyntheticModelBuilder.cs` (no MSBuild involved, so the
+      rule-evaluation benchmark measures rule-evaluation cost in isolation). `BuildAsync` only
+      exercises MSBuild solution loading, which CLAUDE.md's "Known limitation" section already
+      confirms is fixed for self-analysis — it never reaches the unrelated
+      `NoPureDelegationOverrideAnalyzer` crash further down the `validate` pipeline.
+    - `validate` also now logs stage durations (`Analysis model built in {ms} ms` /
+      `Evaluation complete in {ms} ms`) at `Information` level via a plain `Stopwatch` in
+      `ValidateCommand.cs` — no BenchmarkDotNet dependency needed for a user running `validate` on
+      their own repo to see where time is going.
+
 ## Things NOT done (explicitly deferred, per the plan)
 
 - `Any`/`All`/`None` condition combinators (only `And`/`Or`/`Not`).

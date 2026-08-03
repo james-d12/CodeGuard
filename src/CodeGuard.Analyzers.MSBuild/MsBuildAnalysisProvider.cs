@@ -1,4 +1,5 @@
 using Microsoft.Build.Evaluation;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.MSBuild;
 using CodeGuard.Analysis.AnalysisModel;
@@ -10,7 +11,10 @@ using RoslynProject = Microsoft.CodeAnalysis.Project;
 
 namespace CodeGuard.Analyzers.MSBuild;
 
-public sealed class MsBuildAnalysisProvider(IReadOnlyList<string> solutionPaths, ILogger<MsBuildAnalysisProvider>? logger = null) : IAnalysisProvider
+public sealed class MsBuildAnalysisProvider(
+    IReadOnlyList<string> solutionPaths,
+    ILogger<MsBuildAnalysisProvider>? logger = null,
+    int? maxDegreeOfParallelism = null) : IAnalysisProvider
 {
     private readonly ILogger<MsBuildAnalysisProvider> _logger = logger ?? NullLogger<MsBuildAnalysisProvider>.Instance;
 
@@ -20,6 +24,10 @@ public sealed class MsBuildAnalysisProvider(IReadOnlyList<string> solutionPaths,
     {
         _logger.LogInformation("Analyzing {SolutionCount} solution(s) via MSBuildWorkspace", solutionPaths.Count);
 
+        // MSBuildWorkspace itself is not safe for concurrent use (OpenSolutionAsync/workspace-mutating
+        // calls), so solutions are opened one at a time on this single shared instance. Once a Solution
+        // is loaded it's an immutable snapshot - Project/Compilation/SemanticModel reads on it are safe
+        // to fan out across threads, which is what the per-project loop below does.
         using var workspace = MSBuildWorkspace.Create();
         workspace.RegisterWorkspaceFailedHandler(e =>
         {
@@ -44,60 +52,96 @@ public sealed class MsBuildAnalysisProvider(IReadOnlyList<string> solutionPaths,
             _logger.LogDebug("Opening solution {SolutionPath}", solutionPath);
             var solution = await workspace.OpenSolutionAsync(solutionPath, cancellationToken: cancellationToken);
 
-            var projectModels = new List<ProjectModel>();
-
             // Multi-targeted projects produce one Roslyn Project per TFM, all sharing the same
-            // FilePath - group them back into a single ProjectModel per project file.
-            foreach (var group in solution.Projects.GroupBy(p => p.FilePath!, StringComparer.OrdinalIgnoreCase))
+            // FilePath - group them back into a single ProjectModel per project file. Dedup happens
+            // here, sequentially, before any parallel work starts, so the parallel section below never
+            // needs to touch analyzedProjectPaths.
+            var groups = solution.Projects
+                .GroupBy(p => p.FilePath!, StringComparer.OrdinalIgnoreCase)
+                .Where(group => analyzedProjectPaths.Add(group.Key))
+                .ToList();
+
+            var results = new ProjectAnalysisResult?[groups.Count];
+            var parallelOptions = new ParallelOptions
             {
-                var projectPath = group.Key;
-                if (!analyzedProjectPaths.Add(projectPath))
+                CancellationToken = cancellationToken,
+                MaxDegreeOfParallelism = maxDegreeOfParallelism ?? Environment.ProcessorCount
+            };
+
+            await Parallel.ForEachAsync(
+                Enumerable.Range(0, groups.Count),
+                parallelOptions,
+                async (i, ct) => results[i] = await AnalyzeProjectAsync(groups[i], solution, ct));
+
+            // Fold sequentially in original group order (not completion order) so output stays
+            // deterministic regardless of which project's analysis finished first.
+            var projectModels = new List<ProjectModel>();
+            foreach (var result in results)
+            {
+                if (result is null)
                 {
                     continue;
                 }
 
-                var (roslynProject, csharpCompilation) = await ChoosePrimaryAsync(group, cancellationToken);
-                if (roslynProject is null || csharpCompilation is null)
-                {
-                    _logger.LogWarning("Project {ProjectPath} produced no usable C# compilation; skipping", projectPath);
-                    continue;
-                }
-
-                var projectName = Path.GetFileNameWithoutExtension(projectPath);
-                var types = RoslynTypeExtractor.ExtractTypes(csharpCompilation, projectName);
-                var syntaxFacts = RoslynSyntaxFactExtractor.Extract(csharpCompilation, projectName);
-                var diagnostics = RoslynDiagnosticExtractor.Extract(csharpCompilation, projectName);
-                context.AddCallSites(syntaxFacts.CallSites);
-                context.AddSwitches(syntaxFacts.Switches);
-                context.AddThrowSites(syntaxFacts.ThrowSites);
-                context.AddMutationSites(syntaxFacts.MutationSites);
-                context.AddTryBlocks(syntaxFacts.TryBlocks);
-                context.AddMethodBodyShapes(syntaxFacts.MethodBodyShapes);
-                context.AddDiagnostics(diagnostics);
-
-                var projectReferenceNames = roslynProject.ProjectReferences
-                    .Select(pr => solution.GetProject(pr.ProjectId)?.FilePath)
-                    .Where(path => path is not null)
-                    .Select(path => Path.GetFileNameWithoutExtension(path!))
-                    .Distinct(StringComparer.OrdinalIgnoreCase)
-                    .ToList();
-
-                var (packageReferences, properties, targetFramework) = EvaluateProjectMetadata(projectPath);
-
-                projectModels.Add(new ProjectModel(
-                    Name: projectName,
-                    Path: projectPath,
-                    TargetFramework: targetFramework,
-                    Sdk: "Microsoft.NET.Sdk",
-                    ProjectReferences: projectReferenceNames,
-                    PackageReferences: packageReferences,
-                    Properties: properties,
-                    Types: types));
+                context.AddCallSites(result.CallSites);
+                context.AddSwitches(result.Switches);
+                context.AddThrowSites(result.ThrowSites);
+                context.AddMutationSites(result.MutationSites);
+                context.AddTryBlocks(result.TryBlocks);
+                context.AddMethodBodyShapes(result.MethodBodyShapes);
+                context.AddDiagnostics(result.Diagnostics);
+                projectModels.Add(result.ProjectModel);
             }
 
             _logger.LogInformation("Solution {SolutionPath}: {ProjectCount} project(s) analyzed", solutionPath, projectModels.Count);
             context.AddSolution(new SolutionModel(solutionPath, projectModels));
         }
+    }
+
+    private async Task<ProjectAnalysisResult?> AnalyzeProjectAsync(
+        IGrouping<string, RoslynProject> group, Solution solution, CancellationToken cancellationToken)
+    {
+        var projectPath = group.Key;
+        var (roslynProject, csharpCompilation) = await ChoosePrimaryAsync(group, cancellationToken);
+        if (roslynProject is null || csharpCompilation is null)
+        {
+            _logger.LogWarning("Project {ProjectPath} produced no usable C# compilation; skipping", projectPath);
+            return null;
+        }
+
+        var projectName = Path.GetFileNameWithoutExtension(projectPath);
+        var types = RoslynTypeExtractor.ExtractTypes(csharpCompilation, projectName);
+        var syntaxFacts = RoslynSyntaxFactExtractor.Extract(csharpCompilation, projectName);
+        var diagnostics = RoslynDiagnosticExtractor.Extract(csharpCompilation, projectName);
+
+        var projectReferenceNames = roslynProject.ProjectReferences
+            .Select(pr => solution.GetProject(pr.ProjectId)?.FilePath)
+            .Where(path => path is not null)
+            .Select(path => Path.GetFileNameWithoutExtension(path!))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        var (packageReferences, properties, targetFramework) = EvaluateProjectMetadata(projectPath);
+
+        var projectModel = new ProjectModel(
+            Name: projectName,
+            Path: projectPath,
+            TargetFramework: targetFramework,
+            Sdk: "Microsoft.NET.Sdk",
+            ProjectReferences: projectReferenceNames,
+            PackageReferences: packageReferences,
+            Properties: properties,
+            Types: types);
+
+        return new ProjectAnalysisResult(
+            projectModel,
+            syntaxFacts.CallSites,
+            syntaxFacts.Switches,
+            syntaxFacts.ThrowSites,
+            syntaxFacts.MutationSites,
+            syntaxFacts.TryBlocks,
+            syntaxFacts.MethodBodyShapes,
+            diagnostics);
     }
 
     private static async Task<(RoslynProject? Project, CSharpCompilation? Compilation)> ChoosePrimaryAsync(
@@ -121,6 +165,10 @@ public sealed class MsBuildAnalysisProvider(IReadOnlyList<string> solutionPaths,
         return (first, null);
     }
 
+    /// <summary>
+    /// Creates its own ProjectCollection per call so concurrent calls (one per project, from the
+    /// parallel loop in ContributeAsync) don't share evaluation state.
+    /// </summary>
     private static (IReadOnlyList<PackageReferenceModel> PackageReferences, IReadOnlyDictionary<string, string> Properties, string TargetFramework) EvaluateProjectMetadata(
         string projectPath)
     {
@@ -141,4 +189,14 @@ public sealed class MsBuildAnalysisProvider(IReadOnlyList<string> solutionPaths,
 
         return (packageReferences, properties, targetFramework);
     }
+
+    private sealed record ProjectAnalysisResult(
+        ProjectModel ProjectModel,
+        IReadOnlyList<CallSiteModel> CallSites,
+        IReadOnlyList<SwitchModel> Switches,
+        IReadOnlyList<ThrowSiteModel> ThrowSites,
+        IReadOnlyList<MutationSiteModel> MutationSites,
+        IReadOnlyList<TryBlockModel> TryBlocks,
+        IReadOnlyList<MethodBodyShapeModel> MethodBodyShapes,
+        IReadOnlyList<DiagnosticModel> Diagnostics);
 }
