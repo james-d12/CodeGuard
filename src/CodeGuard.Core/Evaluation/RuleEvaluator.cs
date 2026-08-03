@@ -9,42 +9,37 @@ namespace CodeGuard.Core.Evaluation;
 
 public interface IRuleEvaluator
 {
-    ValidationResult Evaluate(IReadOnlyList<RuleDefinition> rules, RepositoryModel model);
+    ValidationResult Evaluate(IReadOnlyList<RuleDefinition> rules, RepositoryModel model, int? maxDegreeOfParallelism = null);
 }
 
 public sealed class RuleEvaluator(ILogger<RuleEvaluator>? logger = null) : IRuleEvaluator
 {
     private readonly ILogger<RuleEvaluator> _logger = logger ?? NullLogger<RuleEvaluator>.Instance;
 
-    public ValidationResult Evaluate(IReadOnlyList<RuleDefinition> rules, RepositoryModel model)
+    /// <summary>
+    /// Rules are independent, stateless, read-only consumers of <paramref name="model"/>, so they're
+    /// evaluated in parallel (indexed array write, no locking) and folded back in original rule order
+    /// afterward - deterministic output regardless of completion order, which matters for SARIF/JSON
+    /// stability. The existing per-rule try/catch isolation boundary moves into the parallel body
+    /// unchanged: one rule's bug still can't affect any other rule's result.
+    /// </summary>
+    public ValidationResult Evaluate(IReadOnlyList<RuleDefinition> rules, RepositoryModel model, int? maxDegreeOfParallelism = null)
     {
-        var violations = new List<Violation>();
-        var evaluationErrors = new List<RuleEvaluationError>();
-        var rulesPassed = 0;
-        var rulesFailed = 0;
-        var rulesErrored = 0;
-        var rulesEvaluated = 0;
-
         var enabledRules = rules.Where(r => r.Enabled).ToList();
         _logger.LogInformation("Evaluating {EnabledCount} of {TotalCount} rule(s)", enabledRules.Count, rules.Count);
 
-        foreach (var rule in enabledRules)
+        var outcomes = new RuleOutcome[enabledRules.Count];
+        var parallelOptions = new ParallelOptions
         {
-            rulesEvaluated++;
+            MaxDegreeOfParallelism = maxDegreeOfParallelism ?? Environment.ProcessorCount
+        };
 
+        Parallel.For(0, enabledRules.Count, parallelOptions, i =>
+        {
+            var rule = enabledRules[i];
             try
             {
-                var ruleViolations = EvaluateRule(rule, model);
-                if (ruleViolations.Count > 0)
-                {
-                    rulesFailed++;
-                }
-                else
-                {
-                    rulesPassed++;
-                }
-
-                violations.AddRange(ruleViolations);
+                outcomes[i] = RuleOutcome.FromViolations(EvaluateRule(rule, model));
             }
             catch (Exception ex)
             {
@@ -52,14 +47,38 @@ public sealed class RuleEvaluator(ILogger<RuleEvaluator>? logger = null) : IRule
                 // lookups), so one rule's bug must not abort every other rule's evaluation. Any partial
                 // violations already found for this rule are discarded - the rule couldn't be fully
                 // evaluated, so its result is unreliable.
-                rulesErrored++;
                 _logger.LogWarning(ex, "Rule {RuleId} failed to evaluate and was skipped: {ExceptionType}: {Message}",
                     rule.Id, ex.GetType().Name, ex.Message);
-                evaluationErrors.Add(new RuleEvaluationError(
+                outcomes[i] = RuleOutcome.FromError(new RuleEvaluationError(
                     rule.Id, ex.GetType().FullName ?? ex.GetType().Name, ex.Message, ex.StackTrace));
+            }
+        });
+
+        var violations = new List<Violation>();
+        var evaluationErrors = new List<RuleEvaluationError>();
+        var rulesPassed = 0;
+        var rulesFailed = 0;
+        var rulesErrored = 0;
+
+        foreach (var outcome in outcomes)
+        {
+            if (outcome.Error is not null)
+            {
+                rulesErrored++;
+                evaluationErrors.Add(outcome.Error);
+            }
+            else if (outcome.Violations!.Count > 0)
+            {
+                rulesFailed++;
+                violations.AddRange(outcome.Violations);
+            }
+            else
+            {
+                rulesPassed++;
             }
         }
 
+        var rulesEvaluated = enabledRules.Count;
         var status = evaluationErrors.Count > 0
             ? ValidationStatus.PartiallyEvaluated
             : violations.Count == 0 ? ValidationStatus.Passed : ValidationStatus.Failed;
@@ -70,6 +89,12 @@ public sealed class RuleEvaluator(ILogger<RuleEvaluator>? logger = null) : IRule
 
         return new ValidationResult(
             status, rulesEvaluated, rulesPassed, rulesFailed, rulesErrored, violations, evaluationErrors, DateTimeOffset.UtcNow);
+    }
+
+    private readonly record struct RuleOutcome(IReadOnlyList<Violation>? Violations, RuleEvaluationError? Error)
+    {
+        public static RuleOutcome FromViolations(IReadOnlyList<Violation> violations) => new(violations, null);
+        public static RuleOutcome FromError(RuleEvaluationError error) => new(null, error);
     }
 
     /// <summary>

@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Not published as a tool - just a developer-run benchmark harness (dotnet run -c Release). -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BenchmarkDotNet" Version="0.15.8" />
+    <PackageReference Include="Microsoft.Build.Locator" Version="1.11.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\CodeGuard.Analysis\CodeGuard.Analysis.csproj" />
+    <ProjectReference Include="..\..\src\CodeGuard.Analyzers.MSBuild\CodeGuard.Analyzers.MSBuild.csproj" />
+    <ProjectReference Include="..\..\src\CodeGuard.Analyzers.Repository\CodeGuard.Analyzers.Repository.csproj" />
+    <ProjectReference Include="..\..\src\CodeGuard.Core\CodeGuard.Core.csproj" />
+    <ProjectReference Include="..\..\src\CodeGuard.RuleModel\CodeGuard.RuleModel.csproj" />
+    <ProjectReference Include="..\..\src\CodeGuard.Configuration\CodeGuard.Configuration.csproj" />
+  </ItemGroup>
+
+</Project>
