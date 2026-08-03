@@ -20,3 +20,19 @@ target:
 assertions:
   - must_inherit_from:
       type: "Contoso.Domain.Entity<*>"
+
+tests:
+  - name: Entity inheriting from Entity<TId>
+    setup:
+      types:
+        - name: Order
+          namespace: Contoso.Domain.Entities
+          baseType: "Contoso.Domain.Entity<Guid>"
+    expect: pass
+
+  - name: Entity not inheriting from Entity<TId>
+    setup:
+      types:
+        - name: LegacyThing
+          namespace: Contoso.Domain.Entities
+    expect: fail

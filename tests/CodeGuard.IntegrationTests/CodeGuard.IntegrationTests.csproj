@@ -38,6 +38,7 @@
     <ProjectReference Include="..\..\src\CodeGuard.Analyzers.MSBuild\CodeGuard.Analyzers.MSBuild.csproj" />
     <ProjectReference Include="..\..\src\CodeGuard.Reporting\CodeGuard.Reporting.csproj" />
     <ProjectReference Include="..\..\src\CodeGuard.Analyzers.Repository\CodeGuard.Analyzers.Repository.csproj" />
+    <ProjectReference Include="..\..\src\CodeGuard.Cli\CodeGuard.Cli.csproj" />
   </ItemGroup>
 
 </Project>
