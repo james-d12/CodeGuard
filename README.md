@@ -18,6 +18,10 @@ engine itself. It's meant to sit alongside AI coding agents as a guardrail: agen
 rules that apply before generating code, then CodeGuard validates what they produced and flags
 anything that breaks the rules.
 
+**Importantly, codeguard does not aim to replace existing static analysis, security analysis or other 
+deterministic tools like SonarQube, Wiz, SOOS, etc. It aims to complement them, to help enforce your company
+specific policies and standards.**
+
 ## Requirements
 
 - .NET SDK `10.0.100` or later (pinned in `global.json`, `rollForward: latestFeature`)
