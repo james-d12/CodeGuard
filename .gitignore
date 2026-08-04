@@ -10,5 +10,4 @@ riderModule.iml
 StrykerOutput/
 *.DotSettings.user
 .config
-rules/
 .codeguard/
