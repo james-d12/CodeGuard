@@ -50,7 +50,15 @@ public sealed class MsBuildAnalysisProvider(
         foreach (var solutionPath in solutionPaths)
         {
             _logger.LogDebug("Opening solution {SolutionPath}", solutionPath);
-            var solution = await workspace.OpenSolutionAsync(solutionPath, cancellationToken: cancellationToken);
+            Solution solution;
+            try
+            {
+                solution = await workspace.OpenSolutionAsync(solutionPath, cancellationToken: cancellationToken);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                throw new SolutionLoadException(solutionPath, ex);
+            }
 
             // Multi-targeted projects produce one Roslyn Project per TFM, all sharing the same
             // FilePath - group them back into a single ProjectModel per project file. Dedup happens

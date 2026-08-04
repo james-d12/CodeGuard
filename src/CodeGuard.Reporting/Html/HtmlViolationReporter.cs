@@ -22,7 +22,7 @@ public sealed class HtmlViolationReporter : IViolationReporter
 
         sb.Append("<!DOCTYPE html>\n");
         sb.Append("<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n");
-        sb.Append("<title>Rules Engine Validation Report</title>\n");
+        sb.Append("<title>CodeGuard Validation Report</title>\n");
         sb.Append("<style>\n").Append(Css).Append("\n</style>\n");
         sb.Append("</head>\n<body>\n");
 

@@ -32,7 +32,13 @@ rootCommand.Subcommands.Add(InfoCommand.Build());
 
 try
 {
-    return await rootCommand.Parse(args).InvokeAsync();
+    // System.CommandLine's own default exception handler (EnableDefaultExceptionHandler, true by
+    // default) would otherwise catch exceptions from command actions itself, print its own raw
+    // "Unhandled exception: " + stack trace, and return 1 without rethrowing - making this catch
+    // block dead code. Disabling it here lets exceptions actually reach the friendlier handling
+    // below (defense-in-depth for anything not already caught inside a command's own action).
+    var invocationConfiguration = new InvocationConfiguration { EnableDefaultExceptionHandler = false };
+    return await rootCommand.Parse(args).InvokeAsync(invocationConfiguration);
 }
 catch (Exception ex)
 {
