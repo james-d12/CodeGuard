@@ -84,6 +84,36 @@ public class ValidateCommandPreflightTests : IDisposable
         }
     }
 
+    [Fact]
+    public async Task Validate_WithMissingSolutionFile_PrintsCleanErrorAndExitsOne_WithoutRawStackTrace()
+    {
+        var originalOut = Console.Out;
+        var originalError = Console.Error;
+        var outWriter = new StringWriter();
+        var errorWriter = new StringWriter();
+        Console.SetOut(outWriter);
+        Console.SetError(errorWriter);
+        int exitCode;
+        try
+        {
+            exitCode = await ValidateCommand.Build()
+                .Parse(["--path", _repoDir, "--rules-source", _rulesDir, "--solution", "does-not-exist.sln"])
+                .InvokeAsync();
+        }
+        finally
+        {
+            Console.SetOut(originalOut);
+            Console.SetError(originalError);
+        }
+
+        var errorOutput = errorWriter.ToString();
+        Assert.Equal(1, exitCode);
+        Assert.Contains("codeguard:", errorOutput);
+        Assert.Contains("does-not-exist.sln", errorOutput);
+        Assert.DoesNotContain("Unhandled exception", errorOutput);
+        Assert.DoesNotContain("at System.CommandLine", errorOutput);
+    }
+
     public void Dispose()
     {
         Directory.Delete(_rulesDir, recursive: true);

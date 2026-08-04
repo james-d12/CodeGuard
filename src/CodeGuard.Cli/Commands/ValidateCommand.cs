@@ -152,73 +152,82 @@ public static class ValidateCommand
             // solution, Buildalyzer's design-time "Clean" step can delete shared output files (such as
             // its own logger assembly) still needed by this process, causing analysis of one of the
             // projects to fail. This doesn't affect validating any other repository.
-            var solutionPaths = SolutionFileLocator.Resolve(
-                context.RepoRoot, parseResult.GetValue(solutionOption) ?? [], loggerFactory.CreateLogger(typeof(SolutionFileLocator)));
-
-            logger.LogInformation("Analyzing {SolutionCount} solution(s) under {RepoRoot}", solutionPaths.Count, context.RepoRoot);
-
-            var maxParallelism = parseResult.GetValue(maxParallelismOption);
-
-            var builder = new AnalysisModelBuilder(
-                [
-                    new RepositoryFileProvider(loggerFactory.CreateLogger<RepositoryFileProvider>()),
-                    new MsBuildAnalysisProvider(solutionPaths, loggerFactory.CreateLogger<MsBuildAnalysisProvider>(), maxParallelism)
-                ],
-                loggerFactory.CreateLogger<AnalysisModelBuilder>());
-            var buildStopwatch = Stopwatch.StartNew();
-            var model = await builder.BuildAsync(context.RepoRoot, cancellationToken);
-            logger.LogInformation("Analysis model built in {ElapsedMs} ms", buildStopwatch.ElapsedMilliseconds);
-
-            var evaluator = new RuleEvaluator(loggerFactory.CreateLogger<RuleEvaluator>());
-            var evaluateStopwatch = Stopwatch.StartNew();
-            var result = evaluator.Evaluate(rules, model, maxParallelism);
-            logger.LogInformation(
-                "Evaluation complete in {ElapsedMs} ms: {RulesEvaluated} rule(s) evaluated, {ViolationCount} violation(s), {ErrorCount} evaluation error(s)",
-                evaluateStopwatch.ElapsedMilliseconds, result.RulesEvaluated, result.Violations.Count, result.EvaluationErrors.Count);
-
-            var severityThreshold = ParseSeverity(parseResult.GetValue(severityThresholdOption)!);
-            result = ApplySeverityThreshold(result, severityThreshold);
-
-            var rawOutput = parseResult.GetValue(outputOption);
-            var outputPath = ReportOutputPathResolver.Resolve(
-                rawOutput, parseResult.GetValue(formatOption)!, rawOutput is not null && Directory.Exists(rawOutput));
-            if (outputPath is not null)
-            {
-                var outputDirectory = Path.GetDirectoryName(Path.GetFullPath(outputPath));
-                if (!string.IsNullOrEmpty(outputDirectory))
-                {
-                    Directory.CreateDirectory(outputDirectory);
-                }
-            }
-
-            var useColor = ColorSupport.ShouldUseColor(
-                parseResult.GetValue(colorOption),
-                parseResult.GetValue(noColorOption),
-                writingToFile: outputPath is not null,
-                consoleOutputRedirected: Console.IsOutputRedirected,
-                noColorEnvVar: Environment.GetEnvironmentVariable("NO_COLOR"));
-
-            var reporter = CreateReporter(parseResult.GetValue(formatOption)!, useColor);
-
-            logger.LogDebug("Writing {Format} report to {Destination}", parseResult.GetValue(formatOption), outputPath ?? "stdout");
-
-            TextWriter writer = outputPath is null ? Console.Out : new StreamWriter(outputPath);
             try
             {
-                await reporter.WriteAsync(result, writer, cancellationToken);
-                await writer.FlushAsync(cancellationToken);
-            }
-            finally
-            {
+                var solutionPaths = SolutionFileLocator.Resolve(
+                    context.RepoRoot, parseResult.GetValue(solutionOption) ?? [], loggerFactory.CreateLogger(typeof(SolutionFileLocator)));
+
+                logger.LogInformation("Analyzing {SolutionCount} solution(s) under {RepoRoot}", solutionPaths.Count, context.RepoRoot);
+
+                var maxParallelism = parseResult.GetValue(maxParallelismOption);
+
+                var builder = new AnalysisModelBuilder(
+                    [
+                        new RepositoryFileProvider(loggerFactory.CreateLogger<RepositoryFileProvider>()),
+                        new MsBuildAnalysisProvider(solutionPaths, loggerFactory.CreateLogger<MsBuildAnalysisProvider>(), maxParallelism)
+                    ],
+                    loggerFactory.CreateLogger<AnalysisModelBuilder>());
+                var buildStopwatch = Stopwatch.StartNew();
+                var model = await builder.BuildAsync(context.RepoRoot, cancellationToken);
+                logger.LogInformation("Analysis model built in {ElapsedMs} ms", buildStopwatch.ElapsedMilliseconds);
+
+                var evaluator = new RuleEvaluator(loggerFactory.CreateLogger<RuleEvaluator>());
+                var evaluateStopwatch = Stopwatch.StartNew();
+                var result = evaluator.Evaluate(rules, model, maxParallelism);
+                logger.LogInformation(
+                    "Evaluation complete in {ElapsedMs} ms: {RulesEvaluated} rule(s) evaluated, {ViolationCount} violation(s), {ErrorCount} evaluation error(s)",
+                    evaluateStopwatch.ElapsedMilliseconds, result.RulesEvaluated, result.Violations.Count, result.EvaluationErrors.Count);
+
+                var severityThreshold = ParseSeverity(parseResult.GetValue(severityThresholdOption)!);
+                result = ApplySeverityThreshold(result, severityThreshold);
+
+                var rawOutput = parseResult.GetValue(outputOption);
+                var outputPath = ReportOutputPathResolver.Resolve(
+                    rawOutput, parseResult.GetValue(formatOption)!, rawOutput is not null && Directory.Exists(rawOutput));
                 if (outputPath is not null)
                 {
-                    await writer.DisposeAsync();
+                    var outputDirectory = Path.GetDirectoryName(Path.GetFullPath(outputPath));
+                    if (!string.IsNullOrEmpty(outputDirectory))
+                    {
+                        Directory.CreateDirectory(outputDirectory);
+                    }
                 }
-            }
 
-            var failOnThreshold = ParseSeverity(parseResult.GetValue(failOnOption)!);
-            var hasQualifyingViolations = result.Violations.Any(v => v.Severity >= failOnThreshold);
-            return hasQualifyingViolations || result.EvaluationErrors.Count > 0 ? 1 : 0;
+                var useColor = ColorSupport.ShouldUseColor(
+                    parseResult.GetValue(colorOption),
+                    parseResult.GetValue(noColorOption),
+                    writingToFile: outputPath is not null,
+                    consoleOutputRedirected: Console.IsOutputRedirected,
+                    noColorEnvVar: Environment.GetEnvironmentVariable("NO_COLOR"));
+
+                var reporter = CreateReporter(parseResult.GetValue(formatOption)!, useColor);
+
+                logger.LogDebug("Writing {Format} report to {Destination}", parseResult.GetValue(formatOption), outputPath ?? "stdout");
+
+                TextWriter writer = outputPath is null ? Console.Out : new StreamWriter(outputPath);
+                try
+                {
+                    await reporter.WriteAsync(result, writer, cancellationToken);
+                    await writer.FlushAsync(cancellationToken);
+                }
+                finally
+                {
+                    if (outputPath is not null)
+                    {
+                        await writer.DisposeAsync();
+                    }
+                }
+
+                var failOnThreshold = ParseSeverity(parseResult.GetValue(failOnOption)!);
+                var hasQualifyingViolations = result.Violations.Any(v => v.Severity >= failOnThreshold);
+                return hasQualifyingViolations || result.EvaluationErrors.Count > 0 ? 1 : 0;
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                logger.LogError(ex, "Validation failed: {Message}", ex.Message);
+                await Console.Error.WriteLineAsync($"codeguard: {ex.Message}");
+                return 1;
+            }
         });
 
         return command;
