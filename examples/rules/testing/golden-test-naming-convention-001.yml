@@ -1,0 +1,21 @@
+id: GOLDEN-TEST-NAMING-CONVENTION-001
+name: Test naming convention (golden standard)
+description: >
+  Test method identifiers must follow {MethodName}_{Scenario}_{ExpectedOutcome}.
+severity: warning
+enforcement:
+  classification: deterministic
+tags:
+  - testing
+  - naming
+remediation: >
+  Rename the test method to MethodName_Scenario_ExpectedOutcome.
+illustrative: true
+
+target:
+  kind: method
+  project: "*.Tests"
+
+assertions:
+  - must_match_name:
+      regex: "^[A-Za-z0-9]+_[A-Za-z0-9]+_[A-Za-z0-9]+$"

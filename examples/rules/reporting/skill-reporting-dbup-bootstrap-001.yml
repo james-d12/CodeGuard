@@ -1,0 +1,23 @@
+id: SKILL-REPORTING-DBUP-BOOTSTRAP-001
+name: Mandatory ReportingDbUpHost bootstrap
+description: >
+  Reporting projects must bootstrap via a DeployChanges-style call and ship
+  their SQL scripts as <Content> in the .csproj, not <EmbeddedResource>.
+  Approximates the full rule (which also forbids direct dbup-core/
+  dbup-sqlserver package references, requires CREATE OR ALTER procs, and a
+  Script{NNN}_ filename prefix) - the filename-prefix half is already covered
+  declaratively by golden-persistence-dbup-script-naming-001.yml.
+severity: critical
+enforcement:
+  classification: deterministic
+tags:
+  - reporting
+  - dbup
+remediation: >
+  Bootstrap via ReportingDbUpHost.CreateDefaultDbUpHostBuilder<Program> and
+  ensure the Scripts folder is included via <Content>, not <EmbeddedResource>.
+illustrative: true
+
+analyzer:
+  kind: project-convention
+  project_pattern: "*.Reporting*"

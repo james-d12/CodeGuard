@@ -1,0 +1,24 @@
+id: GOLDEN-OBSERVABILITY-HEALTH-ENDPOINTS-001
+name: /health and /ready endpoints required
+description: >
+  Program.cs must call MapHealthChecks. Approximated as "the call exists
+  somewhere in the repository" rather than verifying the literal
+  "/health"/"/ready" path arguments.
+severity: error
+enforcement:
+  classification: deterministic
+tags:
+  - health-checks
+remediation: >
+  Call app.MapHealthChecks("/health") (and a readiness endpoint) in
+  Program.cs.
+illustrative: true
+
+target:
+  kind: repository
+
+assertions:
+  - must_exist:
+      selector:
+        kind: call_site
+        invoked_member: "MapHealthChecks"

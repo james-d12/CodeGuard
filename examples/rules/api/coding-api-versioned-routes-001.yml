@@ -1,0 +1,21 @@
+id: CODING-API-VERSIONED-ROUTES-001
+name: API routes versioned in URL path
+description: >
+  API versioning appears in the URL path, e.g. /v1/... or /api/v1/....
+severity: warning
+enforcement:
+  classification: deterministic
+tags:
+  - api
+remediation: >
+  Prefix the route template with /v{n}/ or /api/v{n}/.
+illustrative: true
+
+target:
+  kind: call_site
+  invoked_member: "Map*"
+
+assertions:
+  - must_match_argument:
+      index: 0
+      pattern: "^/(api/)?v[0-9]+/"

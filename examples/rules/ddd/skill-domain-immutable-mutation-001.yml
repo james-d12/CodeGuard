@@ -1,0 +1,19 @@
+id: SKILL-DOMAIN-IMMUTABLE-MUTATION-001
+name: Entity state mutated only via immutable with-updates
+description: >
+  Entity state must be mutated only via immutable `with` updates on
+  EntityData, never a direct field/property assignment after construction -
+  record types are meant to be immutable value objects.
+severity: error
+enforcement:
+  classification: deterministic
+tags:
+  - domain
+remediation: >
+  Replace the direct assignment with a `with` expression that produces a new
+  EntityData instance.
+illustrative: true
+
+analyzer:
+  kind: immutable-mutation
+  namespace: "Contoso.Domain.*"

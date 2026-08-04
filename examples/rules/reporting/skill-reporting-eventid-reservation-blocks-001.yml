@@ -1,0 +1,21 @@
+id: SKILL-REPORTING-EVENTID-RESERVATION-BLOCKS-001
+name: EventId reservation blocks non-collision
+description: >
+  [LoggerMessage(EventId, ...)] values must not collide anywhere in the
+  repository. Approximated as global uniqueness rather than verifying each
+  value falls within its component's specific reserved numeric block
+  (e.g. 3000-3099 for one entity) - block-boundary checking would need a
+  per-component range table this analyzer doesn't have.
+severity: warning
+enforcement:
+  classification: deterministic
+tags:
+  - logging
+remediation: >
+  Change the colliding EventId to an unused value within your component's
+  reserved block.
+illustrative: true
+
+analyzer:
+  kind: duplicate-attribute-argument
+  attribute_name: "LoggerMessageAttribute"

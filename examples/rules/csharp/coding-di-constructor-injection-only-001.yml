@@ -1,0 +1,31 @@
+id: CODING-DI-CONSTRUCTOR-INJECTION-ONLY-001
+name: No service-locator pattern
+description: >
+  No calls to IServiceProvider.GetService/GetRequiredService outside DI
+  extension methods. Doesn't cover the "constructor parameter count < 5" or
+  "dependencies stored in readonly fields" clauses (those are structural,
+  per-candidate checks a future rule could add via must_have_parameter_count
+  and a field-modifier check respectively - this rule covers only the
+  call-site half).
+severity: warning
+enforcement:
+  classification: deterministic
+tags:
+  - di
+remediation: >
+  Inject the dependency through the constructor instead of resolving it via
+  IServiceProvider.GetService/GetRequiredService.
+illustrative: true
+
+target:
+  kind: repository
+
+assertions:
+  - must_not_exist:
+      selector:
+        kind: call_site
+        invoked_member: "GetService"
+  - must_not_exist:
+      selector:
+        kind: call_site
+        invoked_member: "GetRequiredService"

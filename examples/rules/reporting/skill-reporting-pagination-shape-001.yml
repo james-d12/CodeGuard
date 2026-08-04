@@ -1,0 +1,32 @@
+id: SKILL-REPORTING-PAGINATION-SHAPE-001
+name: Paged responses include Page/PageSize/TotalRecords
+description: >
+  Paged response records must declare Page, PageSize, and TotalRecords
+  properties. Doesn't verify TotalRecords is populated from the persistence
+  layer rather than client-computed (needs data-flow/provenance analysis),
+  or that PageSize has an enforced upper bound.
+severity: error
+enforcement:
+  classification: deterministic
+tags:
+  - reporting
+remediation: >
+  Add the missing Page/PageSize/TotalRecords property to the paged response
+  record.
+illustrative: true
+
+target:
+  kind: record
+  namespace: "Contoso.Reporting.*"
+
+when:
+  must_match_name:
+    regex: ".*(Response|Result)$"
+
+assertions:
+  - must_have_property:
+      name: "Page"
+  - must_have_property:
+      name: "PageSize"
+  - must_have_property:
+      name: "TotalRecords"

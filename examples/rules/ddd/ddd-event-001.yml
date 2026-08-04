@@ -1,0 +1,23 @@
+id: DDD-EVENT-001
+name: Domain events must live in the Domain.Events namespace
+description: >
+  Types implementing IDomainEvent must be declared in a namespace ending in
+  Domain.Events.
+severity: error
+enforcement:
+  classification: deterministic
+tags:
+  - ddd
+  - domain
+  - event
+remediation: >
+  Move the domain event type into a namespace ending in Domain.Events.
+illustrative: true
+
+target:
+  kind: implements
+  interface: "Contoso.Domain.IDomainEvent"
+
+assertions:
+  - must_be_in_namespace:
+      pattern: "*.Domain.Events"

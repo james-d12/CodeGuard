@@ -1,0 +1,25 @@
+id: SKILL-PERSISTENCE-DOCUMENT-FILE-SPLIT-001
+name: Entity/event document contracts in separate files
+description: >
+  *EntityDocument and *EventDocument types must be declared in their own file,
+  matching the type name.
+severity: warning
+enforcement:
+  classification: deterministic
+tags:
+  - persistence
+remediation: >
+  Move the *EntityDocument/*EventDocument type into its own file named after
+  the type.
+illustrative: true
+
+target:
+  kind: class
+  namespace: "Contoso.Persistence.Documents"
+
+when:
+  must_match_name:
+    regex: ".*(EntityDocument|EventDocument)$"
+
+assertions:
+  - must_match_filename: {}

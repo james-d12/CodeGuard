@@ -1,0 +1,23 @@
+id: DDD-AGGREGATE-001
+name: Aggregate roots must implement IAggregateRoot
+description: >
+  Any domain entity that inherits from Entity<TId> and represents an aggregate
+  root must implement the IAggregateRoot marker interface.
+severity: error
+enforcement:
+  classification: deterministic
+tags:
+  - ddd
+  - domain
+  - aggregate
+remediation: >
+  Implement Contoso.Domain.IAggregateRoot on the aggregate root type.
+illustrative: true
+
+target:
+  kind: inherits_from
+  type: "Contoso.Domain.Entity<*>"
+
+assertions:
+  - must_implement:
+      interface: "Contoso.Domain.IAggregateRoot"

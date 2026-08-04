@@ -1,0 +1,25 @@
+id: SKILL-CLIENT-CONFIG-TYPENAME-CONSISTENCY-001
+name: typeName constant matches CRD YAML
+description: >
+  The typeName string constant in code must exactly match the CRD YAML's
+  typeName field. Covers only the const/YAML consistency clause of the full
+  rule - byKeyEndpoint/IncludeTenantContext/ConfigurationManager/
+  FilterExpression/ConsumerGroup clauses aren't covered (they need
+  cross-artifact call-site and structural checks this analyzer doesn't
+  perform). The specific const/YAML field pairing below is an illustrative
+  judgment call, not derived from a real CRD schema.
+severity: error
+enforcement:
+  classification: deterministic
+tags:
+  - client-config
+remediation: >
+  Update the typeName constant or the CRD YAML so the two values match exactly.
+illustrative: true
+
+analyzer:
+  kind: const-yaml-value-consistency
+  const_type: "Contoso.Client.*Config"
+  const_name: "TypeName"
+  yaml_file_pattern: "*.crd.yml"
+  yaml_field_path: "spec.typeName"

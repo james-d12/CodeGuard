@@ -1,0 +1,34 @@
+id: CSHARP-PACKAGES-FORBIDDEN-001
+name: Forbidden NuGet packages absent
+description: >
+  AutoMapper, FluentValidation, Moq, NSubstitute, Dapper, Hangfire, and NLog must
+  never be referenced by any project.
+severity: critical
+enforcement:
+  classification: deterministic
+tags:
+  - packages
+remediation: >
+  Remove the PackageReference and use the approved alternative (e.g. hand-crafted
+  mappers instead of AutoMapper).
+illustrative: true
+
+target:
+  kind: project
+  name: "*"
+
+assertions:
+  - must_not_reference_package:
+      id: "AutoMapper"
+  - must_not_reference_package:
+      id: "FluentValidation"
+  - must_not_reference_package:
+      id: "Moq"
+  - must_not_reference_package:
+      id: "NSubstitute"
+  - must_not_reference_package:
+      id: "Dapper"
+  - must_not_reference_package:
+      id: "Hangfire"
+  - must_not_reference_package:
+      id: "NLog"

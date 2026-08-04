@@ -1,0 +1,25 @@
+id: SKILL-APPLICATION-HANDLER-SHAPE-001
+name: Application handlers are sealed partial with HandleAsync
+description: >
+  Handler classes must be declared sealed partial class and expose a
+  HandleAsync entry point.
+severity: error
+enforcement:
+  classification: deterministic
+tags:
+  - application
+remediation: >
+  Declare the handler as sealed partial class and add a HandleAsync method.
+illustrative: true
+
+target:
+  kind: class
+  namespace: "Contoso.Application.Handlers"
+
+assertions:
+  - must_have_modifier:
+      modifier: "sealed"
+  - must_have_modifier:
+      modifier: "partial"
+  - must_have_method:
+      name: "HandleAsync"

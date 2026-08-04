@@ -1,0 +1,23 @@
+id: SKILL-APPHOST-PINNED-COSMOS-EMULATOR-TAG-001
+name: Pinned Cosmos emulator image tag must not change casually
+description: >
+  The pinned Cosmos emulator image tag vnext-EN20260602 must not change
+  without an explicit, validated change.
+severity: warning
+enforcement:
+  classification: deterministic
+tags:
+  - aspire
+  - infrastructure
+remediation: >
+  Restore the Cosmos emulator container image tag to vnext-EN20260602, or
+  update this rule alongside a validated, documented change of the pin.
+illustrative: true
+
+target:
+  kind: file
+  path: "*/AppHost/Program.cs"
+
+assertions:
+  - must_match_content:
+      pattern: "vnext-EN20260602"

@@ -1,0 +1,21 @@
+id: SKILL-APPLICATION-SINGLE-CATCH-BLOCK-001
+name: Handlers use a single generic catch block
+description: >
+  Application handler methods must contain exactly one catch block, typed
+  catch (Exception ex). Zero catches lets errors propagate uncontrolled;
+  more than one usually means exception-type-based branching that should be
+  handled elsewhere.
+severity: warning
+enforcement:
+  classification: deterministic
+tags:
+  - application
+remediation: >
+  Consolidate to a single catch (Exception ex) block in the handler method.
+illustrative: true
+
+analyzer:
+  kind: catch-clause-count
+  namespace: "Contoso.Application.*"
+  min_catches: 1
+  max_catches: 1

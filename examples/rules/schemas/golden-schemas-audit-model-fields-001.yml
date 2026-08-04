@@ -1,0 +1,37 @@
+id: GOLDEN-SCHEMAS-AUDIT-MODEL-FIELDS-001
+name: Canonical Audit model fields
+description: >
+  The Audit record must declare the canonical field set: Username, Name,
+  UserId, ApplicationId, ApplicationName, Operation, DateRequested.
+severity: warning
+enforcement:
+  classification: deterministic
+tags:
+  - schemas
+remediation: >
+  Add the missing canonical Audit field(s); do not rename or remove the existing ones.
+illustrative: true
+
+target:
+  kind: record
+  namespace: "*"
+
+when:
+  must_match_name:
+    regex: "^Audit$"
+
+assertions:
+  - must_have_property:
+      name: "Username"
+  - must_have_property:
+      name: "Name"
+  - must_have_property:
+      name: "UserId"
+  - must_have_property:
+      name: "ApplicationId"
+  - must_have_property:
+      name: "ApplicationName"
+  - must_have_property:
+      name: "Operation"
+  - must_have_property:
+      name: "DateRequested"
