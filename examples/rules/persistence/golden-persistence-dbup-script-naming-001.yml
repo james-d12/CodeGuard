@@ -1,0 +1,23 @@
+id: GOLDEN-PERSISTENCE-DBUP-SCRIPT-NAMING-001
+name: DbUp script naming convention
+description: >
+  RunOnce scripts must be named {NNN}_{description}.sql and RunAlways scripts
+  must be named {EntityName}_{Operation}.sql - no usp_/sp_ filename prefixes.
+severity: warning
+enforcement:
+  classification: deterministic
+tags:
+  - persistence
+  - dbup
+remediation: >
+  Rename the script to match RunOnce/{NNN}_{description}.sql or
+  RunAlways/{EntityName}_{Operation}.sql as appropriate.
+illustrative: true
+
+target:
+  kind: file
+  extension: ".sql"
+
+assertions:
+  - must_match_name:
+      regex: "^(.*/RunOnce/[0-9]{3}_.+\\.sql|.*/RunAlways/[A-Za-z]+_[A-Za-z]+\\.sql)$"

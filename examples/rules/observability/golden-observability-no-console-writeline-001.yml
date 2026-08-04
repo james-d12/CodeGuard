@@ -1,0 +1,29 @@
+id: GOLDEN-OBSERVABILITY-NO-CONSOLE-WRITELINE-001
+name: No Console.WriteLine in production code
+description: >
+  ILogger<T> is required; Console.WriteLine/Console.Write are forbidden.
+  Doesn't exclude test or console-tool projects (that would need per-project
+  classification this engine doesn't have).
+severity: warning
+enforcement:
+  classification: deterministic
+tags:
+  - logging
+remediation: >
+  Replace Console.WriteLine/Console.Write with an injected ILogger<T> call.
+illustrative: true
+
+target:
+  kind: repository
+
+assertions:
+  - must_not_exist:
+      selector:
+        kind: call_site
+        invoked_member: "WriteLine"
+        target_type: "Console"
+  - must_not_exist:
+      selector:
+        kind: call_site
+        invoked_member: "Write"
+        target_type: "Console"

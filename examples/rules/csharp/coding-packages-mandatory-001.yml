@@ -1,0 +1,25 @@
+id: CODING-PACKAGES-MANDATORY-001
+name: Mandatory NuGet packages present in API projects
+description: >
+  Contoso.Framework.DDD.v2, Contoso.Framework.Http, Microsoft.AspNetCore.App,
+  Microsoft.Extensions.* referenced as applicable per project role.
+  Approximated here against *.Api projects only; other project roles have
+  different required package sets not covered by this single rule.
+severity: warning
+enforcement:
+  classification: deterministic
+tags:
+  - packages
+remediation: >
+  Add the missing PackageReference to the project's .csproj.
+illustrative: true
+
+target:
+  kind: project
+  name: "*.Api"
+
+assertions:
+  - must_reference_package:
+      id: "Microsoft.AspNetCore.App"
+  - must_reference_package:
+      id: "Contoso.Framework.Http"

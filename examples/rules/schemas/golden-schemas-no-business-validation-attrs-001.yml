@@ -1,0 +1,30 @@
+id: GOLDEN-SCHEMAS-NO-BUSINESS-VALIDATION-ATTRS-001
+name: Only [Required] allowed on request schemas
+description: >
+  Request schema properties must not carry business-rule validation attributes
+  such as [StringLength], [Range], [MinLength], or [RegularExpression] - those
+  rules belong in domain factories, not on transport contracts.
+severity: error
+enforcement:
+  classification: deterministic
+tags:
+  - schemas
+  - validation
+remediation: >
+  Remove the business-rule validation attribute from the schema property and
+  enforce the rule in the domain factory instead.
+illustrative: true
+
+target:
+  kind: property
+  namespace: "*.Schemas*"
+
+assertions:
+  - must_not_have_attribute:
+      type: "*.StringLengthAttribute"
+  - must_not_have_attribute:
+      type: "*.RangeAttribute"
+  - must_not_have_attribute:
+      type: "*.MinLengthAttribute"
+  - must_not_have_attribute:
+      type: "*.RegularExpressionAttribute"

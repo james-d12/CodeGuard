@@ -1,0 +1,26 @@
+id: SKILL-EVENTHANDLER-TELEMETRY-FOLDER-001
+name: Shared Telemetry folder with required files
+description: >
+  A shared Telemetry/ folder must exist containing MetricNames, TagNames, and
+  MetricExtensions files.
+severity: warning
+enforcement:
+  classification: deterministic
+tags:
+  - eventhandler
+  - telemetry
+remediation: >
+  Add the missing MetricNames/TagNames/MetricExtensions file to the shared
+  Telemetry/ folder.
+illustrative: true
+
+target:
+  kind: repository
+
+assertions:
+  - must_have_file:
+      path: "*/Telemetry/MetricNames.cs"
+  - must_have_file:
+      path: "*/Telemetry/TagNames.cs"
+  - must_have_file:
+      path: "*/Telemetry/MetricExtensions.cs"

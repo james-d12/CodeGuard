@@ -1,0 +1,26 @@
+id: SKILL-APPLICATION-DI-PATTERN-001
+name: Application DI registration pattern
+description: >
+  Options registrations must chain AddOptions().Bind().ValidateDataAnnotations().ValidateOnStart().
+  Approximated as "a ValidateOnStart() call exists in the repository" rather
+  than verifying every chain, and doesn't cover the "TimeProvider registered
+  exactly once" cardinality clause (needs a repo-wide duplicate-registration
+  count this rule doesn't perform).
+severity: warning
+enforcement:
+  classification: deterministic
+tags:
+  - di
+remediation: >
+  Chain .ValidateDataAnnotations().ValidateOnStart() onto the options
+  registration.
+illustrative: true
+
+target:
+  kind: repository
+
+assertions:
+  - must_exist:
+      selector:
+        kind: call_site
+        invoked_member: "ValidateOnStart"

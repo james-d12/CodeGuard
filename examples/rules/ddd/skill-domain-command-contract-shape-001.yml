@@ -1,0 +1,29 @@
+id: SKILL-DOMAIN-COMMAND-CONTRACT-SHAPE-001
+name: Domain command contract shape
+description: >
+  Command types must be sealed record, declare an Audit? Audit property, and
+  follow the Create{Entity}Command/{Action}{Entity}Command naming pattern.
+  (The "no throw statements" and "mandatory members use required" clauses
+  need method-body/per-property analysis and are left for a future pass.)
+severity: error
+enforcement:
+  classification: deterministic
+tags:
+  - domain
+  - commands
+remediation: >
+  Declare the command as a sealed record, add an `Audit? Audit` property, and
+  rename it to match Create{Entity}Command or {Action}{Entity}Command.
+illustrative: true
+
+target:
+  kind: record
+  namespace: "Contoso.Domain.Commands"
+
+assertions:
+  - must_have_modifier:
+      modifier: "sealed"
+  - must_have_property:
+      name: "Audit"
+  - must_match_name:
+      regex: "^[A-Za-z]+Command$"

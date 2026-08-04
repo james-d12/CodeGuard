@@ -1,0 +1,24 @@
+id: GOLDEN-API-MINIMAL-APIS-ONLY-001
+name: Minimal APIs only, no MVC controllers
+description: >
+  ASP.NET Core Minimal APIs required; MVC controllers ([ApiController] /
+  ControllerBase) are forbidden.
+severity: error
+enforcement:
+  classification: deterministic
+tags:
+  - api
+remediation: >
+  Rewrite the controller as a Minimal API endpoint (MapGet/MapPost/etc.)
+  instead of an MVC controller class.
+illustrative: true
+
+target:
+  kind: class
+  namespace: "Contoso.*"
+
+assertions:
+  - must_not_have_attribute:
+      type: "*.ApiControllerAttribute"
+  - must_not_inherit_from:
+      type: "*.ControllerBase"

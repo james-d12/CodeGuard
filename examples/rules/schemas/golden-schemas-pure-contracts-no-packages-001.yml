@@ -1,0 +1,22 @@
+id: GOLDEN-SCHEMAS-PURE-CONTRACTS-NO-PACKAGES-001
+name: Schemas project has zero package dependencies
+description: >
+  *.Schemas projects must have zero NuGet package references - contracts must
+  not carry behavior or third-party dependencies.
+severity: critical
+enforcement:
+  classification: deterministic
+tags:
+  - schemas
+remediation: >
+  Remove the package reference from the *.Schemas project; move any dependent
+  code to a project that isn't a pure contracts project.
+illustrative: true
+
+target:
+  kind: project
+  name: "*.Schemas"
+
+assertions:
+  - must_not_reference_package:
+      id: "*"

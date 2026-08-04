@@ -1,0 +1,31 @@
+id: SKILL-APPLICATION-STARTUP-BOOTSTRAP-001
+name: Mandatory ContosoWebApplication bootstrap
+description: >
+  Program.cs must bootstrap via ContosoWebApplication.CreateBuilder(...)/BuildApp(...),
+  never the raw WebApplication.CreateBuilder(args)/builder.Build(). Doesn't
+  verify app.UseHealthChecks() is called after endpoint mapping (that needs
+  call-order analysis this rule doesn't perform).
+severity: critical
+enforcement:
+  classification: deterministic
+tags:
+  - startup
+remediation: >
+  Replace WebApplication.CreateBuilder(args)/builder.Build() with
+  ContosoWebApplication.CreateBuilder(...)/.BuildApp(...).
+illustrative: true
+
+target:
+  kind: repository
+
+assertions:
+  - must_not_exist:
+      selector:
+        kind: call_site
+        invoked_member: "CreateBuilder"
+        target_type: "WebApplication"
+  - must_exist:
+      selector:
+        kind: call_site
+        invoked_member: "CreateBuilder"
+        target_type: "ContosoWebApplication"

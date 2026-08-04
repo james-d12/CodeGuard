@@ -1,0 +1,23 @@
+id: DDD-ENTITY-002
+name: Domain entities must have a private or protected constructor
+description: >
+  Domain entities must not expose a public constructor - construction should go
+  through a factory method so invariants can be enforced.
+severity: error
+enforcement:
+  classification: deterministic
+tags:
+  - ddd
+  - domain
+  - entity
+remediation: >
+  Change the constructor accessibility to private or protected and add a factory method.
+illustrative: true
+
+target:
+  kind: class
+  namespace: "Contoso.Domain.Entities"
+
+assertions:
+  - must_have_constructor:
+      accessibility: [private, protected]

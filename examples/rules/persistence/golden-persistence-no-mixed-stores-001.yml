@@ -1,0 +1,25 @@
+id: GOLDEN-PERSISTENCE-NO-MIXED-STORES-001
+name: No mixed Cosmos/SQL persistence per project
+description: >
+  Persistence projects must not reference Entity Framework Core directly - a
+  single project must never mix EF-based access with the Cosmos/DbUp-based
+  persistence stack. (Full Cosmos-only vs SQL-only mutual exclusivity between
+  *.Persistence and *.Reporting.Persistence isn't expressible with glob-only
+  project name matching, so this rule covers the sub-check that applies to both.)
+severity: error
+enforcement:
+  classification: deterministic
+tags:
+  - persistence
+remediation: >
+  Remove the Microsoft.EntityFrameworkCore package reference; use Contoso.Framework.Reporting.DbUp
+  or the Cosmos SDK depending on the project's role instead.
+illustrative: true
+
+target:
+  kind: project
+  name: "*.Persistence"
+
+assertions:
+  - must_not_reference_package:
+      id: "Microsoft.EntityFrameworkCore*"

@@ -1,0 +1,25 @@
+id: CODING-CONFIG-STRONGLY-TYPED-OPTIONS-001
+name: Strongly-typed validated configuration
+description: >
+  Configuration should be bound to IOptions<T> and validated at startup via
+  .ValidateDataAnnotations().ValidateOnStart(). Approximated as "a
+  ValidateOnStart() call exists somewhere in the repository" rather than
+  verifying every individual AddOptions<T>() registration chains it.
+severity: warning
+enforcement:
+  classification: deterministic
+tags:
+  - configuration
+remediation: >
+  Chain .ValidateDataAnnotations().ValidateOnStart() onto the AddOptions<T>()
+  registration.
+illustrative: true
+
+target:
+  kind: repository
+
+assertions:
+  - must_exist:
+      selector:
+        kind: call_site
+        invoked_member: "ValidateOnStart"

@@ -1,0 +1,24 @@
+id: SKILL-SERVICE-REQUIREMENTS-BASE-APP-JSON-SCOPE-001
+name: base/app.json contains only the argocd block
+description: >
+  base/app.json must contain the argocd block and must not speculatively add
+  a resources block.
+severity: warning
+enforcement:
+  classification: deterministic
+tags:
+  - infrastructure
+remediation: >
+  Remove any speculative resources block from base/app.json; only the argocd
+  block belongs there unless a documented need exists.
+illustrative: true
+
+target:
+  kind: file
+  path: "*/base/app.json"
+
+assertions:
+  - must_have_json_field:
+      path: "argocd"
+  - must_not_have_json_field:
+      path: "resources"

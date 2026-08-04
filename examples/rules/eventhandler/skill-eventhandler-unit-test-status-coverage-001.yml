@@ -1,0 +1,70 @@
+id: SKILL-EVENTHANDLER-UNIT-TEST-STATUS-COVERAGE-001
+name: EventHandler tests cover all non-success HTTP status codes
+description: >
+  A test must exist exercising each of the non-success HTTP status codes
+  (400/401/403/404/422/429/500/503/504) somewhere in the EventHandler test
+  project, approximated by the status code appearing as a token in a test
+  method's name (test names already carry the status code per the
+  MethodName_Should_ExpectedBehavior_WhenCondition naming convention).
+  Doesn't verify coverage is per HTTP client method, only that each code is
+  covered somewhere in the project.
+severity: warning
+enforcement:
+  classification: deterministic
+tags:
+  - eventhandler
+  - testing
+remediation: >
+  Add a test method whose name includes the missing status code, e.g.
+  Should_ReturnProblem_When404NotFound.
+illustrative: true
+
+target:
+  kind: repository
+
+assertions:
+  - must_exist:
+      selector:
+        kind: method
+        project: "*.EventHandler*"
+        name: "*400*"
+  - must_exist:
+      selector:
+        kind: method
+        project: "*.EventHandler*"
+        name: "*401*"
+  - must_exist:
+      selector:
+        kind: method
+        project: "*.EventHandler*"
+        name: "*403*"
+  - must_exist:
+      selector:
+        kind: method
+        project: "*.EventHandler*"
+        name: "*404*"
+  - must_exist:
+      selector:
+        kind: method
+        project: "*.EventHandler*"
+        name: "*422*"
+  - must_exist:
+      selector:
+        kind: method
+        project: "*.EventHandler*"
+        name: "*429*"
+  - must_exist:
+      selector:
+        kind: method
+        project: "*.EventHandler*"
+        name: "*500*"
+  - must_exist:
+      selector:
+        kind: method
+        project: "*.EventHandler*"
+        name: "*503*"
+  - must_exist:
+      selector:
+        kind: method
+        project: "*.EventHandler*"
+        name: "*504*"

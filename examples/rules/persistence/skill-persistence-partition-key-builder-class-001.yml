@@ -1,0 +1,22 @@
+id: SKILL-PERSISTENCE-PARTITION-KEY-BUILDER-CLASS-001
+name: Dedicated static partition key builder per aggregate
+description: >
+  Every aggregate root must have exactly one dedicated
+  {Aggregate}PartitionKeyBuilder companion type - zero means partitioning was
+  never implemented for that aggregate, more than one means it's ambiguous
+  which builder is authoritative. Doesn't verify [ExcludeFromCodeCoverage] or
+  that no PartitionKey(...) construction happens outside that class.
+severity: warning
+enforcement:
+  classification: deterministic
+tags:
+  - persistence
+remediation: >
+  Add a static {Aggregate}PartitionKeyBuilder class (or remove the duplicate),
+  so exactly one exists for this aggregate.
+illustrative: true
+
+analyzer:
+  kind: companion-type-cardinality
+  marker_interface: "Contoso.Domain.IAggregateRoot"
+  companion_suffix: "PartitionKeyBuilder"

@@ -1,0 +1,25 @@
+id: SKILL-APPLICATION-TIMEPROVIDER-REQUIRED-001
+name: Handlers use TimeProvider, not DateTime.UtcNow
+description: >
+  Application handler code must obtain time via an injected TimeProvider,
+  never DateTime.UtcNow directly.
+severity: warning
+enforcement:
+  classification: deterministic
+tags:
+  - application
+remediation: >
+  Inject TimeProvider and call timeProvider.GetUtcNow() instead of
+  DateTime.UtcNow.
+illustrative: true
+
+target:
+  kind: repository
+
+assertions:
+  - must_not_exist:
+      selector:
+        kind: call_site
+        invoked_member: "UtcNow"
+        target_type: "DateTime"
+        project: "*.Application*"

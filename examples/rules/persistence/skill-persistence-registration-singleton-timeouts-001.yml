@@ -1,0 +1,32 @@
+id: SKILL-PERSISTENCE-REGISTRATION-SINGLETON-TIMEOUTS-001
+name: Cosmos repository registration lifetime and timeouts
+description: >
+  Cosmos repository DI registration must configure WithRequestTimeout and
+  WithThrottlingRetryOptions. Approximated as "the calls exist somewhere in
+  the repository" rather than verifying the exact documented values (30s /
+  30s,3) or that the repository is registered AddSingleton (not
+  scoped/transient).
+severity: error
+enforcement:
+  classification: deterministic
+tags:
+  - persistence
+  - di
+remediation: >
+  Chain .WithRequestTimeout(TimeSpan.FromSeconds(30)) and
+  .WithThrottlingRetryOptions(TimeSpan.FromSeconds(30), 3) onto the Cosmos
+  client registration.
+illustrative: true
+
+target:
+  kind: repository
+
+assertions:
+  - must_exist:
+      selector:
+        kind: call_site
+        invoked_member: "WithRequestTimeout"
+  - must_exist:
+      selector:
+        kind: call_site
+        invoked_member: "WithThrottlingRetryOptions"
