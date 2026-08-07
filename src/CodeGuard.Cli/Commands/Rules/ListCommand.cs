@@ -111,12 +111,35 @@ public static class ListCommand
             return;
         }
 
-        Console.WriteLine($"{"ID",-24}{"SEVERITY",-10}{"ENFORCEMENT",-24}{"ENABLED",-9}TAGS");
-        foreach (var rule in rules)
+        const string idHeader = "ID";
+        const string severityHeader = "SEVERITY";
+        const string enforcementHeader = "ENFORCEMENT";
+        const string enabledHeader = "ENABLED";
+        const string tagsHeader = "TAGS";
+        const int columnGap = 2;
+
+        var rows = rules
+            .Select(rule => (
+                Id: rule.Id,
+                Severity: rule.Severity.ToString(),
+                Enforcement: rule.Enforcement.Classification.ToString(),
+                Enabled: rule.Enabled.ToString(),
+                Tags: string.Join(",", rule.Tags)))
+            .ToList();
+
+        var idWidth = Math.Max(idHeader.Length, rows.Max(r => r.Id.Length)) + columnGap;
+        var severityWidth = Math.Max(severityHeader.Length, rows.Max(r => r.Severity.Length)) + columnGap;
+        var enforcementWidth = Math.Max(enforcementHeader.Length, rows.Max(r => r.Enforcement.Length)) + columnGap;
+        var enabledWidth = Math.Max(enabledHeader.Length, rows.Max(r => r.Enabled.Length)) + columnGap;
+
+        Console.WriteLine(
+            $"{idHeader.PadRight(idWidth)}{severityHeader.PadRight(severityWidth)}{enforcementHeader.PadRight(enforcementWidth)}{enabledHeader.PadRight(enabledWidth)}{tagsHeader}");
+        Console.WriteLine(new string('-', idWidth + severityWidth + enforcementWidth + enabledWidth + tagsHeader.Length));
+
+        foreach (var row in rows)
         {
-            var tags = string.Join(",", rule.Tags);
             Console.WriteLine(
-                $"{rule.Id,-24}{rule.Severity,-10}{rule.Enforcement.Classification,-24}{rule.Enabled,-9}{tags}");
+                $"{row.Id.PadRight(idWidth)}{row.Severity.PadRight(severityWidth)}{row.Enforcement.PadRight(enforcementWidth)}{row.Enabled.PadRight(enabledWidth)}{row.Tags}");
         }
     }
 
