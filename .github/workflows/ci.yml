@@ -80,14 +80,14 @@ jobs:
               /k:"personal-james_codeguard" \
               /o:"personal-james" \
               /n:"CodeGuard" \
-              /d:sonar.token="${{ secrets.SONAR_TOKEN }}" \
+              /d:sonar.token="$SONAR_TOKEN" \
               /d:sonar.qualitygate.wait=false \
               /d:sonar.exclusions="**/bin/**,**/obj/**"
              
             dotnet build --no-restore
             
             "${{ runner.temp }}/scanner/dotnet-sonarscanner" end \
-              /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
+              /d:sonar.token="$SONAR_TOKEN"
 
       - name: Test
         run: dotnet test --no-build --collect:"XPlat Code Coverage" --results-directory ./coverage
