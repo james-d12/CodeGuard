@@ -84,7 +84,7 @@ jobs:
               /d:sonar.qualitygate.wait=false \
               /d:sonar.exclusions="**/bin/**,**/obj/**"
              
-            dotnet build --configuration Release --no-restore
+            dotnet build --no-restore
             
             "${{ runner.temp }}/scanner/dotnet-sonarscanner" end \
               /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
