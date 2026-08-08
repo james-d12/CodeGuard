@@ -287,7 +287,12 @@ public static class SetupCommand
 
         GlobalSettingsStore.Save(
             GlobalSettingsPaths.SettingsFilePath(settingsRoot),
-            new GlobalSettings { Kind = kind, Location = source, Branch = branch });
+            new GlobalSettings
+            {
+                Kind = kind,
+                Location = kind == RuleSourceKind.Directory ? resolvedPath : source,
+                Branch = branch
+            });
 
         var ruleCount = RuleFileLoader.CreateDefault().LoadFromDirectories([resolvedPath]).Count;
         Console.WriteLine($"Configured rules source: {source}{(branch is null ? "" : $" (branch {branch})")}");
