@@ -1,0 +1,45 @@
+id: GOLDEN-ARCH-REPOSITORY-NOT-IN-DOMAIN-001
+name: Repository implementations must not live in the Domain namespace
+description: >
+  A type named `*Repository` is an infrastructure concern (data access) and
+  must not be declared inside a `Contoso.Domain.*` namespace, even if it
+  otherwise looks like a domain type. Demonstrates `must_not_be_in_namespace`
+  (the complement to `must_be_in_namespace`), narrowed via a `when` filter.
+severity: error
+enforcement:
+  classification: deterministic
+tags:
+  - architecture
+  - ddd
+  - layering
+remediation: >
+  Move the repository implementation into an Infrastructure/Persistence
+  namespace; only the repository *interface* belongs in Domain.
+illustrative: true
+
+target:
+  kind: class
+  namespace: "*"
+
+when:
+  must_match_name:
+    regex: "Repository$"
+
+assertions:
+  - must_not_be_in_namespace:
+      pattern: "Contoso.Domain.*"
+
+tests:
+  - name: Repository implementation outside the Domain namespace
+    setup:
+      types:
+        - name: OrderRepository
+          namespace: Contoso.Infrastructure.Persistence
+    expect: pass
+
+  - name: Repository implementation declared inside the Domain namespace
+    setup:
+      types:
+        - name: OrderRepository
+          namespace: Contoso.Domain.Entities
+    expect: fail

@@ -1,0 +1,37 @@
+id: GOLDEN-REPO-TESTS-DIRECTORY-REQUIRED-001
+name: Repository must have a tests directory
+description: >
+  Every product repository must contain a top-level `tests` directory.
+  Demonstrates the `directory` selector.
+severity: error
+enforcement:
+  classification: deterministic
+tags:
+  - repo
+  - testing
+remediation: >
+  Add a top-level `tests` directory containing the repository's test projects.
+illustrative: true
+
+target:
+  kind: repository
+
+assertions:
+  - must_exist:
+      selector:
+        kind: directory
+        path: "tests"
+
+tests:
+  - name: Repository with a tests directory
+    setup:
+      directories:
+        - src
+        - tests
+    expect: pass
+
+  - name: Repository without a tests directory
+    setup:
+      directories:
+        - src
+    expect: fail

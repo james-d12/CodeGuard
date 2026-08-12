@@ -1,0 +1,61 @@
+id: DDD-ENTITY-003
+name: Domain entities must have a private identity field and no public backing fields
+description: >
+  Domain entities must store their identity in a private `_id` field, and must
+  not expose any raw public field. Demonstrates the `must_have_field`/
+  `must_not_have_field` pair (the field-level equivalents of the existing
+  property assertions).
+severity: error
+enforcement:
+  classification: deterministic
+tags:
+  - ddd
+  - domain
+  - entity
+remediation: >
+  Add a private `_id` field for identity, and replace any public field with a
+  property (or make the field private).
+illustrative: true
+
+target:
+  kind: class
+  namespace: "Contoso.Domain.Entities"
+
+assertions:
+  - must_have_field:
+      name: "_id"
+  - must_not_have_field:
+      name: "Public*"
+
+tests:
+  - name: Entity with a private _id field and no public fields
+    setup:
+      types:
+        - name: Order
+          namespace: Contoso.Domain.Entities
+          fields:
+            - name: _id
+              type: System.Guid
+    expect: pass
+
+  - name: Entity missing the _id field
+    setup:
+      types:
+        - name: Order
+          namespace: Contoso.Domain.Entities
+          fields:
+            - name: _name
+              type: System.String
+    expect: fail
+
+  - name: Entity exposing a public backing field
+    setup:
+      types:
+        - name: Order
+          namespace: Contoso.Domain.Entities
+          fields:
+            - name: _id
+              type: System.Guid
+            - name: PublicTotal
+              type: System.Decimal
+    expect: fail

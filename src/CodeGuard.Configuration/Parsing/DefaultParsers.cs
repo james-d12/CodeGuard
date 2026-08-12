@@ -21,7 +21,14 @@ public static class DefaultParsers
         new PropertySelectorParser(),
         new ConstructorSelectorParser(),
         new FieldSelectorParser(),
-        new CallSiteSelectorParser()
+        new CallSiteSelectorParser(),
+        new SwitchSelectorParser(),
+        new ThrowSiteSelectorParser(),
+        new MutationSiteSelectorParser(),
+        new TryBlockSelectorParser(),
+        new MethodBodyShapeSelectorParser(),
+        new DiagnosticSelectorParser(),
+        new DirectorySelectorParser()
     ]);
 
     public static AssertionParserRegistry CreateAssertionRegistry(SelectorParserRegistry selectorParsers) => new(
@@ -59,7 +66,15 @@ public static class DefaultParsers
         new MustNotHaveAttributeAssertionParser(),
         new MustExistAssertionParser(selectorParsers),
         new MustNotExistAssertionParser(selectorParsers),
-        new MustMatchArgumentAssertionParser()
+        new MustMatchArgumentAssertionParser(),
+        new MustHaveCountAssertionParser(selectorParsers),
+        new MustDependOnAssertionParser(),
+        new MustOnlyDependOnAssertionParser(),
+        new MustHaveFieldAssertionParser(),
+        new MustNotHaveFieldAssertionParser(),
+        new MustNotBeInNamespaceAssertionParser(),
+        new MustMatchNamespacePatternAssertionParser(),
+        new MustUsePackageVersionAssertionParser()
     ]);
 
     public static ConditionParserRegistry CreateConditionRegistry(AssertionParserRegistry assertionParsers) =>

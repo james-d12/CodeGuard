@@ -6,9 +6,11 @@ namespace CodeGuard.Configuration.Testing;
 
 /// <summary>
 /// Builds a <see cref="RepositoryModel"/> directly from a rule test's <c>setup:</c> block - no disk,
-/// no Roslyn/MSBuild. See docs/RULES_TEST_DESIGN.md for the setup shape and v1 scope (files,
-/// directories, projects/types with nested members, and call sites; syntax-fact records like
-/// switches/throw sites are explicitly out of scope until a rule test needs them).
+/// no Roslyn/MSBuild. See docs/RULES_TEST_DESIGN.md for the setup shape, which now also covers the
+/// syntax-fact records (switches, throw sites, mutation sites, try blocks, method-body shapes, and
+/// raw diagnostics) consumed by the `switch`/`throw_site`/`mutation_site`/`try_block`/
+/// `method_body_shape`/`diagnostic` selectors - these are supplied directly as flat records in the
+/// setup block, not derived from real source, since virtual rule test setup never runs Roslyn.
 /// </summary>
 public static class TestSetupBuilder
 {
@@ -16,22 +18,8 @@ public static class TestSetupBuilder
     private const string DefaultSolutionPath = "TestSolution.sln";
     private const string VirtualRootPath = "<virtual>";
 
-    private static readonly string[] UnsupportedKeys =
-        ["switches", "throwSites", "mutationSites", "tryBlocks", "methodBodyShapes", "diagnostics"];
-
     public static RepositoryModel Build(JsonObject setup)
     {
-        foreach (var key in UnsupportedKeys)
-        {
-            if (setup[key] is not null)
-            {
-                throw new RuleParsingException(
-                    $"Rule test setup key '{key}' is not supported yet - it requires source-level Roslyn " +
-                    "analysis, which virtual rule test setup does not perform. See docs/RULES_TEST_DESIGN.md " +
-                    "(\"v1 setup scope\").");
-            }
-        }
-
         var projects = new List<ProjectModel>();
 
         if (setup["projects"]?.AsArray() is { } projectsNode)
@@ -53,14 +41,73 @@ public static class TestSetupBuilder
 
         var files = setup["files"]?.AsArray()?.Select(node => ParseFile(node!.AsObject())).ToList() ?? [];
         var callSites = setup["callSites"]?.AsArray()?.Select(node => ParseCallSite(node!.AsObject())).ToList() ?? [];
+        var switches = setup["switches"]?.AsArray()?.Select(node => ParseSwitch(node!.AsObject())).ToList() ?? [];
+        var throwSites = setup["throwSites"]?.AsArray()?.Select(node => ParseThrowSite(node!.AsObject())).ToList() ?? [];
+        var mutationSites = setup["mutationSites"]?.AsArray()?.Select(node => ParseMutationSite(node!.AsObject())).ToList() ?? [];
+        var tryBlocks = setup["tryBlocks"]?.AsArray()?.Select(node => ParseTryBlock(node!.AsObject())).ToList() ?? [];
+        var methodBodyShapes = setup["methodBodyShapes"]?.AsArray()?.Select(node => ParseMethodBodyShape(node!.AsObject())).ToList() ?? [];
+        var diagnostics = setup["diagnostics"]?.AsArray()?.Select(node => ParseDiagnostic(node!.AsObject())).ToList() ?? [];
         var directories = setup.GetStringArray("directories");
 
         return new RepositoryModel(
-            VirtualRootPath, solutions, files, callSites, [], [], [], [], [], [])
+            VirtualRootPath, solutions, files, callSites, switches, throwSites, mutationSites, tryBlocks,
+            methodBodyShapes, diagnostics)
         {
             Directories = directories
         };
     }
+
+    private static SwitchModel ParseSwitch(JsonObject node) => new(
+        node.GetOptionalString("containingMethod") ?? "",
+        node.GetOptionalString("containingType") ?? "",
+        node.GetOptionalString("project") ?? DefaultProjectName,
+        node.GetStringArray("armLabels"),
+        node.GetOptionalBool("hasDefaultOrDiscardArm", false),
+        node.GetOptionalString("filePath") ?? "",
+        node.GetOptionalInt("line") ?? 0);
+
+    private static ThrowSiteModel ParseThrowSite(JsonObject node) => new(
+        node.GetOptionalString("containingMethod") ?? "",
+        node.GetOptionalString("containingType") ?? "",
+        node.GetOptionalString("project") ?? DefaultProjectName,
+        node.GetOptionalString("exceptionTypeName"),
+        node.GetOptionalBool("isFirstStatementInMethod", false),
+        node.GetOptionalString("filePath") ?? "",
+        node.GetOptionalInt("line") ?? 0);
+
+    private static MutationSiteModel ParseMutationSite(JsonObject node) => new(
+        node.GetOptionalString("containingMethod") ?? "",
+        node.GetOptionalString("containingType") ?? "",
+        node.GetRequiredString("targetMemberName"),
+        node.GetOptionalString("project") ?? DefaultProjectName,
+        node.GetOptionalString("filePath") ?? "",
+        node.GetOptionalInt("line") ?? 0);
+
+    private static TryBlockModel ParseTryBlock(JsonObject node) => new(
+        node.GetOptionalString("containingMethod") ?? "",
+        node.GetOptionalString("containingType") ?? "",
+        node.GetOptionalString("project") ?? DefaultProjectName,
+        node.GetOptionalInt("catchClauseCount") ?? 0,
+        node.GetStringArray("catchTypeNames"),
+        node.GetOptionalString("filePath") ?? "",
+        node.GetOptionalInt("line") ?? 0);
+
+    private static MethodBodyShapeModel ParseMethodBodyShape(JsonObject node) => new(
+        node.GetOptionalString("containingMethod") ?? "",
+        node.GetOptionalString("containingType") ?? "",
+        node.GetOptionalString("project") ?? DefaultProjectName,
+        node.GetOptionalInt("statementCount") ?? 0,
+        node.GetOptionalBool("isSingleBaseCallDelegation", false),
+        node.GetOptionalString("filePath") ?? "",
+        node.GetOptionalInt("line") ?? 0);
+
+    private static DiagnosticModel ParseDiagnostic(JsonObject node) => new(
+        node.GetRequiredString("id"),
+        node.GetOptionalString("message") ?? "",
+        node.GetOptionalString("project") ?? DefaultProjectName,
+        node.GetOptionalString("filePath") ?? "",
+        node.GetOptionalInt("line") ?? 0,
+        node.GetOptionalInt("column") ?? 0);
 
     private static FileModel ParseFile(JsonObject node)
     {

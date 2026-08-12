@@ -1,0 +1,45 @@
+id: GOLDEN-ARCH-EVENT-NAMESPACE-SHAPE-001
+name: Domain event types must live in a .Events namespace
+description: >
+  Any type named `*Event` must be declared in a namespace ending in `.Events`,
+  so events are discoverable by namespace convention regardless of which
+  aggregate declares them. Demonstrates `must_match_namespace_pattern` (the
+  namespace-regex complement to `must_match_name`), narrowed to only
+  event-named candidates via a `when` filter.
+severity: warning
+enforcement:
+  classification: deterministic
+tags:
+  - ddd
+  - domain
+  - events
+remediation: >
+  Move the event type into a `*.Events` namespace.
+illustrative: true
+
+target:
+  kind: class
+  namespace: "*"
+
+when:
+  must_match_name:
+    regex: "Event$"
+
+assertions:
+  - must_match_namespace_pattern:
+      regex: "\\.Events$"
+
+tests:
+  - name: Event type declared in a .Events namespace
+    setup:
+      types:
+        - name: OrderPlacedEvent
+          namespace: Contoso.Domain.Events
+    expect: pass
+
+  - name: Event type declared outside a .Events namespace
+    setup:
+      types:
+        - name: OrderPlacedEvent
+          namespace: Contoso.Domain.Messages
+    expect: fail

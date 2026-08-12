@@ -15,7 +15,7 @@ public sealed class MustNotDependOnAssertion(string forbiddenTypePattern) : IAss
         }
 
         var offendingTypes = project.Types
-            .Where(type => ReferencedTypeNames(type).Any(name => GlobMatcher.IsMatch(name, forbiddenTypePattern)))
+            .Where(type => DependencyTraversal.ReferencedTypeNames(type).Any(name => GlobMatcher.IsMatch(name, forbiddenTypePattern)))
             .Select(type => type.FullName)
             .ToList();
 
@@ -23,27 +23,5 @@ public sealed class MustNotDependOnAssertion(string forbiddenTypePattern) : IAss
             ? AssertionOutcome.Success()
             : AssertionOutcome.Failure(
                 $"Project '{project.Name}' must not depend on '{forbiddenTypePattern}' (via: {string.Join(", ", offendingTypes)}).");
-    }
-
-    private static IEnumerable<string> ReferencedTypeNames(TypeModel type)
-    {
-        if (type.BaseType is not null)
-        {
-            yield return type.BaseType;
-        }
-
-        foreach (var i in type.Interfaces)
-        {
-            yield return i;
-        }
-
-        foreach (var method in type.Methods)
-        {
-            yield return method.ReturnType;
-            foreach (var parameter in method.Parameters)
-            {
-                yield return parameter.Type;
-            }
-        }
     }
 }

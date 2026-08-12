@@ -1,0 +1,52 @@
+id: ARCH-DEPENDENCY-005
+name: Domain types must not depend on Infrastructure via a field
+description: >
+  Same layering rule as ARCH-DEPENDENCY-002 (Domain must not reference
+  Infrastructure), but exercised through a field type rather than a base
+  type - demonstrating that `must_not_depend_on`'s dependency traversal now
+  also walks field/property/constructor-parameter/attribute types, not just
+  base types, interfaces, and method signatures.
+severity: critical
+enforcement:
+  classification: deterministic
+tags:
+  - architecture
+  - ddd
+  - layering
+remediation: >
+  Remove the field referencing the Infrastructure type; depend on a
+  Domain-defined abstraction instead.
+illustrative: true
+
+target:
+  kind: project
+  name: "*.Domain"
+
+assertions:
+  - must_not_depend_on:
+      type: "Contoso.Infrastructure.*"
+
+tests:
+  - name: Domain type with a field of a plain framework type
+    setup:
+      projects:
+        - name: Contoso.Domain
+          types:
+            - name: Order
+              namespace: Contoso.Domain
+              fields:
+                - name: _id
+                  type: System.Guid
+    expect: pass
+
+  - name: Domain type with a field referencing an Infrastructure type
+    setup:
+      projects:
+        - name: Contoso.Domain
+          types:
+            - name: Order
+              namespace: Contoso.Domain
+              fields:
+                - name: _repository
+                  type: "Contoso.Infrastructure.OrderRepository"
+    expect: fail

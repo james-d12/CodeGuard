@@ -1,0 +1,42 @@
+id: CSHARP-MUTATION-NO-FROZEN-FIELD-001
+name: Fields named Frozen* must never be reassigned
+description: >
+  A field named with a `Frozen` prefix signals it's set once and treated as
+  immutable thereafter; any assignment to it anywhere is a violation of that
+  contract. Demonstrates the `mutation_site` selector.
+severity: error
+enforcement:
+  classification: deterministic
+tags:
+  - csharp
+  - immutability
+remediation: >
+  Either rename the field to drop the `Frozen` prefix if it's genuinely
+  mutable, or remove the reassignment and set it only in the constructor.
+illustrative: true
+
+target:
+  kind: repository
+
+assertions:
+  - must_not_exist:
+      selector:
+        kind: mutation_site
+        target_member: "Frozen*"
+
+tests:
+  - name: Repository with no mutation of Frozen* fields
+    setup:
+      mutationSites:
+        - containingMethod: Cancel
+          containingType: Contoso.Domain.Order
+          targetMemberName: _status
+    expect: pass
+
+  - name: Repository mutating a Frozen* field
+    setup:
+      mutationSites:
+        - containingMethod: Reset
+          containingType: Contoso.Domain.Order
+          targetMemberName: FrozenSnapshot
+    expect: fail

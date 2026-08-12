@@ -1,0 +1,45 @@
+id: ARCH-DEPENDENCY-003
+name: Domain projects must depend on the Entity base type
+description: >
+  A `*.Domain` project that doesn't reference `Contoso.Domain.Entity<TId>`
+  anywhere is suspicious - it suggests the project isn't actually modeling
+  any domain entities. Demonstrates the positive `must_depend_on` assertion
+  (the counterpart to `must_not_depend_on`).
+severity: warning
+enforcement:
+  classification: deterministic
+tags:
+  - architecture
+  - ddd
+remediation: >
+  Model at least one domain entity inheriting from Contoso.Domain.Entity<TId>,
+  or move this project's types elsewhere if it isn't a domain project.
+illustrative: true
+
+target:
+  kind: project
+  name: "*.Domain"
+
+assertions:
+  - must_depend_on:
+      type: "Contoso.Domain.Entity<*>"
+
+tests:
+  - name: Domain project with a type inheriting from Entity<TId>
+    setup:
+      projects:
+        - name: Contoso.Domain
+          types:
+            - name: Order
+              namespace: Contoso.Domain
+              baseType: "Contoso.Domain.Entity<Guid>"
+    expect: pass
+
+  - name: Domain project with no reference to Entity<TId> anywhere
+    setup:
+      projects:
+        - name: Contoso.Domain
+          types:
+            - name: Order
+              namespace: Contoso.Domain
+    expect: fail

@@ -1,0 +1,44 @@
+id: CSHARP-NO-PURE-DELEGATION-OVERRIDE-001
+name: Overrides must not be pure single-base-call delegations
+description: >
+  An override whose entire body is a single call to the base implementation of
+  the same method adds no behavior and should be deleted. Demonstrates the
+  `method_body_shape` selector.
+severity: warning
+enforcement:
+  classification: deterministic
+tags:
+  - csharp
+  - dead-code
+remediation: >
+  Remove the override entirely - the base implementation already provides
+  this behavior.
+illustrative: true
+
+target:
+  kind: repository
+
+assertions:
+  - must_not_exist:
+      selector:
+        kind: method_body_shape
+        is_single_base_call_delegation: true
+
+tests:
+  - name: Repository with no pure-delegation overrides
+    setup:
+      methodBodyShapes:
+        - containingMethod: ToString
+          containingType: Contoso.Domain.Order
+          statementCount: 3
+          isSingleBaseCallDelegation: false
+    expect: pass
+
+  - name: Repository with a pure-delegation override
+    setup:
+      methodBodyShapes:
+        - containingMethod: ToString
+          containingType: Contoso.Domain.Order
+          statementCount: 1
+          isSingleBaseCallDelegation: true
+    expect: fail
