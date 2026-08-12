@@ -24,3 +24,16 @@ assertions:
       selector:
         kind: call_site
         invoked_member: "AddValidation"
+
+tests:
+  - name: Startup calls AddValidation
+    setup:
+      callSites:
+        - invokedMember: AddValidation
+    expect: pass
+
+  - name: Startup missing AddValidation
+    setup:
+      callSites:
+        - invokedMember: Bind
+    expect: fail

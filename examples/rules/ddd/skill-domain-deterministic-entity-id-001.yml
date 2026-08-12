@@ -22,3 +22,22 @@ assertions:
         invoked_member: "NewGuid"
         target_type: "Guid"
         project: "*.Domain*"
+
+tests:
+  - name: Domain project uses GenerateDeterministicId for entity IDs
+    setup:
+      callSites:
+        - invokedMember: GenerateDeterministicId
+          targetTypeName: GuidGenerator
+          containingType: Contoso.Domain.Order
+          project: Contoso.Domain
+    expect: pass
+
+  - name: Domain project calls Guid.NewGuid() directly
+    setup:
+      callSites:
+        - invokedMember: NewGuid
+          targetTypeName: Guid
+          containingType: Contoso.Domain.Order
+          project: Contoso.Domain
+    expect: fail

@@ -173,7 +173,7 @@ public static class ValidateCommand
 
                 var evaluator = new RuleEvaluator(loggerFactory.CreateLogger<RuleEvaluator>());
                 var evaluateStopwatch = Stopwatch.StartNew();
-                var result = evaluator.Evaluate(rules, model, maxParallelism);
+                var result = evaluator.Evaluate(rules, model, maxParallelism, cancellationToken);
                 logger.LogInformation(
                     "Evaluation complete in {ElapsedMs} ms: {RulesEvaluated} rule(s) evaluated, {ViolationCount} violation(s), {ErrorCount} evaluation error(s)",
                     evaluateStopwatch.ElapsedMilliseconds, result.RulesEvaluated, result.Violations.Count, result.EvaluationErrors.Count);

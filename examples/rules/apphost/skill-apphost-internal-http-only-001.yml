@@ -20,3 +20,20 @@ target:
 assertions:
   - must_not_match_content:
       pattern: "(?s)WithReference\\([^)]*https://"
+
+tests:
+  - name: Internal service reference using http scheme
+    setup:
+      files:
+        - path: src/AppHost/Program.cs
+          content: >
+            builder.AddProject("api").WithReference(cache).WithEnvironment("INTERNAL_URL", "http://internal-service");
+    expect: pass
+
+  - name: Internal service reference using https scheme
+    setup:
+      files:
+        - path: src/AppHost/Program.cs
+          content: >
+            builder.AddProject("api").WithReference(cache, "https://internal-service");
+    expect: fail

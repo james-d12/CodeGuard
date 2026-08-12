@@ -22,3 +22,19 @@ assertions:
       type: "*.ApiControllerAttribute"
   - must_not_inherit_from:
       type: "*.ControllerBase"
+
+tests:
+  - name: Minimal API endpoint class
+    setup:
+      types:
+        - name: OrdersEndpoints
+          namespace: Contoso.Api
+    expect: pass
+
+  - name: MVC controller inheriting from ControllerBase
+    setup:
+      types:
+        - name: OrdersController
+          namespace: Contoso.Api
+          baseType: Microsoft.AspNetCore.Mvc.ControllerBase
+    expect: fail

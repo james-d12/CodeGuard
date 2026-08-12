@@ -28,3 +28,26 @@ assertions:
       type: "*.MinLengthAttribute"
   - must_not_have_attribute:
       type: "*.RegularExpressionAttribute"
+
+tests:
+  - name: Schema property carrying only Required
+    setup:
+      types:
+        - name: CreateOrderRequest
+          namespace: Contoso.Api.Schemas
+          properties:
+            - name: OrderId
+              attributes:
+                - typeName: System.ComponentModel.DataAnnotations.RequiredAttribute
+    expect: pass
+
+  - name: Schema property carrying a business validation attribute
+    setup:
+      types:
+        - name: CreateOrderRequest
+          namespace: Contoso.Api.Schemas
+          properties:
+            - name: OrderId
+              attributes:
+                - typeName: System.ComponentModel.DataAnnotations.StringLengthAttribute
+    expect: fail

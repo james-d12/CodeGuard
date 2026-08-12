@@ -22,3 +22,17 @@ when:
 assertions:
   - must_not_have_file:
       path: "*.sln"
+
+tests:
+  - name: slnx present without a legacy sln file
+    setup:
+      files:
+        - path: "Contoso.slnx"
+    expect: pass
+
+  - name: slnx present alongside a legacy sln file
+    setup:
+      files:
+        - path: "Contoso.slnx"
+        - path: "Contoso.sln"
+    expect: fail

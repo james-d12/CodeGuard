@@ -19,3 +19,16 @@ target:
 assertions:
   - must_not_have_file:
       path: "Dockerfile"
+
+tests:
+  - name: Product repo without a Dockerfile
+    setup:
+      files:
+        - path: "azure-pipelines.yaml"
+    expect: pass
+
+  - name: Product repo containing a Dockerfile
+    setup:
+      files:
+        - path: "Dockerfile"
+    expect: fail

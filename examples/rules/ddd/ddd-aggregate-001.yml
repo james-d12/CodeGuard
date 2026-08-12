@@ -21,3 +21,21 @@ target:
 assertions:
   - must_implement:
       interface: "Contoso.Domain.IAggregateRoot"
+
+tests:
+  - name: Aggregate root implementing IAggregateRoot
+    setup:
+      types:
+        - name: Order
+          namespace: Contoso.Domain.Entities
+          baseType: "Contoso.Domain.Entity<Guid>"
+          interfaces: [Contoso.Domain.IAggregateRoot]
+    expect: pass
+
+  - name: Entity deriving from Entity<TId> without IAggregateRoot
+    setup:
+      types:
+        - name: Order
+          namespace: Contoso.Domain.Entities
+          baseType: "Contoso.Domain.Entity<Guid>"
+    expect: fail

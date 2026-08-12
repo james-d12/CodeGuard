@@ -21,3 +21,22 @@ assertions:
       type: "System.Net.Http.HttpClient"
   - must_not_have_method:
       name: "SendRequest"
+
+tests:
+  - name: Typed client uses Contoso.Framework.Http
+    setup:
+      types:
+        - name: OrdersClient
+          namespace: Contoso.Orders
+          baseType: "Contoso.Framework.Http.TypedHttpClient"
+          methods:
+            - name: GetOrder
+    expect: pass
+
+  - name: Custom client subclasses HttpClient directly
+    setup:
+      types:
+        - name: OrdersClient
+          namespace: Contoso.Orders
+          baseType: "System.Net.Http.HttpClient"
+    expect: fail

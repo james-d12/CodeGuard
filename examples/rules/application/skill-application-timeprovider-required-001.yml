@@ -23,3 +23,20 @@ assertions:
         invoked_member: "UtcNow"
         target_type: "DateTime"
         project: "*.Application*"
+
+tests:
+  - name: Handler using injected TimeProvider
+    setup:
+      callSites:
+        - invokedMember: GetUtcNow
+          targetTypeName: TimeProvider
+          project: Contoso.Application
+    expect: pass
+
+  - name: Handler calling DateTime.UtcNow directly
+    setup:
+      callSites:
+        - invokedMember: UtcNow
+          targetTypeName: DateTime
+          project: Contoso.Application
+    expect: fail

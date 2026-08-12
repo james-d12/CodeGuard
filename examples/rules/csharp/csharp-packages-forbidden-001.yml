@@ -32,3 +32,20 @@ assertions:
       id: "Hangfire"
   - must_not_reference_package:
       id: "NLog"
+
+tests:
+  - name: Project with no forbidden package references
+    setup:
+      projects:
+        - name: Contoso.Domain
+          packageReferences:
+            - id: "Contoso.Framework.DDD.v2"
+    expect: pass
+
+  - name: Project referencing the forbidden AutoMapper package
+    setup:
+      projects:
+        - name: Contoso.Domain
+          packageReferences:
+            - id: "AutoMapper"
+    expect: fail

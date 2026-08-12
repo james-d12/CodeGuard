@@ -22,3 +22,23 @@ target:
 assertions:
   - must_have_modifier:
       modifier: "static"
+
+tests:
+  - name: Static surrogate conversion helper
+    setup:
+      types:
+        - name: DateHelpers
+          namespace: Contoso.Reporting.Utils
+          methods:
+            - name: ToDateSurrogate
+              modifiers: [static]
+    expect: pass
+
+  - name: Non-static surrogate conversion helper
+    setup:
+      types:
+        - name: DateHelpers
+          namespace: Contoso.Reporting.Utils
+          methods:
+            - name: ToDateSurrogate
+    expect: fail

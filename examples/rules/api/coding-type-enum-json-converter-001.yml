@@ -22,3 +22,22 @@ target:
 assertions:
   - must_have_attribute:
       type: "*.JsonConverterAttribute"
+
+tests:
+  - name: API-facing enum with JsonStringEnumConverter
+    setup:
+      types:
+        - name: OrderStatus
+          namespace: Contoso.Api
+          kind: enum
+          attributes:
+            - typeName: System.Text.Json.Serialization.JsonConverterAttribute
+    expect: pass
+
+  - name: API-facing enum without a JsonConverter attribute
+    setup:
+      types:
+        - name: OrderStatus
+          namespace: Contoso.Api
+          kind: enum
+    expect: fail

@@ -20,3 +20,18 @@ assertions:
   - must_have_msbuild_property:
       name: "TreatWarningsAsErrors"
       value: "true"
+
+tests:
+  - name: Project with TreatWarningsAsErrors set to true
+    setup:
+      projects:
+        - name: Contoso.Domain
+          properties:
+            TreatWarningsAsErrors: "true"
+    expect: pass
+
+  - name: Project without TreatWarningsAsErrors set
+    setup:
+      projects:
+        - name: Contoso.Domain
+    expect: fail

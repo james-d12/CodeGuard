@@ -30,3 +30,17 @@ assertions:
       selector:
         kind: call_site
         invoked_member: "WithThrottlingRetryOptions"
+
+tests:
+  - name: Cosmos registration configures both timeout and retry options
+    setup:
+      callSites:
+        - invokedMember: WithRequestTimeout
+        - invokedMember: WithThrottlingRetryOptions
+    expect: pass
+
+  - name: Cosmos registration missing throttling retry options
+    setup:
+      callSites:
+        - invokedMember: WithRequestTimeout
+    expect: fail

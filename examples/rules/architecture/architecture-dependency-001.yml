@@ -21,3 +21,17 @@ target:
 assertions:
   - must_not_reference_project:
       name: "*.Infrastructure"
+
+tests:
+  - name: Domain project without an Infrastructure reference
+    setup:
+      projects:
+        - name: Contoso.Domain
+    expect: pass
+
+  - name: Domain project referencing Infrastructure
+    setup:
+      projects:
+        - name: Contoso.Domain
+          projectReferences: ["Contoso.Infrastructure"]
+    expect: fail

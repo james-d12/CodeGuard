@@ -22,3 +22,30 @@ target:
 assertions:
   - must_not_match_content:
       pattern: "using\\s+(System\\.Net\\.Http|Microsoft\\.Azure\\.Cosmos)\\s*;|\\bSqlConnection\\b"
+
+tests:
+  - name: Domain file with no infrastructure references
+    setup:
+      files:
+        - path: Contoso.Domain/Order.cs
+          content: |
+            namespace Contoso.Domain;
+
+            public class Order
+            {
+            }
+    expect: pass
+
+  - name: Domain file using HttpClient's namespace
+    setup:
+      files:
+        - path: Contoso.Domain/Order.cs
+          content: |
+            using System.Net.Http;
+
+            namespace Contoso.Domain;
+
+            public class Order
+            {
+            }
+    expect: fail

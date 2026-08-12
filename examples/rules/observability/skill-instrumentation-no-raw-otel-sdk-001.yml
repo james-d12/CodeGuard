@@ -33,3 +33,18 @@ assertions:
       selector:
         kind: call_site
         invoked_member: "WithTracing"
+
+tests:
+  - name: Instrumentation wired via the framework extension
+    setup:
+      callSites:
+        - kind: invocation
+          invokedMember: AddFrameworkInstrumentation
+    expect: pass
+
+  - name: Code constructs a raw OpenTelemetry Meter
+    setup:
+      callSites:
+        - kind: object_creation
+          invokedMember: Meter
+    expect: fail

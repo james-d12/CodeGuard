@@ -27,3 +27,18 @@ assertions:
         kind: call_site
         invoked_member: "Write"
         target_type: "Console"
+
+tests:
+  - name: Logging goes through ILogger
+    setup:
+      callSites:
+        - invokedMember: LogInformation
+          targetTypeName: ILogger
+    expect: pass
+
+  - name: Code calls Console.WriteLine
+    setup:
+      callSites:
+        - invokedMember: WriteLine
+          targetTypeName: Console
+    expect: fail

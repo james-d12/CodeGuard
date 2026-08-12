@@ -19,3 +19,18 @@ target:
 assertions:
   - must_match_content:
       pattern: "\"applicationUrl\":\\s*\"https?://localhost:[57][0-9]{3}"
+
+tests:
+  - name: applicationUrl port within the documented range
+    setup:
+      files:
+        - path: "src/Api/Properties/launchSettings.json"
+          content: '{"profiles": {"https": {"applicationUrl": "https://localhost:5001"}}}'
+    expect: pass
+
+  - name: applicationUrl port outside the documented range
+    setup:
+      files:
+        - path: "src/Api/Properties/launchSettings.json"
+          content: '{"profiles": {"https": {"applicationUrl": "https://localhost:8080"}}}'
+    expect: fail

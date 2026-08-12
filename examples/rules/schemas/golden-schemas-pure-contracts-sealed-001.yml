@@ -19,3 +19,21 @@ target:
 assertions:
   - must_have_modifier:
       modifier: "sealed"
+
+tests:
+  - name: Sealed record in a Schemas namespace
+    setup:
+      types:
+        - name: OrderResponse
+          kind: record
+          namespace: Contoso.Schemas
+          modifiers: [sealed]
+    expect: pass
+
+  - name: Non-sealed record in a Schemas namespace
+    setup:
+      types:
+        - name: OrderResponse
+          kind: record
+          namespace: Contoso.Schemas
+    expect: fail

@@ -23,3 +23,20 @@ when:
 
 assertions:
   - must_match_filename: {}
+
+tests:
+  - name: Entity document declared in its own matching file
+    setup:
+      types:
+        - name: OrderEntityDocument
+          namespace: Contoso.Persistence.Documents
+          filePath: OrderEntityDocument.cs
+    expect: pass
+
+  - name: Entity document declared in a differently-named file
+    setup:
+      types:
+        - name: OrderEntityDocument
+          namespace: Contoso.Persistence.Documents
+          filePath: Documents.cs
+    expect: fail

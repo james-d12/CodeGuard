@@ -20,3 +20,21 @@ analyzer:
   kind: companion-type-cardinality
   marker_interface: "Contoso.Domain.IAggregateRoot"
   companion_suffix: "PartitionKeyBuilder"
+
+tests:
+  - name: Aggregate root has exactly one partition key builder
+    setup:
+      types:
+        - name: Order
+          interfaces:
+            - Contoso.Domain.IAggregateRoot
+        - name: OrderPartitionKeyBuilder
+    expect: pass
+
+  - name: Aggregate root has no partition key builder
+    setup:
+      types:
+        - name: Order
+          interfaces:
+            - Contoso.Domain.IAggregateRoot
+    expect: fail

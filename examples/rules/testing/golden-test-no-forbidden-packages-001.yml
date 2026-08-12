@@ -24,3 +24,22 @@ assertions:
       id: "Moq"
   - must_not_reference_package:
       id: "NSubstitute"
+
+tests:
+  - name: Test project with no forbidden packages
+    setup:
+      projects:
+        - name: Contoso.Domain.Tests
+          packageReferences:
+            - id: xunit
+              version: "2.9.0"
+    expect: pass
+
+  - name: Test project referencing FluentAssertions
+    setup:
+      projects:
+        - name: Contoso.Domain.Tests
+          packageReferences:
+            - id: FluentAssertions
+              version: "6.12.0"
+    expect: fail

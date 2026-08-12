@@ -21,3 +21,20 @@ target:
 assertions:
   - must_have_attribute:
       type: "ExcludeFromCodeCoverage"
+
+tests:
+  - name: Factory class carries ExcludeFromCodeCoverage
+    setup:
+      types:
+        - name: OrderFactory
+          namespace: Contoso.Persistence.Factories
+          attributes:
+            - typeName: ExcludeFromCodeCoverage
+    expect: pass
+
+  - name: Factory class missing ExcludeFromCodeCoverage
+    setup:
+      types:
+        - name: OrderFactory
+          namespace: Contoso.Persistence.Factories
+    expect: fail

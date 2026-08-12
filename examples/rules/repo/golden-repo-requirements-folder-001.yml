@@ -26,3 +26,23 @@ assertions:
       path: "requirements/uat"
   - must_have_directory:
       path: "requirements/infrastructure"
+
+tests:
+  - name: All required environment subfolders present
+    setup:
+      directories:
+        - "requirements/base"
+        - "requirements/dev"
+        - "requirements/sandbox"
+        - "requirements/uat"
+        - "requirements/infrastructure"
+    expect: pass
+
+  - name: Missing the infrastructure subfolder
+    setup:
+      directories:
+        - "requirements/base"
+        - "requirements/dev"
+        - "requirements/sandbox"
+        - "requirements/uat"
+    expect: fail

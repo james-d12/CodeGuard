@@ -21,3 +21,22 @@ target:
 assertions:
   - must_have_method:
       name: "Create"
+
+tests:
+  - name: Aggregate root with a Create factory method
+    setup:
+      types:
+        - name: Order
+          namespace: Contoso.Domain.Entities
+          interfaces: [Contoso.Domain.IAggregateRoot]
+          methods:
+            - name: Create
+    expect: pass
+
+  - name: Aggregate root without a Create factory method
+    setup:
+      types:
+        - name: Order
+          namespace: Contoso.Domain.Entities
+          interfaces: [Contoso.Domain.IAggregateRoot]
+    expect: fail

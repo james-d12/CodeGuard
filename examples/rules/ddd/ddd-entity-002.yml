@@ -21,3 +21,22 @@ target:
 assertions:
   - must_have_constructor:
       accessibility: [private, protected]
+
+tests:
+  - name: Entity with a private constructor
+    setup:
+      types:
+        - name: Order
+          namespace: Contoso.Domain.Entities
+          constructors:
+            - accessibility: private
+    expect: pass
+
+  - name: Entity with only a public constructor
+    setup:
+      types:
+        - name: Order
+          namespace: Contoso.Domain.Entities
+          constructors:
+            - accessibility: public
+    expect: fail

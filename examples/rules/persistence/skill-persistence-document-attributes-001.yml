@@ -25,3 +25,24 @@ when:
 assertions:
   - must_have_attribute:
       type: "JsonIgnore"
+
+tests:
+  - name: Partition key property carries JsonIgnore
+    setup:
+      types:
+        - name: OrderEntityDocument
+          namespace: Contoso.Persistence.Documents
+          properties:
+            - name: PartitionKey
+              attributes:
+                - typeName: JsonIgnore
+    expect: pass
+
+  - name: Partition key property missing JsonIgnore
+    setup:
+      types:
+        - name: OrderEntityDocument
+          namespace: Contoso.Persistence.Documents
+          properties:
+            - name: PartitionKey
+    expect: fail

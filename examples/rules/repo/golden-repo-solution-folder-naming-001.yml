@@ -19,3 +19,18 @@ target:
 assertions:
   - must_not_match_content:
       pattern: "<Folder\\s+Name=\"/Contoso"
+
+tests:
+  - name: Solution folder without a service-name prefix
+    setup:
+      files:
+        - path: "Contoso.slnx"
+          content: '<Solution><Folder Name="/src/"></Folder></Solution>'
+    expect: pass
+
+  - name: Solution folder prefixed with the service name
+    setup:
+      files:
+        - path: "Contoso.slnx"
+          content: '<Solution><Folder Name="/Contoso/"></Folder></Solution>'
+    expect: fail

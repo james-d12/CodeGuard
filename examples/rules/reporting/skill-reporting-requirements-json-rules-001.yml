@@ -22,3 +22,18 @@ assertions:
   - must_have_json_field:
       path: "dbup.deploymentType"
       equals: "job"
+
+tests:
+  - name: DbUp component deploymentType is job
+    setup:
+      files:
+        - path: "requirements/requirements.json"
+          content: '{"dbup": {"deploymentType": "job"}}'
+    expect: pass
+
+  - name: DbUp component deploymentType is not job
+    setup:
+      files:
+        - path: "requirements/requirements.json"
+          content: '{"dbup": {"deploymentType": "service"}}'
+    expect: fail

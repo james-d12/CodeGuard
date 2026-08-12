@@ -23,3 +23,20 @@ assertions:
       id: "Microsoft.EntityFrameworkCore*"
   - must_not_depend_on:
       type: "Microsoft.EntityFrameworkCore.*"
+
+tests:
+  - name: Application project without any Entity Framework Core dependency
+    setup:
+      projects:
+        - name: Contoso.Application
+          packageReferences:
+            - id: "Contoso.Framework.DDD.v2"
+    expect: pass
+
+  - name: Application project referencing an Entity Framework Core package
+    setup:
+      projects:
+        - name: Contoso.Application
+          packageReferences:
+            - id: "Microsoft.EntityFrameworkCore.SqlServer"
+    expect: fail

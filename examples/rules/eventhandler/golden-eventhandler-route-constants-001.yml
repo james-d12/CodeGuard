@@ -24,3 +24,25 @@ assertions:
         project: "*.EventHandler*"
         argument_index: 0
         argument_is_literal: true
+
+tests:
+  - name: Route registered with a named constant
+    setup:
+      callSites:
+        - invokedMember: MapPost
+          project: Contoso.Orders.EventHandler.Api
+          arguments:
+            - index: 0
+              isLiteral: false
+    expect: pass
+
+  - name: Route registered with an inline string literal
+    setup:
+      callSites:
+        - invokedMember: MapPost
+          project: Contoso.Orders.EventHandler.Api
+          arguments:
+            - index: 0
+              literalValue: "/orders"
+              isLiteral: true
+    expect: fail

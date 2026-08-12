@@ -21,3 +21,19 @@ target:
 assertions:
   - must_implement:
       interface: "Contoso.Application.ICommandHandler<*>"
+
+tests:
+  - name: Handler implementing ICommandHandler for its command
+    setup:
+      types:
+        - name: PlaceOrderCommandHandler
+          namespace: Contoso.Application.Handlers
+          interfaces: ["Contoso.Application.ICommandHandler<PlaceOrderCommand>"]
+    expect: pass
+
+  - name: Handler not implementing ICommandHandler
+    setup:
+      types:
+        - name: PlaceOrderCommandHandler
+          namespace: Contoso.Application.Handlers
+    expect: fail

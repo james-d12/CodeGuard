@@ -10,6 +10,8 @@ public sealed class ConsoleViolationReporter(bool useColor = false) : IViolation
     {
         foreach (var violation in result.Violations.OrderByDescending(v => v.Severity))
         {
+            ct.ThrowIfCancellationRequested();
+
             var location = violation.File is null
                 ? violation.Project ?? violation.Symbol ?? "<unknown>"
                 : $"{violation.File}({violation.Line ?? 0},{violation.Column ?? 0})";

@@ -23,3 +23,21 @@ assertions:
       id: "Microsoft.AspNetCore.App"
   - must_reference_package:
       id: "Contoso.Framework.Http"
+
+tests:
+  - name: Api project with both mandatory packages referenced
+    setup:
+      projects:
+        - name: Contoso.Api
+          packageReferences:
+            - id: "Microsoft.AspNetCore.App"
+            - id: "Contoso.Framework.Http"
+    expect: pass
+
+  - name: Api project missing the Contoso.Framework.Http package
+    setup:
+      projects:
+        - name: Contoso.Api
+          packageReferences:
+            - id: "Microsoft.AspNetCore.App"
+    expect: fail

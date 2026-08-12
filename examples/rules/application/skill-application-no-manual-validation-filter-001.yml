@@ -23,3 +23,26 @@ assertions:
         kind: call_site
         containing_type: "${FullName}"
         invoked_member: "TryValidateObject"
+
+tests:
+  - name: Endpoint filter not calling TryValidateObject
+    setup:
+      types:
+        - name: CustomFilter
+          namespace: Contoso.Api.Filters
+          interfaces: [Microsoft.AspNetCore.Http.IEndpointFilter]
+      callSites:
+        - invokedMember: InvokeAsync
+          containingType: Contoso.Api.Filters.CustomFilter
+    expect: pass
+
+  - name: Endpoint filter manually calling TryValidateObject
+    setup:
+      types:
+        - name: CustomFilter
+          namespace: Contoso.Api.Filters
+          interfaces: [Microsoft.AspNetCore.Http.IEndpointFilter]
+      callSites:
+        - invokedMember: TryValidateObject
+          containingType: Contoso.Api.Filters.CustomFilter
+    expect: fail

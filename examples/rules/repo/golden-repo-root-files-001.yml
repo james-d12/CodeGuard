@@ -26,3 +26,23 @@ assertions:
       path: ".gitignore"
   - must_have_file:
       path: "README.md"
+
+tests:
+  - name: All mandatory root files present
+    setup:
+      files:
+        - path: "azure-pipelines.yaml"
+        - path: "azure-pipelines-pr.yaml"
+        - path: ".editorconfig"
+        - path: ".gitignore"
+        - path: "README.md"
+    expect: pass
+
+  - name: Missing README.md at the repository root
+    setup:
+      files:
+        - path: "azure-pipelines.yaml"
+        - path: "azure-pipelines-pr.yaml"
+        - path: ".editorconfig"
+        - path: ".gitignore"
+    expect: fail

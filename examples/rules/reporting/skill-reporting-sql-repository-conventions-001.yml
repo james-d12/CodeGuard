@@ -31,3 +31,22 @@ assertions:
         kind: call_site
         invoked_member: "IsDBNull"
         project: "*.Reporting*"
+
+tests:
+  - name: Repository logs via LogDebug and uses the async null check
+    setup:
+      callSites:
+        - invokedMember: "LogDebug"
+          project: Contoso.Reporting.Sql
+        - invokedMember: "IsDBNullAsync"
+          project: Contoso.Reporting.Sql
+    expect: pass
+
+  - name: Repository uses the synchronous IsDBNull check
+    setup:
+      callSites:
+        - invokedMember: "LogDebug"
+          project: Contoso.Reporting.Sql
+        - invokedMember: "IsDBNull"
+          project: Contoso.Reporting.Sql
+    expect: fail

@@ -24,3 +24,19 @@ target:
 assertions:
   - must_inherit_from:
       type: "DomainEntityRepository<*>"
+
+tests:
+  - name: Repository derives from DomainEntityRepository<>
+    setup:
+      types:
+        - name: OrderRepository
+          namespace: Contoso.Persistence.Repositories
+          baseType: "DomainEntityRepository<Order, Guid>"
+    expect: pass
+
+  - name: Repository implements its own base
+    setup:
+      types:
+        - name: OrderRepository
+          namespace: Contoso.Persistence.Repositories
+    expect: fail

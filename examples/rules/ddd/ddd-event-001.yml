@@ -21,3 +21,20 @@ target:
 assertions:
   - must_be_in_namespace:
       pattern: "*.Domain.Events"
+
+tests:
+  - name: Domain event in the Domain.Events namespace
+    setup:
+      types:
+        - name: OrderPlaced
+          namespace: Contoso.Domain.Events
+          interfaces: [Contoso.Domain.IDomainEvent]
+    expect: pass
+
+  - name: Domain event outside the Domain.Events namespace
+    setup:
+      types:
+        - name: OrderPlaced
+          namespace: Contoso.Domain.Entities
+          interfaces: [Contoso.Domain.IDomainEvent]
+    expect: fail

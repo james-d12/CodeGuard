@@ -20,3 +20,16 @@ target:
 assertions:
   - must_have_file:
       path: "*.EventHandler.Application/EventLimiting/*"
+
+tests:
+  - name: EventLimiting middleware folder present
+    setup:
+      files:
+        - path: "Contoso.Orders.EventHandler.Application/EventLimiting/RateLimitingMiddleware.cs"
+    expect: pass
+
+  - name: EventLimiting middleware folder missing
+    setup:
+      files:
+        - path: "Contoso.Orders.EventHandler.Application/Startup.cs"
+    expect: fail

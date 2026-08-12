@@ -20,3 +20,20 @@ assertions:
   - must_have_msbuild_property:
       name: "Nullable"
       value: "enable"
+
+tests:
+  - name: Project with nullable reference types enabled
+    setup:
+      projects:
+        - name: Contoso.Domain
+          properties:
+            Nullable: "enable"
+    expect: pass
+
+  - name: Project without the Nullable property set
+    setup:
+      projects:
+        - name: Contoso.Domain
+          properties:
+            Nullable: "disable"
+    expect: fail

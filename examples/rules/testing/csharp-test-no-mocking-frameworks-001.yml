@@ -27,3 +27,24 @@ assertions:
       id: "NSubstitute"
   - must_not_reference_package:
       id: "FluentAssertions"
+
+tests:
+  - name: Test project using only xUnit
+    setup:
+      projects:
+        - name: Contoso.Domain.Tests
+          packageReferences:
+            - id: xunit
+              version: "2.9.0"
+    expect: pass
+
+  - name: Test project referencing Moq
+    setup:
+      projects:
+        - name: Contoso.Domain.Tests
+          packageReferences:
+            - id: xunit
+              version: "2.9.0"
+            - id: Moq
+              version: "4.20.0"
+    expect: fail

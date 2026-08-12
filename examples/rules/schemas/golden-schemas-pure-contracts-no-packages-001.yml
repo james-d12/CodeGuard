@@ -20,3 +20,19 @@ target:
 assertions:
   - must_not_reference_package:
       id: "*"
+
+tests:
+  - name: Schemas project with no package references
+    setup:
+      projects:
+        - name: Contoso.Schemas
+    expect: pass
+
+  - name: Schemas project referencing a package
+    setup:
+      projects:
+        - name: Contoso.Schemas
+          packageReferences:
+            - id: Newtonsoft.Json
+              version: "13.0.3"
+    expect: fail

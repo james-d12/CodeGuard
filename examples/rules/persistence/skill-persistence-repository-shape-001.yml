@@ -26,3 +26,21 @@ assertions:
       modifier: "sealed"
   - must_inherit_from:
       type: "DomainEntityRepository<*>"
+
+tests:
+  - name: Repository is sealed and derives from DomainEntityRepository<>
+    setup:
+      types:
+        - name: OrderRepository
+          namespace: Contoso.Persistence.Repositories
+          baseType: "DomainEntityRepository<Order, Guid>"
+          modifiers: [sealed]
+    expect: pass
+
+  - name: Repository derives from base but is not sealed
+    setup:
+      types:
+        - name: OrderRepository
+          namespace: Contoso.Persistence.Repositories
+          baseType: "DomainEntityRepository<Order, Guid>"
+    expect: fail

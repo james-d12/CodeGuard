@@ -19,3 +19,20 @@ target:
 assertions:
   - must_match_name:
       regex: "^[A-Za-z]+Event$"
+
+tests:
+  - name: Event record named with the Event suffix
+    setup:
+      types:
+        - name: OrderPlacedEvent
+          namespace: Contoso.Domain.Events
+          kind: record
+    expect: pass
+
+  - name: Event record missing the Event suffix
+    setup:
+      types:
+        - name: OrderPlaced
+          namespace: Contoso.Domain.Events
+          kind: record
+    expect: fail

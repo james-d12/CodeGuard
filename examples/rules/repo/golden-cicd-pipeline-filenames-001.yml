@@ -20,3 +20,17 @@ assertions:
       path: "azure-pipelines.yaml"
   - must_have_file:
       path: "azure-pipelines-pr.yaml"
+
+tests:
+  - name: Repo with both pipeline files
+    setup:
+      files:
+        - path: "azure-pipelines.yaml"
+        - path: "azure-pipelines-pr.yaml"
+    expect: pass
+
+  - name: Repo missing the PR validation pipeline file
+    setup:
+      files:
+        - path: "azure-pipelines.yaml"
+    expect: fail

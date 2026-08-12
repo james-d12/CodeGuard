@@ -22,3 +22,16 @@ assertions:
       selector:
         kind: call_site
         invoked_member: "MapHealthChecks"
+
+tests:
+  - name: Program.cs calls MapHealthChecks
+    setup:
+      callSites:
+        - invokedMember: MapHealthChecks
+    expect: pass
+
+  - name: Program.cs never calls MapHealthChecks
+    setup:
+      callSites:
+        - invokedMember: UseRouting
+    expect: fail

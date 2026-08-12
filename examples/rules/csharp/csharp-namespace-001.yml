@@ -19,3 +19,18 @@ target:
 assertions:
   - must_be_in_namespace:
       pattern: "Contoso.*"
+
+tests:
+  - name: Type declared under the Contoso namespace root
+    setup:
+      types:
+        - name: Order
+          namespace: Contoso.Domain.Entities
+    expect: pass
+
+  - name: Type declared outside the Contoso namespace root
+    setup:
+      types:
+        - name: Order
+          namespace: Acme.Domain.Entities
+    expect: fail

@@ -26,3 +26,18 @@ assertions:
         kind: call_site
         invoked_member: "GenerateDeterministicId"
         project: "*.Application*"
+
+tests:
+  - name: ID derivation kept out of the application layer
+    setup:
+      callSites:
+        - invokedMember: GenerateDeterministicId
+          project: Contoso.Domain
+    expect: pass
+
+  - name: Application layer deriving a deterministic ID directly
+    setup:
+      callSites:
+        - invokedMember: GenerateDeterministicId
+          project: Contoso.Application
+    expect: fail

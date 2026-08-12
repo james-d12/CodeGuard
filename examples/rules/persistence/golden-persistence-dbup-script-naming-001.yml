@@ -21,3 +21,16 @@ target:
 assertions:
   - must_match_name:
       regex: "^(.*/RunOnce/[0-9]{3}_.+\\.sql|.*/RunAlways/[A-Za-z]+_[A-Za-z]+\\.sql)$"
+
+tests:
+  - name: RunOnce script follows the numbered naming convention
+    setup:
+      files:
+        - path: "Scripts/RunOnce/001_create_orders_table.sql"
+    expect: pass
+
+  - name: Script uses a forbidden usp_ filename prefix
+    setup:
+      files:
+        - path: "Scripts/usp_CreateOrders.sql"
+    expect: fail

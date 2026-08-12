@@ -21,3 +21,20 @@ target:
 assertions:
   - must_not_reference_package:
       id: "Microsoft.EntityFrameworkCore"
+
+tests:
+  - name: Domain project without an Entity Framework Core package reference
+    setup:
+      projects:
+        - name: Contoso.Domain
+          packageReferences:
+            - id: "Contoso.Framework.DDD.v2"
+    expect: pass
+
+  - name: Domain project referencing Entity Framework Core directly
+    setup:
+      projects:
+        - name: Contoso.Domain
+          packageReferences:
+            - id: "Microsoft.EntityFrameworkCore"
+    expect: fail
