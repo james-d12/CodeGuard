@@ -22,3 +22,20 @@ target:
 assertions:
   - must_not_match_content:
       pattern: "\"client_key\"|\"clientKey\""
+
+tests:
+  - name: Metric tagged with client_sector
+    setup:
+      files:
+        - path: Metrics.cs
+          content: |
+            counter.Add(1, new("client_sector", sector));
+    expect: pass
+
+  - name: Metric tagged with client_key
+    setup:
+      files:
+        - path: Metrics.cs
+          content: |
+            counter.Add(1, new("client_key", key));
+    expect: fail

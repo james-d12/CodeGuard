@@ -26,3 +26,17 @@ assertions:
       selector:
         kind: call_site
         invoked_member: "Wait"
+
+tests:
+  - name: Repository with no blocking async call sites
+    setup:
+      callSites:
+        - invokedMember: "GetAwaiter"
+    expect: pass
+
+  - name: Repository with a .Result call site
+    setup:
+      callSites:
+        - invokedMember: "Result"
+          containingType: Contoso.Domain.OrderService
+    expect: fail

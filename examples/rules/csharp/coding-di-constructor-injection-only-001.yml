@@ -29,3 +29,17 @@ assertions:
       selector:
         kind: call_site
         invoked_member: "GetRequiredService"
+
+tests:
+  - name: Repository with no service-locator call sites
+    setup:
+      callSites:
+        - invokedMember: "AddSingleton"
+    expect: pass
+
+  - name: Repository resolving a dependency via GetRequiredService
+    setup:
+      callSites:
+        - invokedMember: "GetRequiredService"
+          containingType: Contoso.Api.OrderController
+    expect: fail

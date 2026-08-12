@@ -4,7 +4,7 @@
          AnalysisModelBuilder needs ILogger<T>. Microsoft.Extensions.Logging.Abstractions is itself a
          zero-dependency leaf package, so this doesn't reintroduce any project-reference coupling. -->
     <ItemGroup>
-        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.10" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.11" />
     </ItemGroup>
 
 </Project>

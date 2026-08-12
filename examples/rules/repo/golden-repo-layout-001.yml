@@ -18,3 +18,16 @@ target:
 assertions:
   - must_have_directory:
       path: "src"
+
+tests:
+  - name: Repository with an src folder at the root
+    setup:
+      directories:
+        - "src"
+    expect: pass
+
+  - name: Repository without an src folder
+    setup:
+      directories:
+        - "docs"
+    expect: fail

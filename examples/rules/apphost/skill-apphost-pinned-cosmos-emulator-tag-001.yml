@@ -21,3 +21,20 @@ target:
 assertions:
   - must_match_content:
       pattern: "vnext-EN20260602"
+
+tests:
+  - name: Cosmos emulator pinned to the approved tag
+    setup:
+      files:
+        - path: src/AppHost/Program.cs
+          content: >
+            var cosmos = builder.AddAzureCosmosDB("cosmos").RunAsEmulator(e => e.WithImageTag("vnext-EN20260602"));
+    expect: pass
+
+  - name: Cosmos emulator tag changed away from the approved pin
+    setup:
+      files:
+        - path: src/AppHost/Program.cs
+          content: >
+            var cosmos = builder.AddAzureCosmosDB("cosmos").RunAsEmulator(e => e.WithImageTag("latest"));
+    expect: fail

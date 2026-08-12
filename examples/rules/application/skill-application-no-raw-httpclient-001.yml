@@ -25,3 +25,20 @@ assertions:
         site_kind: object_creation
         invoked_member: "HttpClient"
         project: "*.Application*"
+
+tests:
+  - name: Application layer using IHttpRequestSender instead of raw HttpClient
+    setup:
+      callSites:
+        - kind: invocation
+          invokedMember: SendAsync
+          project: Contoso.Application
+    expect: pass
+
+  - name: Application layer instantiating a raw HttpClient
+    setup:
+      callSites:
+        - kind: object_creation
+          invokedMember: HttpClient
+          project: Contoso.Application
+    expect: fail

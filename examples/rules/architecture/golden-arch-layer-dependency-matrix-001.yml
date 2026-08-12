@@ -26,3 +26,17 @@ assertions:
       name: "*.Infrastructure"
   - must_not_reference_project:
       name: "*.Persistence"
+
+tests:
+  - name: Domain project with no Infrastructure or Persistence dependency
+    setup:
+      projects:
+        - name: Contoso.Domain
+    expect: pass
+
+  - name: Domain project referencing the Persistence project
+    setup:
+      projects:
+        - name: Contoso.Domain
+          projectReferences: [Contoso.Persistence]
+    expect: fail

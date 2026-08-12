@@ -27,3 +27,23 @@ assertions:
   - must_have_msbuild_property:
       name: "TreatWarningsAsErrors"
       value: "true"
+
+tests:
+  - name: Scaffolded csproj with all required properties set
+    setup:
+      projects:
+        - name: Contoso.Api
+          properties:
+            Nullable: "enable"
+            ImplicitUsings: "enable"
+            TreatWarningsAsErrors: "true"
+    expect: pass
+
+  - name: Scaffolded csproj missing ImplicitUsings
+    setup:
+      projects:
+        - name: Contoso.Api
+          properties:
+            Nullable: "enable"
+            TreatWarningsAsErrors: "true"
+    expect: fail

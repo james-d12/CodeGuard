@@ -19,3 +19,36 @@ illustrative: true
 analyzer:
   kind: duplicate-attribute-argument
   attribute_name: "LoggerMessageAttribute"
+
+tests:
+  - name: EventId values are unique across the repository
+    setup:
+      types:
+        - name: OrderEventLogger
+          namespace: Contoso.Reporting.Logging
+          methods:
+            - name: LogOrderCreated
+              attributes:
+                - typeName: LoggerMessageAttribute
+                  constructorArgumentLiterals: ["3000"]
+            - name: LogOrderUpdated
+              attributes:
+                - typeName: LoggerMessageAttribute
+                  constructorArgumentLiterals: ["3001"]
+    expect: pass
+
+  - name: Two methods reserve the same EventId value
+    setup:
+      types:
+        - name: OrderEventLogger
+          namespace: Contoso.Reporting.Logging
+          methods:
+            - name: LogOrderCreated
+              attributes:
+                - typeName: LoggerMessageAttribute
+                  constructorArgumentLiterals: ["3000"]
+            - name: LogOrderUpdated
+              attributes:
+                - typeName: LoggerMessageAttribute
+                  constructorArgumentLiterals: ["3000"]
+    expect: fail

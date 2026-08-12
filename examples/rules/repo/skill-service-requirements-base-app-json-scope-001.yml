@@ -22,3 +22,18 @@ assertions:
       path: "argocd"
   - must_not_have_json_field:
       path: "resources"
+
+tests:
+  - name: base/app.json with only the argocd block
+    setup:
+      files:
+        - path: "requirements/base/app.json"
+          content: '{"argocd": {}}'
+    expect: pass
+
+  - name: base/app.json with a speculative resources block
+    setup:
+      files:
+        - path: "requirements/base/app.json"
+          content: '{"argocd": {}, "resources": {}}'
+    expect: fail

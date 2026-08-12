@@ -19,3 +19,22 @@ target:
 assertions:
   - must_match_name:
       regex: "^[A-Za-z0-9]+_[A-Za-z0-9]+_[A-Za-z0-9]+$"
+
+tests:
+  - name: Test method follows MethodName_Scenario_ExpectedOutcome
+    setup:
+      types:
+        - name: OrderTests
+          project: Contoso.Domain.Tests
+          methods:
+            - name: Create_ValidInput_ReturnsOrder
+    expect: pass
+
+  - name: Test method does not follow the naming convention
+    setup:
+      types:
+        - name: OrderTests
+          project: Contoso.Domain.Tests
+          methods:
+            - name: TestCreate
+    expect: fail

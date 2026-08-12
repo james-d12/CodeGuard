@@ -35,3 +35,35 @@ assertions:
       name: "Operation"
   - must_have_property:
       name: "DateRequested"
+
+tests:
+  - name: Audit record declaring all canonical fields
+    setup:
+      types:
+        - name: Audit
+          kind: record
+          namespace: Contoso.Schemas
+          properties:
+            - name: Username
+            - name: Name
+            - name: UserId
+            - name: ApplicationId
+            - name: ApplicationName
+            - name: Operation
+            - name: DateRequested
+    expect: pass
+
+  - name: Audit record missing a canonical field
+    setup:
+      types:
+        - name: Audit
+          kind: record
+          namespace: Contoso.Schemas
+          properties:
+            - name: Username
+            - name: Name
+            - name: UserId
+            - name: ApplicationId
+            - name: ApplicationName
+            - name: Operation
+    expect: fail

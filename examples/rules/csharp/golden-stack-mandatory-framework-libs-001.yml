@@ -25,3 +25,25 @@ assertions:
       id: "Contoso.Framework.HealthChecks"
   - must_reference_package:
       id: "Contoso.Framework.Http"
+
+tests:
+  - name: Application project referencing all mandatory framework libraries
+    setup:
+      projects:
+        - name: Contoso.Application
+          packageReferences:
+            - id: "Contoso.Framework.Logging.Microsoft"
+            - id: "Contoso.Framework.Instrumentation"
+            - id: "Contoso.Framework.HealthChecks"
+            - id: "Contoso.Framework.Http"
+    expect: pass
+
+  - name: Application project missing the health checks framework library
+    setup:
+      projects:
+        - name: Contoso.Application
+          packageReferences:
+            - id: "Contoso.Framework.Logging.Microsoft"
+            - id: "Contoso.Framework.Instrumentation"
+            - id: "Contoso.Framework.Http"
+    expect: fail

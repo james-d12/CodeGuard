@@ -21,3 +21,26 @@ target:
 assertions:
   - must_match_name:
       regex: "^Add[A-Z][A-Za-z0-9]*$"
+
+tests:
+  - name: Public static registration method named Add{Feature}
+    setup:
+      types:
+        - name: ServiceCollectionExtensions
+          namespace: Contoso.Application
+          methods:
+            - name: AddOrderProcessing
+              modifiers: [static]
+              accessibility: public
+    expect: pass
+
+  - name: Public static registration method not following the Add{Feature} convention
+    setup:
+      types:
+        - name: ServiceCollectionExtensions
+          namespace: Contoso.Application
+          methods:
+            - name: RegisterOrderProcessing
+              modifiers: [static]
+              accessibility: public
+    expect: fail

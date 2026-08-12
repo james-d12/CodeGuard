@@ -20,3 +20,22 @@ target:
 assertions:
   - must_not_reference_package:
       id: "Microsoft.EntityFrameworkCore*"
+
+tests:
+  - name: Persistence project uses the Cosmos SDK for operational data
+    setup:
+      projects:
+        - name: Contoso.Orders.Persistence
+          packageReferences:
+            - id: Microsoft.Azure.Cosmos
+              version: "3.35.0"
+    expect: pass
+
+  - name: Persistence project references EF Core for operational data
+    setup:
+      projects:
+        - name: Contoso.Orders.Persistence
+          packageReferences:
+            - id: Microsoft.EntityFrameworkCore.SqlServer
+              version: "8.0.0"
+    expect: fail

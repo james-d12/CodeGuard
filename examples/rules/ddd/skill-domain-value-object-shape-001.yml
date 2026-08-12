@@ -23,3 +23,21 @@ target:
 assertions:
   - must_have_modifier:
       modifier: "sealed"
+
+tests:
+  - name: Value object declared as a sealed record
+    setup:
+      types:
+        - name: Money
+          namespace: Contoso.Domain.ValueObjects
+          kind: record
+          modifiers: [sealed]
+    expect: pass
+
+  - name: Value object record not sealed
+    setup:
+      types:
+        - name: Money
+          namespace: Contoso.Domain.ValueObjects
+          kind: record
+    expect: fail

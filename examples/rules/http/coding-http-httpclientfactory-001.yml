@@ -22,3 +22,19 @@ assertions:
         kind: call_site
         site_kind: object_creation
         invoked_member: "HttpClient"
+
+tests:
+  - name: HttpClient obtained via IHttpClientFactory
+    setup:
+      callSites:
+        - kind: invocation
+          invokedMember: CreateClient
+          targetTypeName: IHttpClientFactory
+    expect: pass
+
+  - name: HttpClient constructed directly
+    setup:
+      callSites:
+        - kind: object_creation
+          invokedMember: HttpClient
+    expect: fail

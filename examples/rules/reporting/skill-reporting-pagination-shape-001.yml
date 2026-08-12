@@ -30,3 +30,27 @@ assertions:
       name: "PageSize"
   - must_have_property:
       name: "TotalRecords"
+
+tests:
+  - name: Paged response record with all required properties
+    setup:
+      types:
+        - name: OrderSearchResponse
+          namespace: Contoso.Reporting.Contracts
+          kind: record
+          properties:
+            - name: Page
+            - name: PageSize
+            - name: TotalRecords
+    expect: pass
+
+  - name: Paged response record missing TotalRecords
+    setup:
+      types:
+        - name: OrderSearchResponse
+          namespace: Contoso.Reporting.Contracts
+          kind: record
+          properties:
+            - name: Page
+            - name: PageSize
+    expect: fail

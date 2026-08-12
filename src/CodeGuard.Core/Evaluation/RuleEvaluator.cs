@@ -9,7 +9,11 @@ namespace CodeGuard.Core.Evaluation;
 
 public interface IRuleEvaluator
 {
-    ValidationResult Evaluate(IReadOnlyList<RuleDefinition> rules, RepositoryModel model, int? maxDegreeOfParallelism = null);
+    ValidationResult Evaluate(
+        IReadOnlyList<RuleDefinition> rules,
+        RepositoryModel model,
+        int? maxDegreeOfParallelism = null,
+        CancellationToken cancellationToken = default);
 }
 
 public sealed class RuleEvaluator(ILogger<RuleEvaluator>? logger = null) : IRuleEvaluator
@@ -23,7 +27,11 @@ public sealed class RuleEvaluator(ILogger<RuleEvaluator>? logger = null) : IRule
     /// stability. The existing per-rule try/catch isolation boundary moves into the parallel body
     /// unchanged: one rule's bug still can't affect any other rule's result.
     /// </summary>
-    public ValidationResult Evaluate(IReadOnlyList<RuleDefinition> rules, RepositoryModel model, int? maxDegreeOfParallelism = null)
+    public ValidationResult Evaluate(
+        IReadOnlyList<RuleDefinition> rules,
+        RepositoryModel model,
+        int? maxDegreeOfParallelism = null,
+        CancellationToken cancellationToken = default)
     {
         var enabledRules = rules.Where(r => r.Enabled).ToList();
         _logger.LogInformation("Evaluating {EnabledCount} of {TotalCount} rule(s)", enabledRules.Count, rules.Count);
@@ -31,7 +39,8 @@ public sealed class RuleEvaluator(ILogger<RuleEvaluator>? logger = null) : IRule
         var outcomes = new RuleOutcome[enabledRules.Count];
         var parallelOptions = new ParallelOptions
         {
-            MaxDegreeOfParallelism = maxDegreeOfParallelism ?? Environment.ProcessorCount
+            MaxDegreeOfParallelism = maxDegreeOfParallelism ?? Environment.ProcessorCount,
+            CancellationToken = cancellationToken
         };
 
         Parallel.For(0, enabledRules.Count, parallelOptions, i =>
@@ -39,9 +48,9 @@ public sealed class RuleEvaluator(ILogger<RuleEvaluator>? logger = null) : IRule
             var rule = enabledRules[i];
             try
             {
-                outcomes[i] = RuleOutcome.FromViolations(EvaluateRule(rule, model));
+                outcomes[i] = RuleOutcome.FromViolations(EvaluateRule(rule, model, cancellationToken));
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not OperationCanceledException)
             {
                 // Isolation boundary: selectors/assertions/analyzers are user-authored (via YAML `kind`
                 // lookups), so one rule's bug must not abort every other rule's evaluation. Any partial
@@ -103,7 +112,7 @@ public sealed class RuleEvaluator(ILogger<RuleEvaluator>? logger = null) : IRule
     /// whether it's enabled for whole-repo <see cref="Evaluate"/> runs. Does not catch exceptions; callers that
     /// need per-rule isolation (like <see cref="Evaluate"/>) handle that themselves.
     /// </summary>
-    public IReadOnlyList<Violation> EvaluateRule(RuleDefinition rule, RepositoryModel model)
+    public IReadOnlyList<Violation> EvaluateRule(RuleDefinition rule, RepositoryModel model, CancellationToken cancellationToken = default)
     {
         var violations = new List<Violation>();
 
@@ -113,7 +122,7 @@ public sealed class RuleEvaluator(ILogger<RuleEvaluator>? logger = null) : IRule
         }
         else
         {
-            EvaluateSelectorRule(rule, model, violations);
+            EvaluateSelectorRule(rule, model, violations, cancellationToken);
         }
 
         return violations;
@@ -137,7 +146,8 @@ public sealed class RuleEvaluator(ILogger<RuleEvaluator>? logger = null) : IRule
         }
     }
 
-    private static void EvaluateSelectorRule(RuleDefinition rule, RepositoryModel model, List<Violation> violations)
+    private static void EvaluateSelectorRule(
+        RuleDefinition rule, RepositoryModel model, List<Violation> violations, CancellationToken cancellationToken)
     {
         IEnumerable<object> candidates = rule.Target!.SelectCandidates(model);
         if (rule.When is not null)
@@ -147,6 +157,11 @@ public sealed class RuleEvaluator(ILogger<RuleEvaluator>? logger = null) : IRule
 
         foreach (var candidate in candidates)
         {
+            // Bounds a single rule's worst case (many candidates x assertions), not just cancellation
+            // between whole rules - Parallel.For's own CancellationToken check in Evaluate() only
+            // stops scheduling new rule iterations, it can't interrupt one already in flight.
+            cancellationToken.ThrowIfCancellationRequested();
+
             foreach (var assertion in rule.Assertions!)
             {
                 var outcome = assertion.Evaluate(candidate, model);

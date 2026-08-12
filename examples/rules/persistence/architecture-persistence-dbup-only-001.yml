@@ -24,3 +24,22 @@ assertions:
       id: "dbup-sqlserver"
   - must_not_reference_package:
       id: "Microsoft.EntityFrameworkCore*"
+
+tests:
+  - name: Reporting persistence uses Contoso.Framework.Reporting.DbUp
+    setup:
+      projects:
+        - name: Contoso.Billing.Reporting.Persistence
+          packageReferences:
+            - id: Contoso.Framework.Reporting.DbUp
+              version: "1.0.0"
+    expect: pass
+
+  - name: Reporting persistence references bare dbup-core
+    setup:
+      projects:
+        - name: Contoso.Billing.Reporting.Persistence
+          packageReferences:
+            - id: dbup-core
+              version: "4.7.0"
+    expect: fail

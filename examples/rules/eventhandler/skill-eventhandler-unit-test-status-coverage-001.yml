@@ -68,3 +68,37 @@ assertions:
         kind: method
         project: "*.EventHandler*"
         name: "*504*"
+
+tests:
+  - name: Test project covers every non-success status code
+    setup:
+      types:
+        - name: OrderHandlerTests
+          project: Contoso.Orders.EventHandler.Tests
+          methods:
+            - name: Should_ReturnProblem_When400BadRequest
+            - name: Should_ReturnProblem_When401Unauthorized
+            - name: Should_ReturnProblem_When403Forbidden
+            - name: Should_ReturnProblem_When404NotFound
+            - name: Should_ReturnProblem_When422Unprocessable
+            - name: Should_ReturnProblem_When429TooManyRequests
+            - name: Should_ReturnProblem_When500ServerError
+            - name: Should_ReturnProblem_When503Unavailable
+            - name: Should_ReturnProblem_When504GatewayTimeout
+    expect: pass
+
+  - name: Test project missing a 504 gateway-timeout case
+    setup:
+      types:
+        - name: OrderHandlerTests
+          project: Contoso.Orders.EventHandler.Tests
+          methods:
+            - name: Should_ReturnProblem_When400BadRequest
+            - name: Should_ReturnProblem_When401Unauthorized
+            - name: Should_ReturnProblem_When403Forbidden
+            - name: Should_ReturnProblem_When404NotFound
+            - name: Should_ReturnProblem_When422Unprocessable
+            - name: Should_ReturnProblem_When429TooManyRequests
+            - name: Should_ReturnProblem_When500ServerError
+            - name: Should_ReturnProblem_When503Unavailable
+    expect: fail

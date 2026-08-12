@@ -26,3 +26,24 @@ assertions:
       modifier: "partial"
   - must_have_method:
       name: "HandleAsync"
+
+tests:
+  - name: Sealed partial handler with a HandleAsync entry point
+    setup:
+      types:
+        - name: OrderHandler
+          namespace: Contoso.Reporting.Application.Handlers
+          modifiers: [sealed, partial]
+          methods:
+            - name: HandleAsync
+    expect: pass
+
+  - name: Handler missing the partial modifier
+    setup:
+      types:
+        - name: OrderHandler
+          namespace: Contoso.Reporting.Application.Handlers
+          modifiers: [sealed]
+          methods:
+            - name: HandleAsync
+    expect: fail

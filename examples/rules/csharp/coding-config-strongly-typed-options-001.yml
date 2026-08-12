@@ -23,3 +23,17 @@ assertions:
       selector:
         kind: call_site
         invoked_member: "ValidateOnStart"
+
+tests:
+  - name: Repository with a ValidateOnStart registration
+    setup:
+      callSites:
+        - invokedMember: "ValidateOnStart"
+          containingType: Contoso.Api.Startup
+    expect: pass
+
+  - name: Repository with no ValidateOnStart registration anywhere
+    setup:
+      callSites:
+        - invokedMember: "AddOptions"
+    expect: fail

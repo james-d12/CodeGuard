@@ -32,3 +32,18 @@ assertions:
         kind: call_site
         invoked_member: "LogError"
         project: "*.Application*"
+
+tests:
+  - name: Application project with no ad hoc logger calls
+    setup:
+      callSites:
+        - invokedMember: LogInformation
+          project: Contoso.Infrastructure
+    expect: pass
+
+  - name: Application project calling logger.LogInformation directly
+    setup:
+      callSites:
+        - invokedMember: LogInformation
+          project: Contoso.Application
+    expect: fail

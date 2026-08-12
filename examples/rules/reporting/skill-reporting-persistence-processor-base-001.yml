@@ -22,3 +22,19 @@ target:
 assertions:
   - must_inherit_from:
       type: "ReportingPersistenceProcessorBase<*>"
+
+tests:
+  - name: Processor derives from ReportingPersistenceProcessorBase
+    setup:
+      types:
+        - name: OrderPersistenceProcessor
+          namespace: Contoso.Reporting.Persistence
+          baseType: "ReportingPersistenceProcessorBase<Order>"
+    expect: pass
+
+  - name: Processor hand-rolls its own retry logic
+    setup:
+      types:
+        - name: OrderPersistenceProcessor
+          namespace: Contoso.Reporting.Persistence
+    expect: fail

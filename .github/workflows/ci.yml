@@ -72,7 +72,7 @@ jobs:
       - name: Check For Vulnerabilities
         run: dotnet list package --vulnerable
 
-      - name: Build and analyze
+      - name: Build, Test and Analyze
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
@@ -85,12 +85,13 @@ jobs:
               /d:sonar.exclusions="**/bin/**,**/obj/**"
              
             dotnet build --no-restore
+          
+            dotnet test --no-build \
+              --collect:"XPlat Code Coverage" \
+              --results-directory ./coverage
             
             "${{ runner.temp }}/scanner/dotnet-sonarscanner" end \
               /d:sonar.token="$SONAR_TOKEN"
-
-      - name: Test
-        run: dotnet test --no-build --collect:"XPlat Code Coverage" --results-directory ./coverage
 
       - name: Publish
         run: dotnet publish --no-restore

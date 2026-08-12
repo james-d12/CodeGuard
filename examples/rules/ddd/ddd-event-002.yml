@@ -21,3 +21,22 @@ target:
 assertions:
   - must_be_in_project:
       pattern: "*.Domain"
+
+tests:
+  - name: Domain event declared in a Domain project
+    setup:
+      types:
+        - name: OrderPlaced
+          namespace: Contoso.Domain.Events
+          interfaces: [Contoso.Domain.IDomainEvent]
+          project: Contoso.Domain
+    expect: pass
+
+  - name: Domain event declared in an Application project
+    setup:
+      types:
+        - name: OrderPlaced
+          namespace: Contoso.Domain.Events
+          interfaces: [Contoso.Domain.IDomainEvent]
+          project: Contoso.Application
+    expect: fail

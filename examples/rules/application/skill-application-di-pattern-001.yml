@@ -24,3 +24,16 @@ assertions:
       selector:
         kind: call_site
         invoked_member: "ValidateOnStart"
+
+tests:
+  - name: Options registration chains ValidateOnStart
+    setup:
+      callSites:
+        - invokedMember: ValidateOnStart
+    expect: pass
+
+  - name: Options registration missing ValidateOnStart
+    setup:
+      callSites:
+        - invokedMember: Bind
+    expect: fail

@@ -25,3 +25,18 @@ assertions:
   - must_have_json_field:
       path: "profiles.https.environmentVariables.ASPNETCORE_ENVIRONMENT"
       equals: "Development"
+
+tests:
+  - name: launchSettings.json with required profiles and environment
+    setup:
+      files:
+        - path: "src/Api/Properties/launchSettings.json"
+          content: '{"profiles": {"http": {}, "https": {"environmentVariables": {"ASPNETCORE_ENVIRONMENT": "Development"}}}}'
+    expect: pass
+
+  - name: launchSettings.json missing the https profile
+    setup:
+      files:
+        - path: "src/Api/Properties/launchSettings.json"
+          content: '{"profiles": {"http": {}}}'
+    expect: fail

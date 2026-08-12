@@ -22,3 +22,23 @@ target:
 assertions:
   - must_have_modifier:
       modifier: "sealed"
+
+tests:
+  - name: Concrete event record deriving from EventBase is sealed
+    setup:
+      types:
+        - name: OrderPlacedEvent
+          namespace: Contoso.Domain.Events
+          kind: record
+          baseType: "Contoso.Domain.Events.EventBase"
+          modifiers: [sealed]
+    expect: pass
+
+  - name: Concrete event record deriving from EventBase is not sealed
+    setup:
+      types:
+        - name: OrderPlacedEvent
+          namespace: Contoso.Domain.Events
+          kind: record
+          baseType: "Contoso.Domain.Events.EventBase"
+    expect: fail

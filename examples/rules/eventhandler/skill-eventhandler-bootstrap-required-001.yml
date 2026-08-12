@@ -31,3 +31,23 @@ assertions:
         invoked_member: "CreateBuilder"
         target_type: "ContosoWebApplication"
         project: "*.EventHandler*"
+
+tests:
+  - name: Program.cs bootstraps via ContosoWebApplication
+    setup:
+      callSites:
+        - invokedMember: CreateBuilder
+          targetTypeName: ContosoWebApplication
+          project: Contoso.Orders.EventHandler.Api
+    expect: pass
+
+  - name: Program.cs bootstraps via raw WebApplication
+    setup:
+      callSites:
+        - invokedMember: CreateBuilder
+          targetTypeName: WebApplication
+          project: Contoso.Orders.EventHandler.Api
+        - invokedMember: CreateBuilder
+          targetTypeName: ContosoWebApplication
+          project: Contoso.Orders.EventHandler.Api
+    expect: fail

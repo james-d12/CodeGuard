@@ -19,3 +19,24 @@ assertions:
   - must_match_argument:
       index: 0
       pattern: "^/(api/)?v[0-9]+/"
+
+tests:
+  - name: Route mapped with a versioned path
+    setup:
+      callSites:
+        - invokedMember: MapGet
+          arguments:
+            - index: 0
+              literalValue: "/api/v1/orders"
+              isLiteral: true
+    expect: pass
+
+  - name: Route mapped without a versioned path
+    setup:
+      callSites:
+        - invokedMember: MapGet
+          arguments:
+            - index: 0
+              literalValue: "/orders"
+              isLiteral: true
+    expect: fail

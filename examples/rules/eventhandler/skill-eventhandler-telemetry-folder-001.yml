@@ -24,3 +24,19 @@ assertions:
       path: "*/Telemetry/TagNames.cs"
   - must_have_file:
       path: "*/Telemetry/MetricExtensions.cs"
+
+tests:
+  - name: Shared Telemetry folder has all required files
+    setup:
+      files:
+        - path: "Contoso.Shared/Telemetry/MetricNames.cs"
+        - path: "Contoso.Shared/Telemetry/TagNames.cs"
+        - path: "Contoso.Shared/Telemetry/MetricExtensions.cs"
+    expect: pass
+
+  - name: Shared Telemetry folder missing MetricExtensions
+    setup:
+      files:
+        - path: "Contoso.Shared/Telemetry/MetricNames.cs"
+        - path: "Contoso.Shared/Telemetry/TagNames.cs"
+    expect: fail

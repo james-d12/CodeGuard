@@ -20,3 +20,16 @@ assertions:
       selector:
         kind: call_site
         invoked_member: "AddFrameworkInstrumentation"
+
+tests:
+  - name: Instrumentation wired via the current API
+    setup:
+      callSites:
+        - invokedMember: AddInstrumentation
+    expect: pass
+
+  - name: Instrumentation wired via the obsolete API
+    setup:
+      callSites:
+        - invokedMember: AddFrameworkInstrumentation
+    expect: fail

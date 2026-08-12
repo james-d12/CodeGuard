@@ -29,3 +29,20 @@ assertions:
         kind: call_site
         invoked_member: "CreateBuilder"
         target_type: "ContosoWebApplication"
+
+tests:
+  - name: Program.cs bootstrapped via ContosoWebApplication
+    setup:
+      callSites:
+        - invokedMember: CreateBuilder
+          targetTypeName: ContosoWebApplication
+    expect: pass
+
+  - name: Program.cs bootstrapped via raw WebApplication
+    setup:
+      callSites:
+        - invokedMember: CreateBuilder
+          targetTypeName: WebApplication
+        - invokedMember: CreateBuilder
+          targetTypeName: ContosoWebApplication
+    expect: fail

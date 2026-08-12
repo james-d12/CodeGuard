@@ -40,6 +40,15 @@ try
     var invocationConfiguration = new InvocationConfiguration { EnableDefaultExceptionHandler = false };
     return await rootCommand.Parse(args).InvokeAsync(invocationConfiguration);
 }
+catch (OperationCanceledException)
+{
+    // User-initiated (Ctrl+C/SIGINT/SIGTERM, wired up by System.CommandLine's own
+    // ProcessTerminationTimeout handling) - not a bug, so this deliberately doesn't go through the
+    // LogCritical/"unexpected error" path below. 130 is the POSIX convention (128 + SIGINT).
+    bootstrapLogger.LogInformation("codeguard canceled");
+    await Console.Error.WriteLineAsync("codeguard: canceled.");
+    return 130;
+}
 catch (Exception ex)
 {
     bootstrapLogger.LogCritical(ex, "codeguard terminated unexpectedly: {ExceptionType}: {Message}", ex.GetType().Name, ex.Message);

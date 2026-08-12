@@ -27,3 +27,25 @@ assertions:
       name: "Audit"
   - must_match_name:
       regex: "^[A-Za-z]+Command$"
+
+tests:
+  - name: Command record is sealed with an Audit property and correct name
+    setup:
+      types:
+        - name: CreateOrderCommand
+          namespace: Contoso.Domain.Commands
+          kind: record
+          modifiers: [sealed]
+          properties:
+            - name: Audit
+    expect: pass
+
+  - name: Command record is not sealed
+    setup:
+      types:
+        - name: CreateOrderCommand
+          namespace: Contoso.Domain.Commands
+          kind: record
+          properties:
+            - name: Audit
+    expect: fail

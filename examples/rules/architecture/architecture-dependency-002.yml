@@ -21,3 +21,24 @@ target:
 assertions:
   - must_not_depend_on:
       type: "Contoso.Infrastructure.*"
+
+tests:
+  - name: Domain type with no reference to Infrastructure types
+    setup:
+      projects:
+        - name: Contoso.Domain
+          types:
+            - name: Order
+              namespace: Contoso.Domain
+              baseType: "Contoso.Domain.Entity<Guid>"
+    expect: pass
+
+  - name: Domain type using an Infrastructure type as a base type
+    setup:
+      projects:
+        - name: Contoso.Domain
+          types:
+            - name: Order
+              namespace: Contoso.Domain
+              baseType: "Contoso.Infrastructure.Persistence.EntityBase"
+    expect: fail

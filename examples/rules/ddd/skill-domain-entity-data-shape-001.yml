@@ -26,3 +26,25 @@ assertions:
       name: "CreatedDateTime"
   - must_have_property:
       name: "UpdatedDateTime"
+
+tests:
+  - name: EntityData record has CreatedDateTime and UpdatedDateTime
+    setup:
+      types:
+        - name: OrderEntityData
+          namespace: Contoso.Domain.Entities
+          kind: record
+          properties:
+            - name: CreatedDateTime
+            - name: UpdatedDateTime
+    expect: pass
+
+  - name: EntityData record missing UpdatedDateTime
+    setup:
+      types:
+        - name: OrderEntityData
+          namespace: Contoso.Domain.Entities
+          kind: record
+          properties:
+            - name: CreatedDateTime
+    expect: fail

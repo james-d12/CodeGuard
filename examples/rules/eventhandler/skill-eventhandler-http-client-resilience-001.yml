@@ -26,3 +26,21 @@ assertions:
         site_kind: object_creation
         invoked_member: "HttpClient"
         project: "*.EventHandler*"
+
+tests:
+  - name: Outbound call uses IHttpRequestSender
+    setup:
+      callSites:
+        - kind: invocation
+          invokedMember: Send
+          targetTypeName: IHttpRequestSender
+          project: Contoso.Orders.EventHandler.Application
+    expect: pass
+
+  - name: Outbound call constructs a raw HttpClient
+    setup:
+      callSites:
+        - kind: object_creation
+          invokedMember: HttpClient
+          project: Contoso.Orders.EventHandler.Application
+    expect: fail

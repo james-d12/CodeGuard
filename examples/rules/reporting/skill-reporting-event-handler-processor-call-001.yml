@@ -26,3 +26,20 @@ assertions:
         site_kind: object_creation
         invoked_member: "*PersistenceProcessorInput"
         project: "*.Reporting*"
+
+tests:
+  - name: Handler with no bespoke persistence processor input wrapper
+    setup:
+      callSites:
+        - kind: invocation
+          invokedMember: "ProcessAsync"
+          project: Contoso.Reporting.Handlers
+    expect: pass
+
+  - name: Handler constructing a bespoke persistence processor input wrapper
+    setup:
+      callSites:
+        - kind: object_creation
+          invokedMember: "OrderPersistenceProcessorInput"
+          project: Contoso.Reporting.Handlers
+    expect: fail
