@@ -1,19 +1,18 @@
 name: Publish
 permissions:
   contents: read
-  
+
 on:
   push:
     tags:
       - "v*"
 
 jobs:
-  publish:
+  pack-nuget:
     runs-on: ubuntu-latest
 
     permissions:
       id-token: write # enable GitHub OIDC token issuance for NuGet Trusted Publishing
-      contents: write # required for `gh release create`
 
     steps:
       - name: Checkout
@@ -53,15 +52,119 @@ jobs:
       - name: Push Package To NuGet.org
         run: dotnet nuget push ./nupkg/*.nupkg --api-key ${{ steps.login.outputs.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
 
+      - name: Upload NuGet Package Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuget-package
+          path: ./nupkg/*.nupkg
+          if-no-files-found: error
+
+  build-binaries:
+    needs: pack-nuget
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        rid: [linux-x64, linux-arm64, osx-x64, osx-arm64, win-x64]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # MinVer needs full tag history to compute the binary's version too
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Publish Self-Contained Binary (${{ matrix.rid }})
+        # NOTE: deliberately no -p:PublishSingleFile=true. MSBuildWorkspace (used by
+        # CodeGuard.Analyzers.MSBuild for `validate`) launches an out-of-process "BuildHost" by
+        # loading a sibling DLL (BuildHost-netcore/Microsoft.CodeAnalysis.Workspaces.MSBuild.BuildHost.dll)
+        # from next to the executable. Single-file publishing bundles that DLL into the merged exe
+        # instead of leaving it on disk, so the BuildHost can never be found and `validate` fails
+        # with "The build host could not be found" - confirmed by testing both ways against
+        # tests/CodeGuard.IntegrationTests/Fixtures/SimpleDomainSolution. So we ship a self-contained
+        # *folder* archive instead of a single file - still no SDK/runtime install required to run it.
+        run: |
+          dotnet publish src/CodeGuard.Cli/CodeGuard.Cli.csproj \
+            -c Release \
+            -r ${{ matrix.rid }} \
+            --self-contained true \
+            -p:DebugType=None \
+            -o publish/${{ matrix.rid }}
+
+      - name: Smoke Test Binary
+        if: matrix.rid == 'linux-x64'
+        run: |
+          ./publish/linux-x64/codeguard --help
+
+          # Exercise the MSBuildWorkspace/BuildHost path specifically (see note above) against a
+          # fixture repo with intentional rule violations. `validate` exits 1 when it finds
+          # qualifying violations, which is the expected/successful outcome here - only a
+          # "build host could not be found" failure (self-contained packaging regression) should
+          # fail this step.
+          set +e
+          output=$(./publish/linux-x64/codeguard validate --path tests/CodeGuard.IntegrationTests/Fixtures/SimpleDomainSolution 2>&1)
+          set -e
+          echo "$output"
+          if echo "$output" | grep -qi "build host could not be found"; then
+            echo "::error::self-contained binary cannot launch the MSBuild BuildHost process"
+            exit 1
+          fi
+
+      - name: Package Archive
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          rid="${{ matrix.rid }}"
+          mkdir -p dist
+          if [[ "$rid" == win-* ]]; then
+            asset="dist/codeguard-${version}-${rid}.zip"
+            (cd "publish/${rid}" && zip -r "${GITHUB_WORKSPACE}/${asset}" .)
+          else
+            asset="dist/codeguard-${version}-${rid}.tar.gz"
+            tar -C "publish/${rid}" -czf "$asset" .
+          fi
+          echo "ASSET_PATH=$asset" >> "$GITHUB_ENV"
+
+      - name: Upload Binary Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: codeguard-${{ matrix.rid }}
+          path: ${{ env.ASSET_PATH }}
+          if-no-files-found: error
+
+  release:
+    needs: [pack-nuget, build-binaries]
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write # required for `gh release create`
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download All Release Assets
+        uses: actions/download-artifact@v4
+        with:
+          pattern: "*"
+          path: release-assets
+          merge-multiple: true
+
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          version="${GITHUB_REF_NAME#v}"
           prerelease_flag=""
           if [[ "$GITHUB_REF_NAME" == *-* ]]; then
             prerelease_flag="--prerelease"
           fi
-          gh release create "$GITHUB_REF_NAME" ./nupkg/*.nupkg \
+          gh release create "$GITHUB_REF_NAME" release-assets/* \
             --title "$GITHUB_REF_NAME" \
+            --notes "📦 [CodeGuard $version on NuGet.org](https://www.nuget.org/packages/CodeGuard/$version)" \
             --generate-notes \
             $prerelease_flag

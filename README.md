@@ -46,6 +46,53 @@ This installs the `codeguard` command globally. Every example in [CLI usage](#cl
 works the same whether you run it as `codeguard <command>` after installing, or as
 `dotnet run --project src/CodeGuard.Cli -- <command>` from a checkout of this repo.
 
+### Standalone binaries
+
+Each [GitHub Release](https://github.com/james-d12/CodeGuard/releases) also publishes
+self-contained native builds for Linux, macOS and Windows — no .NET runtime/SDK install or
+`dotnet tool install` required just to launch `codeguard`. These always carry the exact same
+version as that release's NuGet package.
+
+Each archive extracts to a *folder* (not a single file) containing `codeguard`/`codeguard.exe`
+plus its runtime and dependencies — `validate` uses Roslyn's `MSBuildWorkspace`, which launches a
+second "BuildHost" process from a DLL that has to sit next to the executable on disk, so it can't
+be merged into a single-file bundle.
+
+| Platform | Archive |
+|---|---|
+| Linux x64 | `codeguard-<version>-linux-x64.tar.gz` |
+| Linux arm64 | `codeguard-<version>-linux-arm64.tar.gz` |
+| macOS x64 (Intel) | `codeguard-<version>-osx-x64.tar.gz` |
+| macOS arm64 (Apple Silicon) | `codeguard-<version>-osx-arm64.tar.gz` |
+| Windows x64 | `codeguard-<version>-win-x64.zip` |
+
+Linux/macOS:
+
+```bash
+mkdir codeguard && curl -L https://github.com/james-d12/CodeGuard/releases/download/v<version>/codeguard-<version>-<rid>.tar.gz | tar xz -C codeguard
+cd codeguard
+./codeguard --help
+```
+
+Windows (PowerShell):
+
+```powershell
+Invoke-WebRequest -Uri https://github.com/james-d12/CodeGuard/releases/download/v<version>/codeguard-<version>-win-x64.zip -OutFile codeguard.zip
+Expand-Archive codeguard.zip -DestinationPath codeguard
+cd codeguard
+.\codeguard.exe --help
+```
+
+Two things to know about the standalone binaries:
+
+- **macOS Gatekeeper**: the binary isn't code-signed/notarized, so macOS will refuse to run it on
+  first launch ("cannot be opened because the developer cannot be verified"). Clear the quarantine
+  attribute on the whole extracted folder once after downloading: `xattr -dr com.apple.quarantine ./codeguard`.
+- **`validate` still needs a .NET SDK installed**: `codeguard` locates a real MSBuild install at
+  runtime (via `MSBuildLocator`) to analyze `.sln`/`.csproj` files, regardless of whether
+  `codeguard` itself is self-contained. The standalone binary removes the need to install the
+  tool via `dotnet tool install`, but not the underlying .NET SDK dependency for `validate`.
+
 ## CLI usage
 
 If you've installed the tool, run commands directly as `codeguard <command>`. From a checkout of
