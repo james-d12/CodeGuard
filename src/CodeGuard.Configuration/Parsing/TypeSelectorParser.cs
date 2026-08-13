@@ -9,5 +9,7 @@ public sealed class TypeSelectorParser : ISelectorParser
     public string Kind => "type";
 
     public ITargetSelector Parse(JsonObject node) =>
-        new TypeSelector(node.GetOptionalString("namespace") ?? "*");
+        new TypeSelector(
+            node.GetOptionalString("namespace") ?? "*",
+            node.GetOptionalString("name") ?? "*");
 }

@@ -10,7 +10,12 @@ public static class SolutionFileLocator
 {
     private static readonly HashSet<string> ExcludedDirectoryNames = new(StringComparer.OrdinalIgnoreCase)
     {
-        "bin", "obj", ".git", ".vs", ".idea", "node_modules"
+        "bin", "obj", ".git", ".vs", ".idea", "node_modules",
+        // .claude may contain full git worktree checkouts of this same repo (see
+        // `.claude/worktrees/`) - without this, validate would discover the worktree's own copy
+        // of every .sln alongside the real one, duplicating every project name and tripping any
+        // analyzer that assumes (ProjectName, FullName) is unique across the analysis model.
+        ".claude"
     };
 
     public static IReadOnlyList<string> Resolve(string repoRoot, IReadOnlyList<string> explicitSolutionPaths, ILogger? logger = null)

@@ -20,11 +20,11 @@ public sealed class ImmutableMutationAnalyzer(string namespacePattern) : ICustom
             .SelectMany(s => s.Projects)
             .SelectMany(p => p.Types)
             .Where(t => t.Kind == TypeKind.Record && GlobMatcher.IsMatch(t.FullName, namespacePattern))
-            .Select(t => t.FullName)
+            .Select(t => (t.ProjectName, t.FullName))
             .ToHashSet();
 
         return model.MutationSites
-            .Where(m => recordTypeNames.Contains(m.ContainingType) && m.ContainingMethod != ".ctor")
+            .Where(m => recordTypeNames.Contains((m.ProjectName, m.ContainingType)) && m.ContainingMethod != ".ctor")
             .Select(m => new AnalyzerViolation(
                 Message: $"Mutation of {m.ContainingType}.{m.TargetMemberName} outside its constructor violates record immutability.",
                 FilePath: m.FilePath,

@@ -1,0 +1,58 @@
+id: DDD-AGGREGATE-004
+name: Aggregate root methods must not be static
+description: >
+  Every method declared directly on an `IAggregateRoot` implementer must be an
+  instance method - a static method on an aggregate root is a sign that
+  behaviour has leaked out of the aggregate into a free-floating helper.
+  Demonstrates `must_all_match`, the universal-quantifier primitive
+  (PRIMITIVES.md's `MustHaveAll`/`All` combinator) that runs a nested
+  `assertions:` list against every match of a nested `selector:`, distinct
+  from `must_have_count` (which counts matches, not runs assertions against
+  each one).
+severity: warning
+enforcement:
+  classification: deterministic
+tags:
+  - ddd
+  - aggregate
+remediation: >
+  Make the method an instance method, or move it off the aggregate root
+  entirely if it doesn't need aggregate state.
+illustrative: true
+
+target:
+  kind: implements
+  interface: "Contoso.Domain.IAggregateRoot"
+
+assertions:
+  - must_all_match:
+      selector:
+        kind: method
+        declaring_type: "${FullName}"
+      assertions:
+        - must_not_have_modifier:
+            modifier: static
+
+tests:
+  - name: Aggregate root with only instance methods
+    setup:
+      types:
+        - name: Order
+          namespace: Contoso.Domain.Entities
+          interfaces: [Contoso.Domain.IAggregateRoot]
+          methods:
+            - name: Place
+            - name: Cancel
+    expect: pass
+
+  - name: Aggregate root with a static method
+    setup:
+      types:
+        - name: Order
+          namespace: Contoso.Domain.Entities
+          interfaces: [Contoso.Domain.IAggregateRoot]
+          methods:
+            - name: Place
+            - name: Create
+              modifiers: [static]
+    expect: fail

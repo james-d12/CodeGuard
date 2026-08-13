@@ -1,0 +1,48 @@
+id: DDD-CQRS-001
+name: Every command must have a corresponding handler
+description: >
+  Every type in a `*.Application.Commands` namespace must have exactly one
+  corresponding type named `{Name}Handler` in a `*.Application.Handlers`
+  namespace. Demonstrates PRIMITIVES.md's cross-entity `MustHaveCorresponding`
+  concept, expressed generically with the existing `must_have_count` assertion
+  plus the `type` selector's `name` param (a glob match against `${Name}`,
+  the outer candidate's own name) rather than a bespoke assertion kind.
+severity: warning
+enforcement:
+  classification: deterministic
+tags:
+  - ddd
+  - cqrs
+remediation: >
+  Add a `{CommandName}Handler` type in the corresponding `*.Application.Handlers`
+  namespace, or remove the orphaned command.
+illustrative: true
+
+target:
+  kind: type
+  namespace: "Contoso.Application.Commands"
+
+assertions:
+  - must_have_count:
+      selector:
+        kind: type
+        namespace: "Contoso.Application.Handlers"
+        name: "${Name}Handler"
+      exactly: 1
+
+tests:
+  - name: Command with a corresponding handler
+    setup:
+      types:
+        - name: PlaceOrder
+          namespace: Contoso.Application.Commands
+        - name: PlaceOrderHandler
+          namespace: Contoso.Application.Handlers
+    expect: pass
+
+  - name: Command with no corresponding handler
+    setup:
+      types:
+        - name: PlaceOrder
+          namespace: Contoso.Application.Commands
+    expect: fail
