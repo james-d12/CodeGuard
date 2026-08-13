@@ -24,6 +24,16 @@ public static class TestCommand
             Description = "Restrict test execution to these rule IDs (repeatable). Default: every rule with embedded tests."
         };
 
+        var colorOption = new Option<bool>("--color")
+        {
+            Description = "Force ANSI color in console output, even when redirected."
+        };
+
+        var noColorOption = new Option<bool>("--no-color")
+        {
+            Description = "Disable ANSI color in console output, even in an interactive terminal."
+        };
+
         var command = new Command(
             "test",
             "Run a rule set's embedded `tests:` cases against a virtual analysis model, using the same " +
@@ -34,6 +44,8 @@ public static class TestCommand
         command.Add(branchOption);
         command.Add(formatOption);
         command.Add(ruleOption);
+        command.Add(colorOption);
+        command.Add(noColorOption);
 
         command.SetAction((parseResult, _) =>
         {
@@ -65,7 +77,14 @@ public static class TestCommand
             }
             else
             {
-                RuleTestReportWriter.WriteConsole(results, Console.Out);
+                var useColor = ColorSupport.ShouldUseColor(
+                    parseResult.GetValue(colorOption),
+                    parseResult.GetValue(noColorOption),
+                    writingToFile: false,
+                    consoleOutputRedirected: Console.IsOutputRedirected,
+                    noColorEnvVar: Environment.GetEnvironmentVariable("NO_COLOR"));
+
+                RuleTestReportWriter.WriteConsole(results, Console.Out, useColor);
             }
 
             var passed = results.All(r => r.Outcome == TestOutcome.Passed);

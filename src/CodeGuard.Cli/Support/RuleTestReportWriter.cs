@@ -13,46 +13,74 @@ public static class RuleTestReportWriter
         Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) }
     };
 
-    public static void WriteConsole(IReadOnlyList<RuleTestCaseResult> results, TextWriter writer)
+    public static void WriteConsole(IReadOnlyList<RuleTestCaseResult> results, TextWriter writer, bool useColor = false)
     {
         writer.WriteLine("Rule tests");
         writer.WriteLine();
 
         foreach (var ruleGroup in results.GroupBy(r => r.RuleId).OrderBy(g => g.Key, StringComparer.Ordinal))
         {
-            var ruleSymbol = ruleGroup.All(r => r.Outcome == TestOutcome.Passed) ? "✓" : "✗";
-            writer.WriteLine($"{ruleSymbol} {ruleGroup.Key}");
-
-            foreach (var result in ruleGroup)
-            {
-                var symbol = result.Outcome switch
-                {
-                    TestOutcome.Passed => "✓",
-                    TestOutcome.Failed => "✗",
-                    _ => "!"
-                };
-
-                writer.WriteLine($"  {symbol} {result.TestName}");
-                if (result.Outcome != TestOutcome.Passed && result.FailureReason is not null)
-                {
-                    writer.WriteLine($"      {result.FailureReason}");
-                }
-            }
-
-            writer.WriteLine();
+            WriteRuleGroup(writer, ruleGroup, useColor);
         }
 
+        writer.WriteLine();
+        WriteSummary(writer, results);
+    }
+
+    private static void WriteRuleGroup(TextWriter writer, IGrouping<string, RuleTestCaseResult> ruleGroup, bool useColor)
+    {
+        var groupResults = ruleGroup.ToList();
+        var passedCount = groupResults.Count(r => r.Outcome == TestOutcome.Passed);
+        var allPassed = passedCount == groupResults.Count;
+
+        var ruleSymbol = Symbol(allPassed ? TestOutcome.Passed : TestOutcome.Failed, useColor);
+        writer.WriteLine($"{ruleSymbol} {ruleGroup.Key}  {passedCount}/{groupResults.Count} passed");
+
+        if (allPassed)
+        {
+            return;
+        }
+
+        foreach (var result in groupResults.Where(r => r.Outcome != TestOutcome.Passed))
+        {
+            WriteCase(writer, result, useColor);
+        }
+    }
+
+    private static void WriteCase(TextWriter writer, RuleTestCaseResult result, bool useColor)
+    {
+        writer.WriteLine($"  {Symbol(result.Outcome, useColor)} {result.TestName}");
+        if (result.FailureReason is not null)
+        {
+            writer.WriteLine($"      {result.FailureReason}");
+        }
+    }
+
+    private static string Symbol(TestOutcome outcome, bool useColor)
+    {
+        var symbol = outcome switch
+        {
+            TestOutcome.Passed => "✓",
+            TestOutcome.Failed => "✗",
+            _ => "!"
+        };
+
+        return useColor ? TestOutcomeColors.Colorize(outcome, symbol) : symbol;
+    }
+
+    private static void WriteSummary(TextWriter writer, IReadOnlyList<RuleTestCaseResult> results)
+    {
         var passed = results.Count(r => r.Outcome == TestOutcome.Passed);
         var failed = results.Count(r => r.Outcome == TestOutcome.Failed);
         var errored = results.Count(r => r.Outcome == TestOutcome.Errored);
 
-        writer.WriteLine($"Tests: {results.Count}");
-        writer.WriteLine($"Passed: {passed}");
-        writer.WriteLine($"Failed: {failed}");
+        var summary = $"Tests: {results.Count}  Passed: {passed}  Failed: {failed}";
         if (errored > 0)
         {
-            writer.WriteLine($"Errored: {errored}");
+            summary += $"  Errored: {errored}";
         }
+
+        writer.WriteLine(summary);
     }
 
     public static void WriteJson(IReadOnlyList<RuleTestCaseResult> results, TextWriter writer)
