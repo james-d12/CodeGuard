@@ -1,0 +1,40 @@
+id: CSHARP-NO-MISSING-XML-DOC-DIAGNOSTIC-001
+name: No CS1591 (missing XML doc) diagnostics
+description: >
+  Public members must carry XML doc comments; a CS1591 diagnostic anywhere in
+  the repository is a violation. Demonstrates the `diagnostic` selector, which
+  wraps the raw compiler-diagnostic pass-through (currently limited to
+  CS1591 - see RoslynDiagnosticExtractor).
+severity: warning
+enforcement:
+  classification: deterministic
+tags:
+  - csharp
+  - documentation
+remediation: >
+  Add an XML doc comment (`/// <summary>...</summary>`) to the flagged member.
+illustrative: true
+
+target:
+  kind: repository
+
+assertions:
+  - must_not_exist:
+      selector:
+        kind: diagnostic
+        id: "CS1591"
+
+tests:
+  - name: Repository with no CS1591 diagnostics
+    setup:
+      diagnostics:
+        - id: CS0219
+          message: Variable is assigned but never used
+    expect: pass
+
+  - name: Repository with a CS1591 diagnostic
+    setup:
+      diagnostics:
+        - id: CS1591
+          message: Missing XML comment for publicly visible type or member
+    expect: fail

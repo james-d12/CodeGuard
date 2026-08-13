@@ -156,13 +156,17 @@ majority of the existing rule set's selector/assertion kinds (`class`, `type`, `
 `method`, `property`, `constructor`, `field`, `inherits_from`, `implements`, `project`, `file`,
 `repository`, `call_site`, and the ~35 `must_*` assertion kinds built on them).
 
-Explicitly out of scope for v1 (produces a clear error if a rule needing them is given a test):
-switch statements, throw sites, mutation sites, try blocks, method-body shapes, and raw compiler
-diagnostics — the Roslyn syntax-fact records consumed only by a handful of bespoke `analyzer`-kind
-rules (e.g. `exhaustive_switch`, `no_exceptions`, `catch_clause_count`). These require full
-source-level Roslyn analysis to produce meaningfully, which is a larger, separate effort (see
-"Future extensions" — "Rules that require source-level Roslyn setup"). Add support for a given
-concept only once a real rule needs a test that exercises it.
+**Extended scope**: switch statements, throw sites, mutation sites, try blocks, method-body
+shapes, and raw compiler diagnostics — the Roslyn syntax-fact records backing the
+`switch`/`throw_site`/`mutation_site`/`try_block`/`method_body_shape`/`diagnostic` selectors — are
+now also supported via flat `switches:`/`throwSites:`/`mutationSites:`/`tryBlocks:`/
+`methodBodyShapes:`/`diagnostics:` setup arrays (`TestSetupBuilder`). These are supplied as
+pre-computed flat records directly (matching the shape of the corresponding `*Model` types), not
+derived from real source — virtual rule test setup still never runs Roslyn. This was added once
+declarative selectors over this data existed (previously these records were reachable only from a
+handful of bespoke `analyzer`-kind rules, e.g. `exhaustive_switch`, `no_exceptions`,
+`catch_clause_count`, which don't go through the rule-test setup path at all). Add support for a
+given concept only once a real rule needs a test that exercises it.
 
 ### Setup shape
 

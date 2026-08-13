@@ -1,0 +1,49 @@
+id: CODING-PACKAGES-VERSION-FLOOR-001
+name: Contoso.Sdk must be referenced at version 8.0.0 or later
+description: >
+  Projects referencing Contoso.Sdk must use at least version 8.0.0 - older
+  versions are missing a required security fix. Demonstrates the generic
+  `must_use_package_version` constraint assertion (one parameterized
+  primitive covering the at-least/at-most/exactly family from
+  docs/PRIMITIVES.md §15).
+severity: error
+enforcement:
+  classification: deterministic
+tags:
+  - csharp
+  - packages
+remediation: >
+  Bump the Contoso.Sdk PackageReference to 8.0.0 or later.
+illustrative: true
+
+target:
+  kind: project
+  name: "*"
+
+when:
+  must_reference_package:
+    id: "Contoso.Sdk"
+
+assertions:
+  - must_use_package_version:
+      package: "Contoso.Sdk"
+      constraint: ">=8.0.0"
+
+tests:
+  - name: Project referencing Contoso.Sdk at or above the floor version
+    setup:
+      projects:
+        - name: Contoso.Application
+          packageReferences:
+            - id: Contoso.Sdk
+              version: "8.1.0"
+    expect: pass
+
+  - name: Project referencing Contoso.Sdk below the floor version
+    setup:
+      projects:
+        - name: Contoso.Application
+          packageReferences:
+            - id: Contoso.Sdk
+              version: "7.9.0"
+    expect: fail

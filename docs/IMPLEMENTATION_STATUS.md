@@ -278,6 +278,60 @@ Command file `Cli/Commands/Rules/CheckCommand.cs` → `Rules/ValidateCommand.cs`
 the old `rules check` name — consistent with the earlier `check-rules` → `rules check` rename above,
 since the tool is still pre-1.0.
 
+### Post-v1 addition: expanded generic primitive vocabulary
+
+The "Selectors and assertions implemented (v1 scope)" table above is a historical snapshot of the
+original 8-PR plan and was already stale before this addition (it lists 5 selector kinds/12
+assertion kinds; the registries in `DefaultParsers.cs` had grown to 14/32 by the time of the
+Stage A/B rule-coverage work in `docs/done/`). Rather than rewrite that table in place, this
+section documents on top of it, following this doc's existing "Post-v1 addition" convention —
+**`DefaultParsers.cs` is the actual source of truth for the current kind list**, not this doc.
+
+Motivation and full design rationale: broaden the *variety* of declarative primitives available
+(per `docs/PRIMITIVES.md`'s original vocabulary) while staying generic/reusable rather than
+one-off, per `docs/REFACTORING.md` §2.1. Four concrete additions:
+
+- **Selectors over previously-unreachable syntax-fact data** (`SwitchSelector`/`switch`,
+  `ThrowSiteSelector`/`throw_site`, `MutationSiteSelector`/`mutation_site`,
+  `TryBlockSelector`/`try_block`, `MethodBodyShapeSelector`/`method_body_shape`,
+  `DiagnosticSelector`/`diagnostic`, `DirectorySelector`/`directory`). `RepositoryModel.Switches`/
+  `ThrowSites`/`MutationSites`/`TryBlocks`/`MethodBodyShapes`/`Diagnostics`/`Directories` were
+  already populated by `RoslynSyntaxFactExtractor`/`RepositoryFileProvider` but only reachable
+  from bespoke `analyzer`-kind classes — no declarative rule could select over them. Each new
+  selector mirrors `CallSiteSelector`'s glob/range-filter style. This required extending
+  `CodeGuard.Configuration.Testing.TestSetupBuilder` to accept `switches:`/`throwSites:`/
+  `mutationSites:`/`tryBlocks:`/`methodBodyShapes:`/`diagnostics:` setup arrays (previously these
+  six keys explicitly threw `RuleParsingException` — "not supported yet" — since no selector
+  needed them; see `docs/RULES_TEST_DESIGN.md`'s "v1 setup scope").
+- **`must_have_count`** (`MustHaveCountAssertion`): generalizes `must_exist`/`must_not_exist`
+  (existence-only) to counting, via `min`/`max`/`exactly` params against a nested `selector:`
+  template — same `SelectorTemplateResolver` plumbing. `must_exist`/`must_not_exist` are kept as
+  the simpler, more readable form for pure existence checks (`min: 1` / `exactly: 0` are the
+  equivalent `must_have_count` forms).
+- **`must_depend_on`/`must_only_depend_on`** (`MustDependOnAssertion`/`MustOnlyDependOnAssertion`),
+  plus a broadened `must_not_depend_on`: all three now share `DependencyTraversal`
+  (`CodeGuard.Evaluation.Assertions`), which walks base type, interfaces, type-level attributes,
+  and member (method/property/field/constructor) return/parameter/property/field types and their
+  attributes — `must_not_depend_on` previously only checked base type/interfaces/method
+  signatures, so a forbidden dependency reached only via a field or attribute silently passed.
+  `must_only_depend_on` (the allow-list form) has **no implicit BCL/framework exemption** — Roslyn
+  renders primitives via their C# keyword alias (`string`, `int`, `void`, confirmed against
+  `RoslynTypeExtractorTests`), not a `System.*`-prefixed name, so a hardcoded "exclude System.*"
+  default would silently fail to exempt them; allow-lists must name primitives/framework types
+  explicitly (see the example rule for a starter list).
+- **Small symmetric gap-fills**: `must_have_field`/`must_not_have_field` (mirrors
+  `must_have_property`/`must_not_have_property`, closing the asymmetry against the existing
+  `field` selector), `must_not_be_in_namespace` (complement to `must_be_in_namespace`),
+  `must_match_namespace_pattern` (regex-on-`Namespace`, complement to `must_match_name`'s
+  regex-on-`Name`), `must_use_package_version` (one generic `{package, constraint}` primitive —
+  e.g. `constraint: ">=8.0.0"` — covering the at-least/at-most/exactly family from
+  `docs/PRIMITIVES.md` §15 without three separate kinds).
+
+All 16 new kinds ship with unit tests (`CodeGuard.Evaluation.Tests/{Selectors,Assertions}`) and at
+least one `illustrative: true` example rule with embedded `tests:` cases under `examples/rules/`
+(15 new rule files — `must_have_field`/`must_not_have_field` share one file as a natural pair),
+verified via `codeguard rules validate`/`codeguard rules test`.
+
 ## The 11 starter rules
 
 All under `rules/`, all illustrative (`Contoso.*` namespace, `illustrative: true`), matching the

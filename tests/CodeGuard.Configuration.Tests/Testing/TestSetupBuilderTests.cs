@@ -106,12 +106,74 @@ public sealed class TestSetupBuilderTests
     }
 
     [Fact]
-    public void Build_Throws_ForOutOfScopeSetupConcept()
+    public void Build_ParsesSwitches()
     {
-        var ex = Assert.Throws<RuleParsingException>(() => TestSetupBuilder.Build(Setup("""
-            { "switches": [ { "containingMethod": "M" } ] }
-            """)));
+        var model = TestSetupBuilder.Build(Setup("""
+            { "switches": [ { "containingMethod": "M", "containingType": "T", "hasDefaultOrDiscardArm": true } ] }
+            """));
 
-        Assert.Contains("switches", ex.Message);
+        var @switch = Assert.Single(model.Switches);
+        Assert.Equal("M", @switch.ContainingMethod);
+        Assert.Equal("T", @switch.ContainingType);
+        Assert.True(@switch.HasDefaultOrDiscardArm);
+    }
+
+    [Fact]
+    public void Build_ParsesThrowSites()
+    {
+        var model = TestSetupBuilder.Build(Setup("""
+            { "throwSites": [ { "exceptionTypeName": "System.ArgumentException", "isFirstStatementInMethod": true } ] }
+            """));
+
+        var throwSite = Assert.Single(model.ThrowSites);
+        Assert.Equal("System.ArgumentException", throwSite.ExceptionTypeName);
+        Assert.True(throwSite.IsFirstStatementInMethod);
+    }
+
+    [Fact]
+    public void Build_ParsesMutationSites()
+    {
+        var model = TestSetupBuilder.Build(Setup("""
+            { "mutationSites": [ { "targetMemberName": "_field" } ] }
+            """));
+
+        var mutationSite = Assert.Single(model.MutationSites);
+        Assert.Equal("_field", mutationSite.TargetMemberName);
+    }
+
+    [Fact]
+    public void Build_ParsesTryBlocks()
+    {
+        var model = TestSetupBuilder.Build(Setup("""
+            { "tryBlocks": [ { "catchClauseCount": 2, "catchTypeNames": ["System.Exception"] } ] }
+            """));
+
+        var tryBlock = Assert.Single(model.TryBlocks);
+        Assert.Equal(2, tryBlock.CatchClauseCount);
+        Assert.Equal(["System.Exception"], tryBlock.CatchTypeNames);
+    }
+
+    [Fact]
+    public void Build_ParsesMethodBodyShapes()
+    {
+        var model = TestSetupBuilder.Build(Setup("""
+            { "methodBodyShapes": [ { "statementCount": 1, "isSingleBaseCallDelegation": true } ] }
+            """));
+
+        var shape = Assert.Single(model.MethodBodyShapes);
+        Assert.Equal(1, shape.StatementCount);
+        Assert.True(shape.IsSingleBaseCallDelegation);
+    }
+
+    [Fact]
+    public void Build_ParsesDiagnostics()
+    {
+        var model = TestSetupBuilder.Build(Setup("""
+            { "diagnostics": [ { "id": "CS1591", "message": "Missing XML comment" } ] }
+            """));
+
+        var diagnostic = Assert.Single(model.Diagnostics);
+        Assert.Equal("CS1591", diagnostic.Id);
+        Assert.Equal("Missing XML comment", diagnostic.Message);
     }
 }

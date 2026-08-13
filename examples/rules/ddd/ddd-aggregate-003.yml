@@ -1,0 +1,52 @@
+id: DDD-AGGREGATE-003
+name: Aggregate roots must raise a bounded number of domain events
+description: >
+  Aggregate roots must expose between 1 and 3 domain-event-raising methods
+  (named `Raise*`) - none suggests the aggregate never emits events at all;
+  more than three suggests it has outgrown a single aggregate and should be
+  split. Demonstrates the generalized `must_have_count` cardinality assertion
+  over a nested `method` selector.
+severity: warning
+enforcement:
+  classification: deterministic
+tags:
+  - ddd
+  - domain
+  - aggregate
+remediation: >
+  Add a `Raise*` method if the aggregate currently raises none, or split the
+  aggregate's responsibilities if it raises more than three kinds of events.
+illustrative: true
+
+target:
+  kind: inherits_from
+  type: "Contoso.Domain.Entity<*>"
+
+assertions:
+  - must_have_count:
+      selector:
+        kind: method
+        declaring_type: "${FullName}"
+        name: "Raise*"
+      min: 1
+      max: 3
+
+tests:
+  - name: Aggregate root with two Raise* methods
+    setup:
+      types:
+        - name: Order
+          namespace: Contoso.Domain.Entities
+          baseType: "Contoso.Domain.Entity<Guid>"
+          methods:
+            - name: RaisePlaced
+            - name: RaiseCancelled
+    expect: pass
+
+  - name: Aggregate root with no Raise* methods
+    setup:
+      types:
+        - name: Order
+          namespace: Contoso.Domain.Entities
+          baseType: "Contoso.Domain.Entity<Guid>"
+    expect: fail

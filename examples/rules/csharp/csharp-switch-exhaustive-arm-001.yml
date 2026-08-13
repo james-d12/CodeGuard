@@ -1,0 +1,42 @@
+id: CSHARP-SWITCH-EXHAUSTIVE-ARM-001
+name: Switch statements must be exhaustive
+description: >
+  Every switch statement/expression in the repository must have a default or
+  discard arm, so adding a new enum member or type case doesn't silently fall
+  through unhandled. Demonstrates the `switch` selector.
+severity: warning
+enforcement:
+  classification: deterministic
+tags:
+  - csharp
+  - switch
+remediation: >
+  Add a `default:`/`_ =>` arm that either handles the remaining cases or
+  throws an explicit exception.
+illustrative: true
+
+target:
+  kind: repository
+
+assertions:
+  - must_not_exist:
+      selector:
+        kind: switch
+        has_default_or_discard_arm: false
+
+tests:
+  - name: Repository with only exhaustive switches
+    setup:
+      switches:
+        - containingMethod: Handle
+          containingType: Contoso.Domain.OrderStateMachine
+          hasDefaultOrDiscardArm: true
+    expect: pass
+
+  - name: Repository with a non-exhaustive switch
+    setup:
+      switches:
+        - containingMethod: Handle
+          containingType: Contoso.Domain.OrderStateMachine
+          hasDefaultOrDiscardArm: false
+    expect: fail

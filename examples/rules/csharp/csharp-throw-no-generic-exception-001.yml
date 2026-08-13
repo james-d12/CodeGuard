@@ -1,0 +1,41 @@
+id: CSHARP-THROW-NO-GENERIC-EXCEPTION-001
+name: Must not throw the bare System.Exception type
+description: >
+  Throwing the base System.Exception type discards information callers could
+  use to handle failures selectively. Demonstrates the `throw_site` selector.
+severity: warning
+enforcement:
+  classification: deterministic
+tags:
+  - csharp
+  - exceptions
+remediation: >
+  Throw a specific exception type (or a custom domain exception) instead of
+  the bare System.Exception.
+illustrative: true
+
+target:
+  kind: repository
+
+assertions:
+  - must_not_exist:
+      selector:
+        kind: throw_site
+        exception_type: "System.Exception"
+
+tests:
+  - name: Repository with only specific exception types
+    setup:
+      throwSites:
+        - containingMethod: Validate
+          containingType: Contoso.Domain.Order
+          exceptionTypeName: System.ArgumentException
+    expect: pass
+
+  - name: Repository throwing the bare System.Exception type
+    setup:
+      throwSites:
+        - containingMethod: Validate
+          containingType: Contoso.Domain.Order
+          exceptionTypeName: System.Exception
+    expect: fail

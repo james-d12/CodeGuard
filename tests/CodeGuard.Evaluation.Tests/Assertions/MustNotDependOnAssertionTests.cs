@@ -121,4 +121,62 @@ public class MustNotDependOnAssertionTests
         Assert.False(outcome.Passed);
         Assert.Equal("'must_not_depend_on' can only be evaluated against projects.", outcome.Message);
     }
+
+    [Fact]
+    public void Evaluate_Fails_WhenAFieldTypeReferencesForbiddenNamespace()
+    {
+        var field = new FieldModel(
+            "_repository", "Contoso.Infrastructure.OrderRepository", Accessibility.Private, FieldModifiers.None,
+            [], "Contoso.Domain.Order", "Contoso.Domain", "Order.cs", 1, 1);
+        var type = TestModels.Type("Contoso.Domain.Order", fields: [field]);
+        var project = TestModels.Project("Contoso.Domain", types: [type]);
+        var model = TestModels.Repository(project);
+
+        var outcome = new MustNotDependOnAssertion("Contoso.Infrastructure.*").Evaluate(project, model);
+
+        Assert.False(outcome.Passed);
+    }
+
+    [Fact]
+    public void Evaluate_Fails_WhenAPropertyTypeReferencesForbiddenNamespace()
+    {
+        var property = new PropertyModel(
+            "Repository", "Contoso.Infrastructure.OrderRepository", Accessibility.Public, true, false, null, false, false, false,
+            [], "Contoso.Domain.Order", "Contoso.Domain", "Order.cs", 1, 1);
+        var type = TestModels.Type("Contoso.Domain.Order", properties: [property]);
+        var project = TestModels.Project("Contoso.Domain", types: [type]);
+        var model = TestModels.Repository(project);
+
+        var outcome = new MustNotDependOnAssertion("Contoso.Infrastructure.*").Evaluate(project, model);
+
+        Assert.False(outcome.Passed);
+    }
+
+    [Fact]
+    public void Evaluate_Fails_WhenAConstructorParameterReferencesForbiddenNamespace()
+    {
+        var constructor = new ConstructorModel(
+            Accessibility.Public, [new ParameterModel("repository", "Contoso.Infrastructure.OrderRepository", [], false)],
+            [], "Contoso.Domain.Order", "Contoso.Domain", "Order.cs", 1, 1);
+        var type = TestModels.Type("Contoso.Domain.Order", constructors: [constructor]);
+        var project = TestModels.Project("Contoso.Domain", types: [type]);
+        var model = TestModels.Repository(project);
+
+        var outcome = new MustNotDependOnAssertion("Contoso.Infrastructure.*").Evaluate(project, model);
+
+        Assert.False(outcome.Passed);
+    }
+
+    [Fact]
+    public void Evaluate_Fails_WhenATypeAttributeReferencesForbiddenNamespace()
+    {
+        var attribute = new AttributeModel("Contoso.Infrastructure.PersistedAttribute", [], new Dictionary<string, string>());
+        var type = TestModels.Type("Contoso.Domain.Order") with { Attributes = [attribute] };
+        var project = TestModels.Project("Contoso.Domain", types: [type]);
+        var model = TestModels.Repository(project);
+
+        var outcome = new MustNotDependOnAssertion("Contoso.Infrastructure.*").Evaluate(project, model);
+
+        Assert.False(outcome.Passed);
+    }
 }

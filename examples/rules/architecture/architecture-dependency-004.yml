@@ -1,0 +1,62 @@
+id: ARCH-DEPENDENCY-004
+name: Domain projects must only depend on their own namespace and common primitives
+description: >
+  A `*.Domain` project may only reference its own `Contoso.Domain.*` types
+  plus a short allow-list of framework/primitive types - anything else (most
+  commonly a leaked Infrastructure or third-party type) is a layering
+  violation. Demonstrates the allow-list `must_only_depend_on` assertion.
+  Unlike `must_not_depend_on`'s blacklist, this has no implicit BCL exemption
+  (Roslyn renders primitives via their C# keyword alias, e.g. `string`, not a
+  `System.*`-prefixed name) - the allow-list must name them explicitly.
+severity: critical
+enforcement:
+  classification: deterministic
+tags:
+  - architecture
+  - ddd
+  - layering
+remediation: >
+  Remove the disallowed reference, or add its pattern to the allow-list if
+  it's a legitimate common dependency every domain project should permit.
+illustrative: true
+
+target:
+  kind: project
+  name: "*.Domain"
+
+assertions:
+  - must_only_depend_on:
+      types:
+        - "Contoso.Domain.*"
+        - "System.*"
+        - "string"
+        - "int"
+        - "bool"
+        - "void"
+        - "object"
+        - "decimal"
+        - "Guid"
+        - "DateTime"
+        - "DateTimeOffset"
+
+tests:
+  - name: Domain type referencing only its own namespace and primitives
+    setup:
+      projects:
+        - name: Contoso.Domain
+          types:
+            - name: Order
+              namespace: Contoso.Domain
+              baseType: "Contoso.Domain.Entity<Guid>"
+              interfaces: ["Contoso.Domain.IAggregateRoot"]
+    expect: pass
+
+  - name: Domain type referencing an Infrastructure type as its base type
+    setup:
+      projects:
+        - name: Contoso.Domain
+          types:
+            - name: Order
+              namespace: Contoso.Domain
+              baseType: "Contoso.Infrastructure.EfEntity"
+    expect: fail

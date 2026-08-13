@@ -97,7 +97,7 @@ public class TestCommandTests : IDisposable
     }
 
     [Fact]
-    public async Task Run_UnsupportedSetupConcept_ReportsErrored()
+    public async Task Run_MalformedSetup_ReportsErrored()
     {
         WriteRuleFile("errors.yml", """
             id: REPO-001
@@ -108,10 +108,10 @@ public class TestCommandTests : IDisposable
               - must_have_directory:
                   path: src
             tests:
-              - name: Uses an unsupported setup concept
+              - name: Setup type is missing a required 'name'
                 setup:
-                  switches:
-                    - containingMethod: M
+                  types:
+                    - namespace: Contoso.Domain
                 expect: pass
             """);
 

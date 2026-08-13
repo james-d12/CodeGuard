@@ -1,0 +1,42 @@
+id: CSHARP-TRY-CATCH-CLAUSE-LIMIT-001
+name: Try blocks must not have more than three catch clauses
+description: >
+  A try block catching more than three distinct exception types is a sign it's
+  doing too much and should be decomposed. Demonstrates the `try_block`
+  selector's catch-clause-count range filter.
+severity: warning
+enforcement:
+  classification: deterministic
+tags:
+  - csharp
+  - exceptions
+remediation: >
+  Split the try block into smaller, single-purpose try blocks, or consolidate
+  related catch clauses into a common exception hierarchy.
+illustrative: true
+
+target:
+  kind: repository
+
+assertions:
+  - must_not_exist:
+      selector:
+        kind: try_block
+        min_catch_clause_count: 4
+
+tests:
+  - name: Repository with try blocks under the catch-clause limit
+    setup:
+      tryBlocks:
+        - containingMethod: Save
+          containingType: Contoso.Domain.Order
+          catchClauseCount: 2
+    expect: pass
+
+  - name: Repository with a try block exceeding the catch-clause limit
+    setup:
+      tryBlocks:
+        - containingMethod: Save
+          containingType: Contoso.Domain.Order
+          catchClauseCount: 5
+    expect: fail
