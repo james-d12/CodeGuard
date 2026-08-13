@@ -332,6 +332,50 @@ least one `illustrative: true` example rule with embedded `tests:` cases under `
 (15 new rule files — `must_have_field`/`must_not_have_field` share one file as a natural pair),
 verified via `codeguard rules validate`/`codeguard rules test`.
 
+### Post-v1 addition: `must_all_match`/`must_any_match`/`must_none_match` quantifiers, `type` selector `name:` param
+
+Closes the two remaining gaps found by re-auditing `docs/PRIMITIVES.md` against `DefaultParsers.cs`
+(see gotcha #6 above for the self-analysis bug fixes done alongside this): `Any`/`All`/`None`
+quantifier combinators (§20's `MustHaveAll`, §22) and cross-entity correspondence rules (§23's
+`MustHaveCorresponding`). Two additions, kept generic per the same `docs/REFACTORING.md` §2.1
+philosophy as the section above:
+
+- **`must_all_match`/`must_any_match`/`must_none_match`** (`MustAllMatchAssertion`/
+  `MustAnyMatchAssertion`/`MustNoneMatchAssertion`, `CodeGuard.Evaluation.Assertions`): run a nested
+  `assertions:` list (implicit AND, same as a rule's top-level `assertions:`) against every match of
+  a nested `selector:` (same `SelectorTemplateResolver` plumbing as `must_have_count`), then combine
+  per-match results via universal (`all`), existential (`any`), or negative-existential (`none`)
+  quantification. This is the piece of the `And`/`Or`/`Not` vocabulary those three don't cover -
+  they combine conditions for a *single* candidate, these quantify over a *set*. `must_all_match`/
+  `must_none_match` are vacuously true on an empty match set (standard for-all/none-exists
+  semantics); `must_any_match` is false on an empty set (nothing to satisfy "exists").
+  - Parsing these requires the very `AssertionParserRegistry` being constructed (any assertion kind
+    can nest inside one of these) - a genuine self-reference, not just recursion. `DefaultParsers
+    .CreateAssertionRegistry` handles this with a local function closing over a `registry` variable
+    assigned immediately after the list literal completes; the delegate is only ever invoked later,
+    during an actual rule-file parse, by which point `registry` is assigned. Regression-tested by
+    `RuleFileLoaderTests.LoadFromFile_WithMustAllMatch_ParsesNestedSelectorAndNestedAssertions`
+    (nests a `must_have_property` inside a `must_all_match`, i.e. two different assertion kinds).
+- **`type` selector gained a `name:` glob param** (mirroring `method`'s existing `namePattern`) —
+  combined with `must_have_count`, this makes `MustHaveCorresponding`/`MustHaveOneToOne`/
+  `MustHaveOneToMany` fully expressible with **zero new assertion classes**: `must_have_count` +
+  `type: { namespace: ..., name: "${Name}Handler" }` + `exactly: 1` (see
+  `examples/rules/ddd/ddd-cqrs-001.yml`).
+  - Building this example rule surfaced a real bug in `SelectorTemplateResolver`: it only resolved
+    a template string that *was* exactly one placeholder (`^\$\{(\w+)\}$`, anchored), so
+    `"${Name}Handler"` was left completely unresolved (literal, placeholder and all) rather than
+    becoming `"PlaceOrderHandler"`. Fixed to a global `Regex.Replace` so a placeholder can appear
+    anywhere within a larger string, with the same fallback-to-literal behavior as before for an
+    unresolvable placeholder (property not found, or its value is null) - this is what actually
+    makes suffix-based correspondence rules like `must_have_corresponding`'s use case work, not
+    just the new `name:` param on its own. Confirmed against the entire existing `examples/rules/`
+    tree (125 rule files, 235 embedded test cases) with no regressions.
+
+Both additions ship with unit tests (`CodeGuard.Evaluation.Tests/{Assertions,Selectors}`,
+`SelectorTemplateResolverTests`) and `illustrative: true` example rules with embedded `tests:`
+(`examples/rules/ddd/ddd-aggregate-004.yml`, `ddd-cqrs-001.yml`), verified via `codeguard rules
+validate`/`codeguard rules test`.
+
 ## The 11 starter rules
 
 All under `rules/`, all illustrative (`Contoso.*` namespace, `illustrative: true`), matching the
@@ -397,7 +441,7 @@ All under `rules/`, all illustrative (`Contoso.*` namespace, `illustrative: true
    `SelectorParserRegistry`/`AssertionParserRegistry`, there's no intermediate DTO layer. Keep
    this consistent if you extend the schema.
 
-6. **Known limitation — CLI self-analysis (partially resolved).** `codeguard validate` run
+6. **Known limitation — CLI self-analysis (now resolved).** `codeguard validate` run
    against **this tool's own currently-running solution** (`CodeGuard.sln`) used to reliably crash
    with `System.InvalidOperationException: Sequence contains no elements` inside
    `MsBuildAnalysisProvider.ContributeAsync`, because Buildalyzer's default design-time build ran
@@ -409,20 +453,45 @@ All under `rules/`, all illustrative (`Contoso.*` namespace, `illustrative: true
      the swap. `MSBuildWorkspace`'s design-time build runs in a separate out-of-process BuildHost
      and does no `Clean;Build` sequencing across projects, so this class of shared-output-directory
      collision no longer occurs.
-   - **However, self-analysis still doesn't complete end-to-end.** It now gets much further — past
-     type extraction — and crashes in `NoPureDelegationOverrideAnalyzer.Analyze`
-     (`src/CodeGuard.Evaluation/Analyzers/NoPureDelegationOverrideAnalyzer.cs`):
-     `model.Solutions.SelectMany(...).SelectMany(p => p.Types).ToDictionary(t => t.FullName)`
-     assumes a type's `FullName` is unique across the *entire* repository, but every test project in
-     this solution gets an SDK-generated `AutoGeneratedProgram` stub type with an identical name, so
-     with 6+ test projects the dictionary throws `ArgumentException: An item with the same key has
-     already been added`. This is a **pre-existing bug unrelated to MSBuild/Buildalyzer** — it was
-     simply never reached before because the Buildalyzer crash always happened first. Not yet fixed;
-     the fix direction is to key by something that includes the project (e.g. `(ProjectName,
-     FullName)`) rather than `FullName` alone — any other analyzer/selector doing a bare
-     `.ToDictionary(t => t.FullName)` across `model.Solutions.SelectMany(s => s.Projects)` likely has
-     the same latent bug.
-   - Still does **not** affect validating any other repository without this same-name collision —
+   - **A second crash then surfaced further into the pipeline, and is now also fixed.** Past type
+     extraction, `NoPureDelegationOverrideAnalyzer.Analyze`
+     (`src/CodeGuard.Evaluation/Analyzers/NoPureDelegationOverrideAnalyzer.cs`) did
+     `model.Solutions.SelectMany(...).SelectMany(p => p.Types).ToDictionary(t => t.FullName)`,
+     assuming a type's `FullName` is unique across the *entire* repository — but every test project
+     in this solution gets an SDK-generated `AutoGeneratedProgram` stub type with an identical name,
+     so with 6+ test projects the dictionary threw `ArgumentException: An item with the same key has
+     already been added`. **Fixed**: the dictionary is now keyed by `(ProjectName, FullName)`
+     instead of bare `FullName`, with a regression test (`NoPureDelegationOverrideAnalyzerTests
+     .Analyze_DoesNotThrow_WhenTwoProjectsShareATypeFullName`) covering the multi-project collision
+     that caused the crash.
+   - **A sibling analyzer had the exact same assumption, found while fixing the above.**
+     `ImmutableMutationAnalyzer` (`src/CodeGuard.Evaluation/Analyzers/ImmutableMutationAnalyzer.cs`)
+     built its record-name set as a `HashSet<string>` keyed on bare `FullName` — this doesn't throw
+     on a repo-wide collision (unlike `ToDictionary`), so instead of crashing it silently
+     misattributed mutation-site violations to the wrong project when two projects had an
+     identically-named type. **Fixed** the same way (`HashSet<(string ProjectName, string
+     FullName)>`), with an analogous regression test
+     (`ImmutableMutationAnalyzerTests.Analyze_AttributesCorrectly_WhenTwoProjectsShareATypeFullName`).
+     A repo-wide search turned up no other analyzer with this same-class bug — see the other
+     `Analyzers/*.cs` files, which either already key by the composite tuple, use containers that
+     tolerate duplicates by design (`GroupBy`/`FirstOrDefault`), or intentionally traverse
+     cross-project by design (documented in their own class comments).
+   - **Self-analysis now completes end-to-end with zero evaluation errors** — confirmed empirically
+     (`codeguard validate --path .` against this repo). One more fix was needed to get a *plain*
+     `validate --path .` (no `--solution` override) to this state:
+     `Cli/Support/SolutionFileLocator.cs`'s directory-skip list didn't exclude `.claude`, and a
+     Claude Code git worktree checkout can live at `.claude/worktrees/...` — a full duplicate copy
+     of this repo, complete with its own `CodeGuard.sln` and identically-named projects. Without
+     skipping it, `validate` discovered *two* solutions and re-tripped the same
+     `(ProjectName, FullName)`-uniqueness assumption one level up, across solutions rather than
+     within one. `.claude` is now in the skip list alongside `bin`/`obj`/`.git`/etc.
+   - **Residual caveat, not yet hit in practice:** `(ProjectName, FullName)` is unique within one
+     solution and, empirically, across this repo's own solutions, but nothing *guarantees* it across
+     an arbitrary multi-solution repo where the same project name legitimately appears in two
+     different `.sln` files on disk (a real repo layout, not a duplicate worktree checkout). Not a
+     known failure, just an unproven edge case worth keeping in mind if a similar collision
+     resurfaces.
+   - Still does **not** affect validating any other repository without a same-name collision —
      proven by `CodeGuard.IntegrationTests` (a real, separate 3-project solution analyzed
      correctly, real violations detected).
 
@@ -530,13 +599,24 @@ All under `rules/`, all illustrative (`Contoso.*` namespace, `illustrative: true
 
 ## Things NOT done (explicitly deferred, per the plan)
 
-- `Any`/`All`/`None` condition combinators (only `And`/`Or`/`Not`).
-- `when`/`and`/`or`/`not` YAML parsing — `AndCondition`/`OrCondition`/`NotCondition` exist and are
-  unit-tested, but there's no parser registry or schema support to author them in a rule YAML
-  file yet (see "Selectors and assertions implemented" section above).
-- Method-body assertions (`MustCall`, `MustAwait`, etc.), cross-entity assertions
-  (`MustHaveCorresponding`), naming/cardinality assertions, package version-range constraints
-  (`MustUsePackageVersionAtLeast`), property-setter assertions (`MustNotHaveSetter`).
+- `when`/`and`/`or`/`not` YAML parsing is **done** — `ConditionParserRegistry`
+  (`CodeGuard.Configuration.Parsing`) wires `AndCondition`/`OrCondition`/`NotCondition` into
+  `RuleDocumentParser`/`RuleDefinition.When`/`RuleEvaluator`, with schema support (`whenNode` in
+  `rule.schema.json`) and tests (`ConditionCompositionTests`, `ConditionParserRegistryTests`) — this
+  bullet was stale. The `Any`/`All`/`None` *quantifier* gap (over a set of candidates, as opposed to
+  `And`/`Or`/`Not`'s single-candidate conditions) is also **done** — see `must_all_match`/
+  `must_any_match`/`must_none_match` in the "Post-v1 addition" section above.
+- Cross-entity correspondence (`MustHaveCorresponding`/`MustHaveOneToOne`/`MustHaveOneToMany`) is
+  **done** — fully expressible via the existing `must_have_count` plus the `type` selector's new
+  `name:` param, no new assertion kind needed (see the same "Post-v1 addition" section above).
+  `MustHaveMatching`/`MustHaveRelated` (undifferentiated from `MustHaveCorresponding` in
+  PRIMITIVES.md, no separate example given) remain unimplemented as named kinds pending a concrete
+  use case.
+- Method-body assertions (`MustCall`, `MustAwait`, etc.), naming-convention assertions
+  (`MustUsePascalCase` etc. — already expressible via `must_match_name`'s regex, so low priority),
+  generic relationship assertions (`MustBeRelatedTo`/`MustHaveParent`/ownership-graph concepts —
+  no concrete use case yet), package version-range constraints (`MustUsePackageVersionAtLeast`),
+  property-setter assertions (`MustNotHaveSetter`).
 - Non-C# analysis providers (YAML/JSON/Terraform/K8s/etc.) — architecture left open via
   `IAnalysisProvider`, nothing implemented.
 - A dedicated standards-file format was never built. The `RuleDefinition.Standard` field and the

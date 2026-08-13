@@ -63,6 +63,20 @@ public class SolutionFileLocatorTests : IDisposable
     }
 
     [Fact]
+    public void Resolve_SkipsClaudeDirectory_WhichMayContainWorktreeCheckouts()
+    {
+        var claudeWorktreeDir = Directory.CreateDirectory(Path.Combine(_repoDir, ".claude", "worktrees", "some-branch"));
+        File.WriteAllText(Path.Combine(claudeWorktreeDir.FullName, "ShouldBeSkipped.sln"), "");
+
+        var includedPath = Path.Combine(_repoDir, "Included.sln");
+        File.WriteAllText(includedPath, "");
+
+        var resolved = SolutionFileLocator.Resolve(_repoDir, []);
+
+        Assert.Equal([includedPath], resolved);
+    }
+
+    [Fact]
     public void Resolve_WithExplicitSlnxPath_ReturnsResolvedFullPath()
     {
         var slnxPath = Path.Combine(_repoDir, "Explicit.slnx");

@@ -41,4 +41,31 @@ public class TypeSelectorTests
 
         Assert.Empty(candidates);
     }
+
+    [Fact]
+    public void SelectCandidates_FiltersByName()
+    {
+        var matching = TestModels.Type("Contoso.Application.Commands.PlaceOrderHandler");
+        var other = TestModels.Type("Contoso.Application.Commands.PlaceOrder");
+        var model = TestModels.Repository(TestModels.Project("Contoso.Application", types: [matching, other]));
+
+        var candidates = new TypeSelector(namePattern: "*Handler").SelectCandidates(model).Cast<TypeModel>().ToList();
+
+        var type = Assert.Single(candidates);
+        Assert.Equal("Contoso.Application.Commands.PlaceOrderHandler", type.FullName);
+    }
+
+    [Fact]
+    public void SelectCandidates_CombinesNamespaceAndNamePatterns_RequiringBothToMatch()
+    {
+        var matching = TestModels.Type("Contoso.Application.Commands.PlaceOrderHandler");
+        var wrongNamespace = TestModels.Type("Contoso.Domain.Commands.PlaceOrderHandler");
+        var wrongName = TestModels.Type("Contoso.Application.Commands.PlaceOrder");
+        var model = TestModels.Repository(TestModels.Project("Contoso.Application", types: [matching, wrongNamespace, wrongName]));
+
+        var candidates = new TypeSelector(namespacePattern: "Contoso.Application.*", namePattern: "*Handler").SelectCandidates(model).Cast<TypeModel>().ToList();
+
+        var type = Assert.Single(candidates);
+        Assert.Equal("Contoso.Application.Commands.PlaceOrderHandler", type.FullName);
+    }
 }

@@ -85,4 +85,40 @@ public class SelectorTemplateResolverTests
 
         Assert.Equal("Class", resolved["value"]!.GetValue<string>());
     }
+
+    [Fact]
+    public void Resolve_ResolvesPlaceholder_WhenEmbeddedInALargerString()
+    {
+        // Regression test: cross-entity correspondence rules (e.g. "every Command must have a
+        // corresponding {Name}Handler") need a placeholder embedded in a literal suffix/prefix,
+        // not just a value that IS exactly one placeholder.
+        var candidate = TestModels.Type("Contoso.Application.Commands.PlaceOrder");
+        var template = new JsonObject { ["name"] = "${Name}Handler" };
+
+        var resolved = SelectorTemplateResolver.Resolve(template, candidate);
+
+        Assert.Equal("PlaceOrderHandler", resolved["name"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public void Resolve_ResolvesMultiplePlaceholders_WithinTheSameString()
+    {
+        var candidate = TestModels.Type("Contoso.Domain.Order");
+        var template = new JsonObject { ["value"] = "${Namespace}.Generated.${Name}Dto" };
+
+        var resolved = SelectorTemplateResolver.Resolve(template, candidate);
+
+        Assert.Equal("Contoso.Domain.Generated.OrderDto", resolved["value"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public void Resolve_LeavesUnmatchedEmbeddedPlaceholder_AsLiteralText()
+    {
+        var candidate = TestModels.Type("Contoso.Domain.Order");
+        var template = new JsonObject { ["value"] = "${Name}-${NoSuchProperty}" };
+
+        var resolved = SelectorTemplateResolver.Resolve(template, candidate);
+
+        Assert.Equal("Order-${NoSuchProperty}", resolved["value"]!.GetValue<string>());
+    }
 }

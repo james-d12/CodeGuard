@@ -5,7 +5,11 @@ namespace CodeGuard.Evaluation.Assertions;
 
 internal static class SelectorTemplateResolver
 {
-    private static readonly Regex PlaceholderPattern = new(@"^\$\{(\w+)\}$");
+    // Matches every `${PropName}` occurrence anywhere in a string, not just a value that IS
+    // exactly one placeholder - this lets a nested selector template express something like
+    // `name: "${Name}Handler"` (cross-entity correspondence by suffix), not only `name: "${Name}"`
+    // verbatim.
+    private static readonly Regex PlaceholderPattern = new(@"\$\{(\w+)\}");
 
     public static JsonObject Resolve(JsonObject template, object candidate) =>
         (JsonObject)ResolveNode(template, candidate)!;
@@ -19,16 +23,10 @@ internal static class SelectorTemplateResolver
         _ => node?.DeepClone()
     };
 
-    private static string ResolveString(string value, object candidate)
-    {
-        var match = PlaceholderPattern.Match(value);
-        if (!match.Success)
+    private static string ResolveString(string value, object candidate) =>
+        PlaceholderPattern.Replace(value, match =>
         {
-            return value;
-        }
-
-        var propertyName = match.Groups[1].Value;
-        var property = candidate.GetType().GetProperty(propertyName);
-        return property?.GetValue(candidate)?.ToString() ?? value;
-    }
+            var property = candidate.GetType().GetProperty(match.Groups[1].Value);
+            return property?.GetValue(candidate)?.ToString() ?? match.Value;
+        });
 }
