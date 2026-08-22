@@ -82,4 +82,30 @@ public class ImmutableMutationAnalyzerTests
 
         Assert.Equal("immutable-mutation", analyzer.Name);
     }
+
+    [Fact]
+    public void Analyze_AttributesCorrectly_WhenTwoProjectsShareATypeFullName()
+    {
+        // Regression test: this analyzer built its record-name set from bare FullName alone, so a
+        // record type in one project and an identically-named non-record (or out-of-pattern) type
+        // in another project could collide - not a crash (HashSet tolerates duplicates), but a
+        // silent misattribution, since Contains() ignored which project a mutation site belonged
+        // to. It's now keyed by (ProjectName, FullName).
+        const string sharedFullName = "Contoso.Domain.Money";
+        var recordType = TestModels.Type(sharedFullName, kind: TypeKind.Record, projectName: "Contoso.Domain");
+        var classType = TestModels.Type(sharedFullName, kind: TypeKind.Class, projectName: "Contoso.Other");
+        var model = TestModels.RepositoryWithFacts(
+            projects: [TestModels.Project("Contoso.Domain", types: [recordType]), TestModels.Project("Contoso.Other", types: [classType])],
+            mutationSites:
+            [
+                new MutationSiteModel(ContainingMethod: "Recalculate", ContainingType: sharedFullName, TargetMemberName: "Amount", ProjectName: "Contoso.Domain", FilePath: "Domain/Money.cs", Line: 10),
+                new MutationSiteModel(ContainingMethod: "Recalculate", ContainingType: sharedFullName, TargetMemberName: "Amount", ProjectName: "Contoso.Other", FilePath: "Other/Money.cs", Line: 20)
+            ]);
+        var analyzer = new ImmutableMutationAnalyzer("*");
+
+        var violations = analyzer.Analyze(model).ToList();
+
+        var violation = Assert.Single(violations);
+        Assert.Equal("Domain/Money.cs", violation.FilePath);
+    }
 }

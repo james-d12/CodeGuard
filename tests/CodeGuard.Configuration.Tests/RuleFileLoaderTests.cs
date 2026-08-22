@@ -100,6 +100,36 @@ public class RuleFileLoaderTests : IDisposable
     }
 
     [Fact]
+    public void LoadFromFile_WithMustAllMatch_ParsesNestedSelectorAndNestedAssertions()
+    {
+        // Regression test for DefaultParsers.CreateAssertionRegistry's self-referential wiring:
+        // must_all_match/must_any_match/must_none_match parse a nested `assertions:` list via the
+        // very AssertionParserRegistry being constructed, using a deferred (registry-not-yet-
+        // assigned-at-construction-time) local function. This exercises that end to end, including
+        // nesting a different assertion kind (must_have_property) inside the quantifier.
+        var file = WriteRuleFile("with-must-all-match.yml", """
+            id: DDD-AGGREGATE-004
+            name: Some quantifier rule
+            target:
+              kind: class
+              namespace: "Contoso.Domain.Entities"
+            assertions:
+              - must_all_match:
+                  selector:
+                    kind: method
+                    declaring_type: "${FullName}"
+                  assertions:
+                    - must_have_property:
+                        name: Ignored
+            """);
+
+        var rule = CreateLoader().LoadFromFile(file);
+
+        var assertion = Assert.Single(rule.Assertions!);
+        Assert.Equal("must_all_match", assertion.Kind);
+    }
+
+    [Fact]
     public void LoadFromFile_WithAnalyzer_ParsesAnalyzer()
     {
         var file = WriteRuleFile("with-analyzer.yml", """
