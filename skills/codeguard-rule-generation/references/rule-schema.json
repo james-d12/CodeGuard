@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://ruleengine.internal/schemas/rule.schema.json",
-  "title": "RuleEngine rule definition",
+  "$id": "https://codeguard.internal/schemas/rule.schema.json",
+  "title": "CodeGuard rule definition",
   "type": "object",
   "additionalProperties": false,
   "required": ["id", "name"],

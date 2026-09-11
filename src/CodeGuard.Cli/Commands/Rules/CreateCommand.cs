@@ -8,7 +8,7 @@ namespace CodeGuard.Cli.Commands.Rules;
 
 /// <summary>
 /// Interactively scaffolds a new rule YAML file. Deliberately doesn't hardcode per-selector/
-/// per-assertion parameter shapes (there are 14 target selector kinds and ~35 assertion kinds in
+/// per-assertion parameter shapes (there are 21 target selector kinds and 45 assertion kinds in
 /// <see cref="DefaultParsers"/>, each with different parameter names) - instead drives a generic
 /// kind-picker + key/value parameter loop off <see cref="SelectorParserRegistry.Kinds"/>/
 /// <see cref="AssertionParserRegistry.Kinds"/>, so new kinds are picked up automatically. Only

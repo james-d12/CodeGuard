@@ -249,7 +249,7 @@ mirrored the move (`CheckRulesCommandTests` → `tests/CodeGuard.Cli.Tests/Rules
 
 A new `rules create` command (`Rules/CreateCommand.cs`) interactively scaffolds a rule YAML file.
 Rather than hardcoding each target-selector/assertion kind's parameter shape into the CLI (there
-are 14 selector kinds and ~35 assertion kinds in `DefaultParsers`, each with different parameter
+are 21 selector kinds and 45 assertion kinds in `DefaultParsers`, each with different parameter
 names), it drives a generic kind-picker + key/value parameter loop off
 `SelectorParserRegistry.Kinds`/`AssertionParserRegistry.Kinds` (new one-line accessors added to
 both registries, backed by the `_byKind` dictionary each already had) — so it automatically
