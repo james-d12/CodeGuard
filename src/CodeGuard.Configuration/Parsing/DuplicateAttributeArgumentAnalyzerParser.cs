@@ -1,7 +1,8 @@
-using System.Text.Json.Nodes;
 using CodeGuard.Configuration.Capabilities;
+using CodeGuard.Configuration.Validation;
 using CodeGuard.Evaluation.Analyzers;
 using CodeGuard.RuleModel.Analyzers;
+using System.Text.Json.Nodes;
 
 namespace CodeGuard.Configuration.Parsing;
 
@@ -19,6 +20,7 @@ public sealed class DuplicateAttributeArgumentAnalyzerParser : IAnalyzerParser
 
     public ICustomAnalyzer Parse(JsonObject node) => new DuplicateAttributeArgumentAnalyzer(
         node.GetOptionalString("attribute_name") ?? throw new RuleParsingException(
-            "'duplicate-attribute-argument' requires an 'attribute_name' pattern."),
+                "'duplicate-attribute-argument' requires an 'attribute_name' pattern.",
+                RuleErrorCodes.InvalidParameter, "/attribute_name"),
         node.GetOptionalInt("argument_index") ?? 0);
 }

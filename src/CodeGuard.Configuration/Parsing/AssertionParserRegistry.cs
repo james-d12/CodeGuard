@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using CodeGuard.Configuration.Capabilities;
+using CodeGuard.Configuration.Validation;
 using CodeGuard.RuleModel.Assertions;
 
 namespace CodeGuard.Configuration.Parsing;
@@ -25,7 +26,9 @@ public sealed class AssertionParserRegistry(IEnumerable<IAssertionParser> parser
         var (kind, parametersNode) = assertionEntry.Single();
         if (!_byKind.TryGetValue(kind, out var parser))
         {
-            throw new RuleParsingException($"Unknown assertion kind '{kind}'.");
+            throw new RuleParsingException(
+                $"Unknown assertion kind '{kind}'.{KindSuggestion.For(kind, _byKind.Keys)}",
+                RuleErrorCodes.UnknownAssertionKind);
         }
 
         var parameters = parametersNode?.AsObject() ?? new JsonObject();

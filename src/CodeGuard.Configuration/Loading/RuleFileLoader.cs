@@ -74,7 +74,10 @@ public sealed class RuleFileLoader(
             {
                 issues.Add(new RuleFileIssue(
                     file,
-                    [$"Duplicate rule id '{rule.Id}' (already defined in '{existingFile}')."]));
+                    [new RuleValidationError(
+                        RuleErrorCodes.DuplicateRuleId,
+                        "/id",
+                        $"Duplicate rule id '{rule.Id}' (already defined in '{existingFile}').")]));
                 continue;
             }
 
@@ -101,7 +104,7 @@ public sealed class RuleFileLoader(
     }
 
     /// <summary>Non-throwing counterpart to <see cref="LoadFromFile"/>, used to build aggregate reports.</summary>
-    public bool TryLoadFromFile(string filePath, out RuleDefinition? rule, out IReadOnlyList<string> errors)
+    public bool TryLoadFromFile(string filePath, out RuleDefinition? rule, out IReadOnlyList<RuleValidationError> errors)
     {
         try
         {
@@ -112,7 +115,16 @@ public sealed class RuleFileLoader(
         catch (Exception ex) when (ex is RuleSchemaValidationException or RuleParsingException or RuleLoadException)
         {
             rule = null;
-            errors = ex is RuleSchemaValidationException schemaEx ? schemaEx.Errors : [ex.Message];
+
+            // Schema validation reports every violation at once; parsing and loading fail on the
+            // first problem, so those yield a single error.
+            errors = ex switch
+            {
+                RuleSchemaValidationException schemaEx => schemaEx.Errors,
+                RuleParsingException parseEx => [parseEx.ToValidationError()],
+                _ => [new RuleValidationError(RuleErrorCodes.UnreadableRuleFile, null, ex.Message)]
+            };
+
             _logger.LogWarning(ex, "Rule file {FilePath} failed to load: {ErrorCount} error(s)", filePath, errors.Count);
             return false;
         }

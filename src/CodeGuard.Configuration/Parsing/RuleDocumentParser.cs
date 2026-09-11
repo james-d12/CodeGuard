@@ -1,9 +1,10 @@
-using System.Text.Json.Nodes;
+using CodeGuard.Configuration.Validation;
 using CodeGuard.RuleModel.Analyzers;
 using CodeGuard.RuleModel.Assertions;
 using CodeGuard.RuleModel.Conditions;
 using CodeGuard.RuleModel.Rules;
 using CodeGuard.RuleModel.Selectors;
+using System.Text.Json.Nodes;
 
 namespace CodeGuard.Configuration.Parsing;
 
@@ -25,7 +26,9 @@ public static class RuleDocumentParser
         {
             if (document["target"] is not null || document["assertions"] is not null)
             {
-                throw new RuleParsingException("A rule cannot specify both 'analyzer' and 'target'/'assertions'.");
+                throw new RuleParsingException(
+                "A rule cannot specify both 'analyzer' and 'target'/'assertions'.",
+                RuleErrorCodes.InvalidParameter);
             }
 
             analyzer = analyzerParsers.Parse(analyzerNode);
@@ -33,9 +36,13 @@ public static class RuleDocumentParser
         else
         {
             var targetNode = document["target"]?.AsObject()
-                ?? throw new RuleParsingException("Rule is missing required 'target'.");
+                ?? throw new RuleParsingException(
+                "Rule is missing required 'target'.",
+                RuleErrorCodes.InvalidParameter);
             var assertionsNode = document["assertions"]?.AsArray()
-                ?? throw new RuleParsingException("Rule is missing required 'assertions'.");
+                ?? throw new RuleParsingException(
+                "Rule is missing required 'assertions'.",
+                RuleErrorCodes.InvalidParameter);
 
             target = selectorParsers.Parse(targetNode);
             when = document["when"]?.AsObject() is { } whenNode ? conditionParsers.Parse(whenNode) : null;
@@ -71,7 +78,9 @@ public static class RuleDocumentParser
     private static RuleTestCase ParseTestCase(JsonObject node) =>
         new(
             node.GetRequiredString("name"),
-            node["setup"]?.AsObject() ?? throw new RuleParsingException("Test case is missing required 'setup'."),
+            node["setup"]?.AsObject() ?? throw new RuleParsingException(
+                "Test case is missing required 'setup'.",
+                RuleErrorCodes.InvalidParameter),
             EnumParsing.ParseSnakeCase<TestExpectation>(node.GetRequiredString("expect")));
 
     private static Severity ParseSeverity(JsonObject document) =>

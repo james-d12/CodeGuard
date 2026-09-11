@@ -1,7 +1,8 @@
-using System.Text.Json.Nodes;
 using CodeGuard.Configuration.Capabilities;
+using CodeGuard.Configuration.Validation;
 using CodeGuard.Evaluation.Assertions;
 using CodeGuard.RuleModel.Assertions;
+using System.Text.Json.Nodes;
 
 namespace CodeGuard.Configuration.Parsing;
 
@@ -22,7 +23,9 @@ public sealed class MustAnyMatchAssertionParser(
     public IAssertion Parse(JsonObject parameters) =>
         new MustAnyMatchAssertion(
             parameters["selector"]?.AsObject()
-                ?? throw new RuleParsingException("'must_any_match' requires a nested 'selector'."),
+                ?? throw new RuleParsingException(
+                "'must_any_match' requires a nested 'selector'.",
+                RuleErrorCodes.InvalidParameter, "/selector"),
             selectorParsers.Parse,
             MustAllMatchAssertionParser.ParseNestedAssertions(parameters, "must_any_match", assertionParser));
 }

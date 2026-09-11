@@ -1,7 +1,8 @@
-using System.Text.Json.Nodes;
 using CodeGuard.Configuration.Capabilities;
+using CodeGuard.Configuration.Validation;
 using CodeGuard.Evaluation.Assertions;
 using CodeGuard.RuleModel.Assertions;
+using System.Text.Json.Nodes;
 
 namespace CodeGuard.Configuration.Parsing;
 
@@ -22,17 +23,23 @@ public sealed class MustAllMatchAssertionParser(
     public IAssertion Parse(JsonObject parameters) =>
         new MustAllMatchAssertion(
             parameters["selector"]?.AsObject()
-                ?? throw new RuleParsingException("'must_all_match' requires a nested 'selector'."),
+                ?? throw new RuleParsingException(
+                "'must_all_match' requires a nested 'selector'.",
+                RuleErrorCodes.InvalidParameter, "/selector"),
             selectorParsers.Parse,
             ParseNestedAssertions(parameters, "must_all_match", assertionParser));
 
     internal static List<IAssertion> ParseNestedAssertions(JsonObject parameters, string kind, Func<JsonObject, IAssertion> assertionParser)
     {
         var assertionsNode = parameters["assertions"]?.AsArray()
-            ?? throw new RuleParsingException($"'{kind}' requires a nested 'assertions' list.");
+            ?? throw new RuleParsingException(
+                $"'{kind}' requires a nested 'assertions' list.",
+                RuleErrorCodes.InvalidParameter, "/assertions");
         if (assertionsNode.Count == 0)
         {
-            throw new RuleParsingException($"'{kind}' requires at least one nested assertion.");
+            throw new RuleParsingException(
+                $"'{kind}' requires at least one nested assertion.",
+                RuleErrorCodes.InvalidParameter);
         }
 
         return assertionsNode.Select(node => assertionParser(node!.AsObject())).ToList();

@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using CodeGuard.Configuration.Validation;
 
 namespace CodeGuard.Configuration.Parsing;
 
@@ -6,7 +7,10 @@ internal static class JsonNodeExtensions
 {
     public static string GetRequiredString(this JsonObject node, string property) =>
         node[property]?.GetValue<string>()
-            ?? throw new RuleParsingException($"Missing required property '{property}'.");
+            ?? throw new RuleParsingException(
+                $"Missing required property '{property}'.",
+                RuleErrorCodes.InvalidParameter,
+                $"/{property}");
 
     public static string? GetOptionalString(this JsonObject node, string property) =>
         node[property]?.GetValue<string>();

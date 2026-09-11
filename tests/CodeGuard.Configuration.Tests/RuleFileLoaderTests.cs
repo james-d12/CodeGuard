@@ -308,8 +308,10 @@ public class RuleFileLoaderTests : IDisposable
         Assert.False(report.IsValid);
         Assert.Equal(2, report.Issues.Count);
         Assert.Empty(report.Rules);
-        Assert.Contains(report.Issues, i => i.Errors.Any(e => e.Contains("not_a_real_kind")));
-        Assert.Contains(report.Issues, i => i.Errors.Any(e => e.Contains("not_a_real_assertion")));
+        Assert.Contains(report.Issues, i => i.Errors.Any(e =>
+            e.Code == RuleErrorCodes.UnknownSelectorKind && e.Message.Contains("not_a_real_kind", StringComparison.Ordinal)));
+        Assert.Contains(report.Issues, i => i.Errors.Any(e =>
+            e.Code == RuleErrorCodes.UnknownAssertionKind && e.Message.Contains("not_a_real_assertion", StringComparison.Ordinal)));
     }
 
     [Fact]
@@ -323,8 +325,11 @@ public class RuleFileLoaderTests : IDisposable
         Assert.False(report.IsValid);
         Assert.Single(report.Rules);
         Assert.Single(report.Issues);
-        Assert.Contains("DDD-ENTITY-001", report.Issues[0].Errors[0]);
-        Assert.Contains(fileA, report.Issues[0].Errors[0]);
+        var error = report.Issues[0].Errors[0];
+        Assert.Equal(RuleErrorCodes.DuplicateRuleId, error.Code);
+        Assert.Equal("/id", error.Path);
+        Assert.Contains("DDD-ENTITY-001", error.Message, StringComparison.Ordinal);
+        Assert.Contains(fileA, error.Message, StringComparison.Ordinal);
     }
 
     [Fact]

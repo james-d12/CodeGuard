@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using CodeGuard.Configuration.Capabilities;
+using CodeGuard.Configuration.Validation;
 using CodeGuard.RuleModel.Selectors;
 
 namespace CodeGuard.Configuration.Parsing;
@@ -21,7 +22,9 @@ public sealed class SelectorParserRegistry(IEnumerable<ISelectorParser> parsers)
         var kind = node.GetRequiredString("kind");
         if (!_byKind.TryGetValue(kind, out var parser))
         {
-            throw new RuleParsingException($"Unknown target selector kind '{kind}'.");
+            throw new RuleParsingException(
+                $"Unknown target selector kind '{kind}'.{KindSuggestion.For(kind, _byKind.Keys)}",
+                RuleErrorCodes.UnknownSelectorKind);
         }
 
         return parser.Parse(node);

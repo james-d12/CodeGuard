@@ -1,8 +1,9 @@
-using System.Text.Json.Nodes;
-using CodeGuard.Configuration.Capabilities;
 using CodeGuard.Analysis.AnalysisModel;
+using CodeGuard.Configuration.Capabilities;
+using CodeGuard.Configuration.Validation;
 using CodeGuard.Evaluation.Assertions;
 using CodeGuard.RuleModel.Assertions;
+using System.Text.Json.Nodes;
 
 namespace CodeGuard.Configuration.Parsing;
 
@@ -23,7 +24,9 @@ public sealed class MustHaveConstructorAssertionParser : IAssertionParser
         var accessibilities = parameters.GetStringArray("accessibility");
         if (accessibilities.Count == 0)
         {
-            throw new RuleParsingException("'must_have_constructor' requires at least one 'accessibility' value.");
+            throw new RuleParsingException(
+                "'must_have_constructor' requires at least one 'accessibility' value.",
+                RuleErrorCodes.InvalidParameter, "/accessibility");
         }
 
         return new MustHaveConstructorAssertion(

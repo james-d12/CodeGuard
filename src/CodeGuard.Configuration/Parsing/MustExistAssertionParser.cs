@@ -1,7 +1,8 @@
-using System.Text.Json.Nodes;
 using CodeGuard.Configuration.Capabilities;
+using CodeGuard.Configuration.Validation;
 using CodeGuard.Evaluation.Assertions;
 using CodeGuard.RuleModel.Assertions;
+using System.Text.Json.Nodes;
 
 namespace CodeGuard.Configuration.Parsing;
 
@@ -17,6 +18,8 @@ public sealed class MustExistAssertionParser(SelectorParserRegistry selectorPars
         ]);
 
     public IAssertion Parse(JsonObject parameters) => new MustExistAssertion(
-        parameters["selector"]?.AsObject() ?? throw new RuleParsingException("'must_exist' requires a nested 'selector'."),
+        parameters["selector"]?.AsObject() ?? throw new RuleParsingException(
+                "'must_exist' requires a nested 'selector'.",
+                RuleErrorCodes.InvalidParameter, "/selector"),
         selectorParsers.Parse);
 }
