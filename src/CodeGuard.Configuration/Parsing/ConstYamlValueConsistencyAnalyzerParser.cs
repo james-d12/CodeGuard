@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using CodeGuard.Configuration.Capabilities;
 using CodeGuard.Evaluation.Analyzers;
 using CodeGuard.RuleModel.Analyzers;
 
@@ -7,6 +8,16 @@ namespace CodeGuard.Configuration.Parsing;
 public sealed class ConstYamlValueConsistencyAnalyzerParser : IAnalyzerParser
 {
     public string Kind => "const-yaml-value-consistency";
+
+    public CapabilityDescriptor Descriptor => new(
+        "const-yaml-value-consistency",
+        "Cross-checks a C# const against a single field in a YAML file. The only YAML-aware check; there is no generic YAML field assertion.",
+        [
+            ParameterDescriptor.RequiredGlob("const_type", "Type declaring the const."),
+            new ParameterDescriptor("const_name", ParameterType.String, true, "Const field name."),
+            ParameterDescriptor.RequiredGlob("yaml_file_pattern", "YAML file to read."),
+            new ParameterDescriptor("yaml_field_path", ParameterType.String, true, "Dotted path to the YAML field.")
+        ]);
 
     public ICustomAnalyzer Parse(JsonObject node) => new ConstYamlValueConsistencyAnalyzer(
         node.GetOptionalString("const_type") ?? throw new RuleParsingException(

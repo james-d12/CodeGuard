@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using CodeGuard.Configuration.Capabilities;
 using CodeGuard.RuleModel.Analyzers;
 
 namespace CodeGuard.Configuration.Parsing;
@@ -6,6 +7,12 @@ namespace CodeGuard.Configuration.Parsing;
 public sealed class AnalyzerParserRegistry(IEnumerable<IAnalyzerParser> parsers)
 {
     private readonly Dictionary<string, IAnalyzerParser> _byKind = parsers.ToDictionary(p => p.Kind);
+
+    public IReadOnlyCollection<string> Kinds => _byKind.Keys;
+
+    /// <summary>Every registered analyzer's declared capability, ordered by kind.</summary>
+    public IReadOnlyList<CapabilityDescriptor> Descriptors =>
+        field ??= _byKind.Values.Select(p => p.Descriptor).OrderBy(d => d.Kind, StringComparer.Ordinal).ToList();
 
     public ICustomAnalyzer Parse(JsonObject node)
     {
