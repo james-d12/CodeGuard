@@ -93,6 +93,14 @@ jobs:
             "${{ runner.temp }}/scanner/dotnet-sonarscanner" end \
               /d:sonar.token="$SONAR_TOKEN"
 
+      - name: Validate and test example rules
+        run: |
+          dotnet run --project src/CodeGuard.Cli --no-build -- \
+            rules validate --rules-source examples/rules
+
+          dotnet run --project src/CodeGuard.Cli --no-build -- \
+            rules test --rules-source examples/rules
+
       - name: Publish
         run: dotnet publish --no-restore
   
