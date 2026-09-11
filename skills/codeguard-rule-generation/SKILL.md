@@ -20,8 +20,9 @@ Read these once — they are the authoritative, current description of what Code
 supports. Don't rely on prior knowledge of the schema, and don't guess at a kind not listed there:
 
 - `references/rule-schema.json` — the JSON Schema every rule document must validate against.
-- `references/selectors.md` — the fourteen valid `target.kind` values and their params.
-- `references/assertions.md` — the thirty-four valid assertion kinds and their params, plus `when`.
+- `references/selectors.md` — the twenty-one valid `target.kind` values and their params.
+- `references/assertions.md` — the forty-five valid assertion kinds and their params, plus `when`
+  and the `must_all_match`/`must_any_match`/`must_none_match`/`must_have_count` quantifiers.
 - `references/analyzers.md` — the eleven valid `analyzer.kind` values and their params.
 - `references/examples.md` — worked examples of every rule shape, and the `tests` field.
 
@@ -131,9 +132,27 @@ explicitly example/sample content rather than a mandatory requirement.
 * Set `enforcement.classification` per the rules above.
 * Include `remediation` guidance where useful.
 * Add relevant `tags` and `documentation` references where available.
-* Add a `tests` block when a clear minimal pass/fail case exists.
+* Add a `tests` block with both a `pass` and a `fail` case (see `references/examples.md`).
 * Set `illustrative` per the rules above.
 * Set `enabled` to `true` unless the source indicates otherwise.
+
+## Verify before you hand anything over
+
+Don't present generated rules as finished until the engine has checked them. Both commands are
+deterministic, need no repository, and take seconds:
+
+```bash
+codeguard rules validate --rules-source <dir>   # schema, known kinds, no duplicate ids
+codeguard rules test     --rules-source <dir>   # runs each rule's embedded tests:
+```
+
+Both exit non-zero on failure and support `--format json` for machine-readable output. Fix whatever
+they report and re-run until both are clean — a rule that fails either is not a finished rule. If
+`rules test` reports a case as **errored** rather than failed, the test itself is wrong (an
+unrecognised `setup:` key, or a `pass` case whose target matches nothing), not the rule.
+
+If the CLI isn't available in the environment, say so explicitly rather than implying the rules were
+verified.
 
 ## When a requirement doesn't fit
 
@@ -141,13 +160,31 @@ If a requirement cannot be fully expressed using the primitives in `references/`
 rule file for it. List it instead in a "not yet enforceable" appendix: a short markdown table with
 columns `id | name | reason it doesn't fit`.
 
-Naming/regex checks, file-content/text-grep checks, folder-existence checks, and JSON config-field
-checks are all supported (`must_match_name`, `must_match_content`/`must_not_match_content`,
-`must_have_directory`, `must_have_json_field`/`must_not_have_json_field`) — don't route these to
-the appendix. What still commonly doesn't fit: general YAML/XML config-field checks (only the
-narrow `const-yaml-value-consistency` analyzer exists, and only for cross-checking a C# `const`
-against one YAML field — there's no generic "assert this YAML/XML field equals X"), and anything
-requiring genuinely subjective judgment beyond a structural or textual check.
+Be strict about what genuinely doesn't fit — the appendix is for requirements the engine *can't*
+express, not ones you couldn't immediately find a kind for. All of the following are supported, so
+don't route them to the appendix:
+
+| requirement shape | use |
+|---|---|
+| naming / regex on a name or namespace | `must_match_name`, `must_match_namespace_pattern` |
+| file content / text-grep | `must_match_content`, `must_not_match_content` |
+| folder or file existence | `must_have_directory`, `must_have_file`, `must_not_have_file`, or a nested `directory`/`file` selector |
+| JSON config fields | `must_have_json_field`, `must_not_have_json_field` |
+| "never throw X anywhere" | `repository` + `must_not_exist` + nested `throw_site` |
+| switch exhaustiveness | nested `switch` selector, or the `exhaustive-switch` analyzer |
+| mutating a field that should be immutable | nested `mutation_site` selector |
+| catch-clause limits | nested `try_block` selector with `max_catch_clause_count` |
+| "compiler warning X must not occur" | nested `diagnostic` selector |
+| "exactly/at most N of these" | `must_have_count` |
+| "every / at least one / none of these nested things" | `must_all_match` / `must_any_match` / `must_none_match` |
+| project dependency allow-lists | `must_only_depend_on` (name framework types explicitly) |
+| minimum package versions | `must_use_package_version` with a `">=x.y.z"` constraint |
+
+What still commonly doesn't fit: general YAML/XML config-field checks (only the narrow
+`const-yaml-value-consistency` analyzer exists, and only for cross-checking a C# `const` against one
+YAML field — there's no generic "assert this YAML/XML field equals X"), cross-file or cross-repo
+consistency beyond what an analyzer already implements, and anything requiring genuinely subjective
+judgment beyond a structural or textual check.
 
 ## Output
 

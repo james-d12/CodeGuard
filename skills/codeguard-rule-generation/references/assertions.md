@@ -1,9 +1,10 @@
 # Assertions
 
 Each entry in a rule's `assertions` array is a single-key map: the key is one of the following
-thirty-four kinds, the value is that kind's params object. There is no free-text/narrative
-assertion form (e.g. `{"check": "..."}`) — every assertion must be one of these exact kinds. This
-list is kept in sync with `rule-schema.json` in this same folder.
+forty-five kinds, the value is that kind's params object. There is no free-text/narrative
+assertion form (e.g. `{"check": "..."}`) — every assertion must be one of these exact kinds. The
+schema only requires each entry to be a single-key object, so this table is the authoritative list;
+run `codeguard rules discover` to confirm it against the engine.
 
 | kind                          | params                                          |
 |-------------------------------|---------------------------------------------------|
@@ -39,8 +40,19 @@ list is kept in sync with `rule-schema.json` in this same folder.
 | `must_not_match_content`      | `pattern` (regex, matched against file content)    |
 | `must_have_json_field`        | `path`, `equals` (optional)                        |
 | `must_not_have_json_field`    | `path`, `equals` (optional)                        |
+| `must_have_field`             | `name` (glob)                                      |
+| `must_not_have_field`         | `name` (glob)                                      |
+| `must_not_be_in_namespace`    | `pattern` (glob)                                   |
+| `must_match_namespace_pattern`| `regex` — matched against the type's namespace     |
+| `must_depend_on`              | `type` (glob) — project must reference ≥1 matching type |
+| `must_only_depend_on`         | `types` (non-empty array of glob) — allow-list; see note below |
+| `must_use_package_version`    | `package` (glob), `constraint` (e.g. `">=8.0.0"`)  |
 | `must_exist`                  | `selector` — a full nested `target`-style selector (any kind from `selectors.md`) |
 | `must_not_exist`              | `selector` — a full nested `target`-style selector (any kind from `selectors.md`) |
+| `must_have_count`             | `selector`, plus at least one of `min`, `max`, `exactly` (int) |
+| `must_all_match`              | `selector` + `assertions` (non-empty nested list)  |
+| `must_any_match`              | `selector` + `assertions` (non-empty nested list)  |
+| `must_none_match`             | `selector` + `assertions` (non-empty nested list)  |
 
 ## Modifier values
 
@@ -62,6 +74,50 @@ their `selector` param is a *nested*, independent target selector (any kind from
 matching this nested selector exist (or not) anywhere the outer target scopes to?" — this is what
 lets a `repository`-targeted rule make an assertion about the codebase as a whole. See "Global
 rule pattern" in `SKILL.md` for when to reach for this.
+
+## Quantifiers — `must_all_match` / `must_any_match` / `must_none_match` / `must_have_count`
+
+`and`/`or`/`not` (in `when`) combine conditions about *one* candidate. These four instead quantify
+over a *set*: they take a nested `selector` and run a nested `assertions:` list against every match
+of it.
+
+```yaml
+assertions:
+  - must_all_match:
+      selector:
+        kind: property
+        declaring_type: "Contoso.Domain.Order"
+      assertions:
+        - must_have_modifier:
+            modifier: init
+```
+
+`must_have_count` is the cardinality form — it asserts how *many* things the nested selector matches,
+and needs at least one of `min`, `max`, `exactly`:
+
+```yaml
+assertions:
+  - must_have_count:
+      selector:
+        kind: class
+        namespace: "Contoso.Domain.Aggregates"
+      exactly: 1
+```
+
+## Dependency assertions
+
+`must_depend_on`, `must_not_depend_on` and `must_only_depend_on` evaluate against **projects** only
+(use `target: { kind: project }`), and walk every type-reference site: base types, interfaces,
+attributes, and member return/parameter/property/field types.
+
+`must_only_depend_on` is an allow-list and has **no implicit framework exemption**. Roslyn renders
+primitives with their C# keyword alias (`string`, `int`, `void`, …), so an allow-list must name the
+primitive and framework types the project legitimately uses alongside its own namespaces — otherwise
+every project fails it.
+
+`must_use_package_version`'s `constraint` is a comparator (`>=`, `<=`, `>`, `<`, `==`, `!=`; bare
+version means `==`) followed by a dotted version, e.g. `">=8.0.0"`. Comparison is numeric-segment
+only — any `-prerelease` suffix is stripped — so it is not full SemVer precedence.
 
 ## `when` — conditional assertions
 

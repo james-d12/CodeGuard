@@ -12,18 +12,42 @@ rules — they're illustrating a *shape*, not a library of reusable values.
 
 ## `tests` (optional)
 
-A rule may include a `tests` array to self-document expected pass/fail behaviour:
+A rule may include a `tests` array. These are **executable** — `codeguard rules test` builds a
+virtual analysis model from each `setup:` and runs the rule through the same evaluator as
+`codeguard validate`, with no repository and no disk I/O. Write them for every rule that can have
+them: 117 of the 125 example rules in this repository do, and the 8 that don't are analyzer-backed
+rules, which the virtual setup path can't drive.
 
 ```yaml
 tests:
   - name: <description>
     setup:
-      <freeform fixture data — shape depends on what the rule's target/analyzer needs>
+      types:
+        - name: Order
+          namespace: Contoso.Domain
+          baseType: "Entity<Guid>"
     expect: pass   # or: fail
 ```
 
-Include this when you can express a clear minimal pass case and fail case; omit it otherwise —
-most existing example rules in this repository don't have it, and it isn't required by the schema.
+`setup:` is **not** freeform. Only these top-level keys are recognised, and any other key is
+rejected outright:
+
+`projects`, `types`, `files`, `callSites`, `switches`, `throwSites`, `mutationSites`, `tryBlocks`,
+`methodBodyShapes`, `diagnostics`, `directories`
+
+Use `types:` (a flat shortcut that folds everything into one synthetic project) unless the rule
+genuinely cares about project identity or references, in which case use `projects:`. Every field is
+optional and defaults to an empty value, so describe only what the rule actually inspects. The full
+setup shape is in `docs/RULES_TEST_DESIGN.md`.
+
+Two things to get right, both of which `rules test` will reject:
+
+- **Describe state the target actually selects.** An `expect: pass` case whose target matches no
+  candidates is reported as a vacuous test, not a pass — zero candidates trivially produce zero
+  violations without running any assertion.
+- **Cover both sides.** Write a `pass` case and a `fail` case. A rule with only a `pass` case
+  demonstrates very little.
+
 Example 1 below shows it in use.
 
 ## 1. `target` + `assertions` + `tests`

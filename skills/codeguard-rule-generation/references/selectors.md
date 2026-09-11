@@ -1,9 +1,14 @@
 # Target selectors
 
 A rule's `target` selects the set of code elements its `assertions` run against. `target.kind`
-must be one of the following fourteen values — do not invent any other kind, an unregistered
-`kind` fails to parse. This list, and every param below, is kept in sync with
-`rule-schema.json` in this same folder.
+must be one of the following twenty-one values — do not invent any other kind, an unregistered
+`kind` fails to parse. `rule-schema.json` only requires `kind` to be a non-empty string, so this
+table is the authoritative list; run `codeguard rules discover` to confirm it against the engine.
+
+The first fourteen select declaration-level elements and are the usual choice for a rule's top-level
+`target`. The last seven (`switch` … `directory`) select syntax facts and filesystem directories, and
+are almost always used as the **nested** selector inside `must_exist` / `must_not_exist` /
+`must_have_count` rather than as a top-level `target` — see "Global rule pattern" in `SKILL.md`.
 
 | `kind`          | params                                                                                                                                                  | selects                                              |
 |-----------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------|
@@ -21,6 +26,13 @@ must be one of the following fourteen values — do not invent any other kind, a
 | `constructor`   | `declaring_type` (glob, optional, default `*`), `parameter_types` (optional array of glob)                                                                | constructors matching the given filters                 |
 | `field`         | `declaring_type` (glob, optional, default `*`), `is_readonly`/`is_static` (optional bool)                                                                 | fields matching the given filters                       |
 | `call_site`     | `site_kind` (optional), `invoked_member`, `target_type`, `project`, `containing_method`, `containing_type` (globs, optional, default `*`), `argument_index` (optional int), `argument_is_literal` (optional bool), `enclosing_comparison` (optional) | call sites (invocations/object creations/member access) matching the given filters |
+| `switch`        | `containing_type`, `containing_method`, `project` (globs, optional, default `*`), `has_default_or_discard_arm` (optional bool) | switch statements/expressions matching the filters |
+| `throw_site`    | `exception_type` (glob, optional, default `*`), `is_first_statement_in_method` (optional bool), `containing_type`, `containing_method`, `project` (globs, optional, default `*`) | `throw` sites by thrown exception type |
+| `mutation_site` | `target_member` (glob, optional, default `*`), `containing_type`, `containing_method`, `project` (globs, optional, default `*`) | assignments/mutations of a matching member |
+| `try_block`     | `min_catch_clause_count`, `max_catch_clause_count` (optional int), `containing_type`, `containing_method`, `project` (globs, optional, default `*`) | `try` blocks by catch-clause count |
+| `method_body_shape` | `min_statement_count`, `max_statement_count` (optional int), `is_single_base_call_delegation` (optional bool), `containing_type`, `containing_method`, `project` (globs, optional, default `*`) | method bodies by statement count/shape |
+| `diagnostic`    | `id` (glob, optional, default `*`), `project` (glob, optional, default `*`) | raw Roslyn compiler diagnostics by ID (e.g. `CS1591`) |
+| `directory`     | `path` (glob, optional, default `*`)                                                                                          | repository directories by path |
 
 ## Enum values
 
