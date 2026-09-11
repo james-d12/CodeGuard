@@ -1,5 +1,6 @@
 using System.CommandLine;
 using CodeGuard.Cli.Support;
+using Microsoft.Extensions.Logging;
 
 namespace CodeGuard.Cli.Commands.Rules;
 
@@ -11,6 +12,7 @@ public static class TestCommand
         var configOption = CommonOptions.CreateConfigOption();
         var rulesSourceOption = CommonOptions.CreateRulesSourceOption();
         var branchOption = CommonOptions.CreateBranchOption();
+        var verbosityOption = CommonOptions.CreateVerbosityOption();
 
         var formatOption = new Option<string>("--format")
         {
@@ -42,6 +44,7 @@ public static class TestCommand
         command.Add(configOption);
         command.Add(rulesSourceOption);
         command.Add(branchOption);
+        command.Add(verbosityOption);
         command.Add(formatOption);
         command.Add(ruleOption);
         command.Add(colorOption);
@@ -49,11 +52,15 @@ public static class TestCommand
 
         command.SetAction((parseResult, _) =>
         {
+            using var loggerFactory = CliLoggerFactory.Create(CliLoggerFactory.ParseVerbosity(parseResult.GetValue(verbosityOption)!));
+            var logger = loggerFactory.CreateLogger(typeof(TestCommand));
+
             var context = CliRepositoryContext.Resolve(
                 parseResult.GetValue(pathOption),
                 parseResult.GetValue(configOption),
                 parseResult.GetValue(rulesSourceOption),
-                parseResult.GetValue(branchOption));
+                parseResult.GetValue(branchOption),
+                loggerFactory: loggerFactory);
 
             if (!context.TryRequireRulesConfigured(Console.Error))
             {
@@ -70,6 +77,13 @@ public static class TestCommand
             }
 
             var results = rules.SelectMany(RuleTestRunner.Run).ToList();
+
+            logger.LogInformation(
+                "Rule tests: {Total} case(s), {Passed} passed, {Failed} failed, {Errored} errored",
+                results.Count,
+                results.Count(r => r.Outcome == TestOutcome.Passed),
+                results.Count(r => r.Outcome == TestOutcome.Failed),
+                results.Count(r => r.Outcome == TestOutcome.Errored));
 
             if (parseResult.GetValue(formatOption) == "json")
             {

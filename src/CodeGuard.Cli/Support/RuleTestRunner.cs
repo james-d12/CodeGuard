@@ -32,6 +32,25 @@ public static class RuleTestRunner
         try
         {
             var model = TestSetupBuilder.Build(testCase.Setup);
+
+            // A selector-backed rule whose target matches nothing trivially produces no violations, so
+            // an `expect: pass` case would report green having exercised none of the rule's assertions.
+            // That is almost always a setup that doesn't describe what the rule actually selects, so
+            // report it rather than letting it count as evidence. Analyzer-backed rules have no Target
+            // and run against the whole model, so the check doesn't apply to them. An `expect: fail`
+            // case needs no such guard - zero candidates means zero violations, which already fails.
+            if (testCase.Expect == TestExpectation.Pass
+                && rule.Target is not null
+                && !rule.Target.SelectCandidates(model).Any())
+            {
+                return new RuleTestCaseResult(
+                    rule.Id,
+                    testCase.Name,
+                    TestOutcome.Errored,
+                    $"Vacuous test: target '{rule.Target.Kind}' matched no candidates in this setup, so the " +
+                    "rule's assertions never ran. Describe state the target actually selects.");
+            }
+
             var violations = evaluator.EvaluateRule(rule, model);
             var passed = testCase.Expect == TestExpectation.Pass
                 ? violations.Count == 0
