@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using CodeGuard.Configuration.Capabilities;
 using CodeGuard.RuleModel.Assertions;
 
 namespace CodeGuard.Configuration.Parsing;
@@ -8,6 +9,10 @@ public sealed class AssertionParserRegistry(IEnumerable<IAssertionParser> parser
     private readonly Dictionary<string, IAssertionParser> _byKind = parsers.ToDictionary(p => p.Kind);
 
     public IReadOnlyCollection<string> Kinds => _byKind.Keys;
+
+    /// <summary>Every registered assertion's declared capability, ordered by kind.</summary>
+    public IReadOnlyList<CapabilityDescriptor> Descriptors =>
+        field ??= _byKind.Values.Select(p => p.Descriptor).OrderBy(d => d.Kind, StringComparer.Ordinal).ToList();
 
     public IAssertion Parse(JsonObject assertionEntry)
     {

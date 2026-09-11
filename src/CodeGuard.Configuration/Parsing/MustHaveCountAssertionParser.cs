@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using CodeGuard.Configuration.Capabilities;
 using CodeGuard.Evaluation.Assertions;
 using CodeGuard.RuleModel.Assertions;
 
@@ -7,6 +8,16 @@ namespace CodeGuard.Configuration.Parsing;
 public sealed class MustHaveCountAssertionParser(SelectorParserRegistry selectorParsers) : IAssertionParser
 {
     public string Kind => "must_have_count";
+
+    public CapabilityDescriptor Descriptor => new(
+        "must_have_count",
+        "The nested selector must match a given number of things. At least one of min, max or exactly is required.",
+        [
+            new ParameterDescriptor("selector", ParameterType.Selector, true, "Nested target-style selector; any registered selector kind."),
+            ParameterDescriptor.OptionalInt("min", "Minimum match count, inclusive."),
+            ParameterDescriptor.OptionalInt("max", "Maximum match count, inclusive."),
+            ParameterDescriptor.OptionalInt("exactly", "Exact match count.")
+        ]);
 
     public IAssertion Parse(JsonObject parameters)
     {
