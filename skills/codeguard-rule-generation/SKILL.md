@@ -159,21 +159,50 @@ metadata:
 
 ## Verify before you hand anything over
 
-Don't present generated rules as finished until the engine has checked them. Both commands are
+Don't present generated rules as finished until the engine has checked them. All three commands are
 deterministic, need no repository, and take seconds:
 
 ```bash
 codeguard rules validate --rules-source <dir>   # schema, known kinds, no duplicate ids
 codeguard rules test     --rules-source <dir>   # runs each rule's embedded tests:
+codeguard rules analyze  --rules-source <dir>   # rule-set-level problems, see below
 ```
 
-Both exit non-zero on failure and support `--format json` for machine-readable output. Fix whatever
-they report and re-run until both are clean — a rule that fails either is not a finished rule. If
-`rules test` reports a case as **errored** rather than failed, the test itself is wrong (an
-unrecognised `setup:` key, or a `pass` case whose target matches nothing), not the rule.
+Run all three against `<dir>` as a whole (the full rule set the generated files land in, not just
+the new files in isolation) — `analyze`'s duplicate/conflict detection is only meaningful across the
+whole set. All three exit non-zero on failure and support `--format json` for machine-readable
+output. Fix whatever `validate`/`test` report and re-run until both are clean — a rule that fails
+either is not a finished rule. If `rules test` reports a case as **errored** rather than failed, the
+test itself is wrong (an unrecognised `setup:` key, or a `pass` case whose target matches nothing),
+not the rule.
+
+Unlike `validate`/`test`, `analyze` inspects the *whole* rule set, so it can report findings that
+predate your session and have nothing to do with what you generated — an existing rule set may
+already have rules without tests or exact-duplicate groups in it, and its exit code can be non-zero
+before you've written anything. **Only act on findings that involve a rule you just generated** —
+never attempt to fix, clean up, or even mention a pre-existing finding that only involves rules you
+didn't touch; that's not this task. For findings on your generated rule(s):
+
+- **Unreachable assertions** is an authoring bug — fix it and re-verify, same as a `validate`/`test`
+  failure.
+- **Exact-duplicate rules** against an *already-existing* rule is not a bug to fix silently — it
+  means the requirement may already be enforced. Don't delete or merge either rule yourself; drop
+  the generated rule from your output (or keep it, your call) and call out the conflict explicitly
+  to the human reviewer — see "Report conflicts" below.
+- Missing provenance, and illustrative/disabled status, are informational only (they don't fail the
+  command on their own) — no action needed even when they concern your generated rule.
 
 If the CLI isn't available in the environment, say so explicitly rather than implying the rules were
 verified.
+
+## Report conflicts
+
+If `codeguard rules analyze` flags anything relevant to the rules you just generated (an
+exact-duplicate against an existing rule, most commonly), don't fold it silently into the generated
+output. Add a short "conflicts" note to your final deliverable — separate from the "not yet
+enforceable" appendix below — naming the generated rule, the existing rule it conflicts with, and
+what `analyze` reported. A human reviewer decides whether that's an intentional overlap or a
+duplicate to drop; you don't decide that for them.
 
 ## When a requirement doesn't fit
 
@@ -217,4 +246,4 @@ one rule document, in the field order shown in `references/examples.md`. Name ea
 existing rule-file layout if one is visible (for instance, in the CodeGuard repository itself,
 existing rules live under `examples/rules/<area>/`, grouped by topic), otherwise ask rather than
 inventing a fresh convention. Follow the rule files with the "not yet enforceable" appendix (if
-any) as a single markdown block, not as rule files.
+any) and the conflicts note (if any) as a single markdown block, not as rule files.
