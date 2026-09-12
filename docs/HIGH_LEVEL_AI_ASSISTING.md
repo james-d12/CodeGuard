@@ -1170,6 +1170,8 @@ separate host or run it out-of-process rather than making the whole server heavy
 Expose the deterministic capabilities:
 
 ```text
+list_rules
+get_rule
 validate_rule
 test_rule
 discover_capabilities
@@ -1177,6 +1179,13 @@ explain_rule
 analyze_rules
 validate_repository
 ```
+
+(This previously listed only six of the eight tools named in §15 while still saying "the eight
+tools below" — `list_rules`/`get_rule` were missing. Both are as cheap as the other non-
+`validate_repository` tools: `list_rules` is `rules list`, needs no MSBuild/Roslyn. `get_rule` likely
+overlaps heavily with `explain_rule` — `rules explain` already returns a rule's full metadata plus
+its source document — so whoever implements this should confirm whether `get_rule` earns a separate
+tool or `explain_rule` alone covers it before building both.)
 
 ### Phase 5 — Improve the existing AI skill — **DONE**
 

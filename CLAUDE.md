@@ -20,23 +20,32 @@ history/decisions/gotchas from the initial 8-PR implementation are in `docs/IMPL
 
 ```bash
 dotnet build                    # 0 errors, 0 warnings expected
-dotnet test                     # 631 tests across 7 test projects, all should pass
+dotnet test                     # 748 tests across 7 test projects, all should pass
 dotnet test tests/CodeGuard.Evaluation.Tests   # run a single test project
 dotnet test --filter "FullyQualifiedName~MustInheritFromAssertionTests"  # run a single test class/method
 
 # CLI (AssemblyName=codeguard). Commands are nested under a `rules` group, not flat.
 # This repo's own rules live in examples/rules/, so most commands need --rules-source.
 dotnet run --project src/CodeGuard.Cli -- rules list     --rules-source examples/rules
-dotnet run --project src/CodeGuard.Cli -- rules explain  DDD-ENTITY-001 --rules-source examples/rules
+dotnet run --project src/CodeGuard.Cli -- rules explain  DDD-ENTITY-001 --rules-source examples/rules --format json
 dotnet run --project src/CodeGuard.Cli -- rules validate --rules-source examples/rules
 dotnet run --project src/CodeGuard.Cli -- rules test     --rules-source examples/rules  # embedded tests:, no repo/disk
-dotnet run --project src/CodeGuard.Cli -- rules create   # interactive scaffolder
+dotnet run --project src/CodeGuard.Cli -- rules analyze  --rules-source examples/rules  # rule-set-level problems (missing tests, unreachable assertions, exact duplicates), no repo/disk
+dotnet run --project src/CodeGuard.Cli -- rules discover --format json                  # engine's full selector/assertion/analyzer vocabulary, reads no rule files
+dotnet run --project src/CodeGuard.Cli -- rules create   # interactive scaffolder, descriptor-driven (see rules discover)
 dotnet run --project src/CodeGuard.Cli -- info
 dotnet run --project src/CodeGuard.Cli -- validate       # self-validation completes end-to-end, see "Known limitation" below
 ```
 
-CI (`.github/workflows/ci.yml`) runs `dotnet restore && dotnet build --no-restore && dotnet test --no-build`
-on `ubuntu-latest` for push/PR to `main`. `global.json` pins the SDK to `10.0.100` (`rollForward: latestFeature`).
+CI (`.github/workflows/ci.yml`, single `build-and-test` job on `ubuntu-latest` for push/PR to
+`main`) does more than build+test: `dotnet format --verify-no-changes`, a vulnerable-package check,
+build+test wrapped in a SonarCloud scan (`dotnet-sonarscanner` — coverage is collected via
+`coverlet`'s `XPlat Code Coverage` collector and reported to Sonar via
+`sonar.cs.cobertura.reportsPaths`), `rules validate`/`rules test` against this repo's own
+`examples/rules/`, a check that `scripts/sync-skill-references.sh` produces no diff (the skill's
+reference tables are generated from the engine's capability descriptors — see "Rules directory"
+below), `dotnet publish`, and an HTML/markdown coverage report attached to the job summary.
+`global.json` pins the SDK to `10.0.100` (`rollForward: latestFeature`).
 
 ## Architecture
 
@@ -112,9 +121,10 @@ directory, so CLI commands against this repo need `--rules-source examples/rules
 The JSON Schema (2020-12) rules are validated against lives at
 `src/CodeGuard.Configuration/Validation/Schemas/rule.schema.json` and is embedded as a resource.
 `skills/codeguard-rule-generation/references/rule-schema.json` is a copy for the authoring skill;
-keep the two identical. `.codeguard/config.yml` configures repository discovery (where
-rules/skills/agents/source/tests live) — discovery is deliberately configurable per-repo, missing
-paths are skipped silently.
+`scripts/sync-skill-references.sh` keeps the two identical (don't hand-edit the skill's copy — CI
+runs the script and diffs `skills/`, so a manual edit there just gets overwritten/flagged). `.codeguard/config.yml`
+configures repository discovery (where rules/skills/agents/source/tests live) — discovery is
+deliberately configurable per-repo, missing paths are skipped silently.
 
 117 of the 125 rules carry an embedded `tests:` block run by `codeguard rules test` against a
 virtual analysis model (no disk, no Roslyn/MSBuild) — see `docs/RULES_TEST_DESIGN.md`. The 8 without
@@ -127,6 +137,22 @@ to nuget.org as a `dotnet tool` (see `Directory.Build.props`/`CodeGuard.Cli.cspr
 the embedded `rule.schema.json` may travel with the packaged tool. Do not add `examples/rules/` as
 `<Content>`/`<None>`/`<EmbeddedResource>` to `CodeGuard.Cli` or any other packable project;
 `scripts/verify-nupkg-contents.sh` enforces this in CI before publishing.
+
+### Capability descriptors and the AI-assisted authoring tooling
+
+Every selector/assertion/analyzer parser (`CodeGuard.Configuration.Parsing`) implements a
+`CapabilityDescriptor Descriptor` property (kind, summary, parameters, plus — for selectors/
+assertions — the `CandidateKind` produced/accepted). `CapabilityCatalog.Create()`
+(`CodeGuard.Configuration.Capabilities`) aggregates all of them; a test
+(`CapabilityCatalogTests`) fails the build if a parser and its descriptor drift apart. This
+backs `rules discover` (prints the engine's actual vocabulary; `--format markdown` is what
+`scripts/sync-skill-references.sh` consumes to regenerate the skill's reference tables above) and
+`rules analyze` (rule-set-level checks: missing/one-sided tests, unreachable assertions — an
+assertion whose `AppliesTo` doesn't include its target selector's `Produces` — and exact-duplicate
+rules). Adding a new selector/assertion/analyzer means adding its `Descriptor` too, or
+`CapabilityCatalogTests` fails. See `docs/HIGH_LEVEL_AI_ASSISTING.md` for the design rationale and
+`docs/IMPLEMENTATION_STATUS.md` for full build detail on this and `metadata.source` (optional rule
+provenance — `document`/`section`/`statement`, surfaced by `rules explain --format json`).
 
 ### Known limitation — CLI self-analysis (resolved)
 
