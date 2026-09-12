@@ -1,7 +1,8 @@
 # CodeGuard — AI-Assisted Rule Authoring & MCP
 
-**Status:** Proposed (Phase 1, provenance from Phase 2, and Phase 3 of §27 implemented; see §6, §9-§14, §19)
-**Version:** 1.4
+**Status:** Proposed (Phases 1, 3 and 5 of §27 implemented, plus provenance from Phase 2 — its
+lifecycle-state item was considered and rejected, not deferred; see §6, §9-§14, §19, §27)
+**Version:** 1.5
 **Scope:** CodeGuard rule authoring, validation, testing and AI integration
 
 > **All YAML and JSON in this document is real, current CodeGuard syntax**, checked against the
@@ -1133,9 +1134,18 @@ Introduce:
 * provenance — **done**. `metadata.source: {document, section, statement}`, deliberately narrower
   than this document originally sketched (no `generation` block, no multi-source list) — see §6/§19
   for the shape and the reasoning. No backfill of the 125 existing example rules.
-* lifecycle state — not started, and not the same decision as provenance; deliberately kept separate
-  rather than bundled into the same field (see §6's reasoning). `docs/REFACTORING.md` §12 has a
-  related, not-yet-reconciled proposal (`version`/`status`: experimental/active/deprecated/retired).
+* lifecycle state — **considered and deliberately rejected**, not merely deferred.
+  `docs/REFACTORING.md` §12 proposed `status: experimental|active|deprecated|retired` (plus a
+  separate `version` field with diagnostic-level version stamping, itself a materially bigger,
+  cross-cutting change touching the evaluator and every `IViolationReporter` — that half was never
+  in scope for this decision either way). Once scoped down to "just `status`, purely informational,
+  no `rules analyze` check yet" — the same discipline `metadata.source` went through — it became
+  clear the field would have **zero consumers**: nothing would read it, filter by it, or surface it
+  anywhere, unlike `metadata.source` which `rules explain --format json` and `rules analyze` both
+  make use of. `enabled` and `illustrative` already cover the on/off and real-vs-demonstrative axes;
+  a third "maturity" axis with no consumer wasn't worth the schema surface. Don't re-propose this
+  without first identifying a concrete consumer (a command that reads it, a check that flags on it)
+  — the shape questions (field location, whether it affects evaluation) are secondary to that.
 * test metadata, deterministic capability metadata — not started; this document never specified a
   concrete shape for either, so there's nothing yet to implement.
 
@@ -1160,6 +1170,8 @@ separate host or run it out-of-process rather than making the whole server heavy
 Expose the deterministic capabilities:
 
 ```text
+list_rules
+get_rule
 validate_rule
 test_rule
 discover_capabilities
@@ -1167,6 +1179,13 @@ explain_rule
 analyze_rules
 validate_repository
 ```
+
+(This previously listed only six of the eight tools named in §15 while still saying "the eight
+tools below" — `list_rules`/`get_rule` were missing. Both are as cheap as the other non-
+`validate_repository` tools: `list_rules` is `rules list`, needs no MSBuild/Roslyn. `get_rule` likely
+overlaps heavily with `explain_rule` — `rules explain` already returns a rule's full metadata plus
+its source document — so whoever implements this should confirm whether `get_rule` earns a separate
+tool or `explain_rule` alone covers it before building both.)
 
 ### Phase 5 — Improve the existing AI skill — **DONE**
 
