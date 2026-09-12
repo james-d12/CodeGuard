@@ -1,7 +1,7 @@
 # CodeGuard — AI-Assisted Rule Authoring & MCP
 
-**Status:** Proposed
-**Version:** 1.1
+**Status:** Proposed (Phase 1 of §27 implemented; see §9-§13)
+**Version:** 1.2
 **Scope:** CodeGuard rule authoring, validation, testing and AI integration
 
 > **All YAML and JSON in this document is real, current CodeGuard syntax**, checked against the
@@ -342,8 +342,9 @@ codeguard validate        # evaluate a repository (--format console|json|sarif|h
 codeguard rules validate  # structural validation of a rule set (--format console|json)
 codeguard rules test      # run rules' embedded tests: cases (--format console|json)
 codeguard rules list      # (--format table|json)
-codeguard rules explain   # console only today; see §13
-codeguard rules create    # interactive rule scaffolder
+codeguard rules explain   # --format console|json; see §13
+codeguard rules discover  # --format console|json|markdown; see §12
+codeguard rules create    # interactive rule scaffolder, descriptor-driven; see §12
 codeguard setup           # configure the rule source
 codeguard info            # show the resolved rule source and counts
 ```
@@ -351,9 +352,7 @@ codeguard info            # show the resolved rule source and counts
 **Proposed** — these do not exist yet:
 
 ```bash
-codeguard rules discover  # §12
 codeguard rules analyze   # §14
-codeguard rules explain --format json   # §13
 ```
 
 Note the command group is nested (`codeguard rules <verb>`), not flat.
@@ -392,23 +391,12 @@ for an agent iterating on one generated rule.
 
 Failures should be structured and machine-readable.
 
-`codeguard rules validate --format json` exists today, but every error is a **bare string**:
-
-```json
-{
-  "filesChecked": 125,
-  "filesPassed": 124,
-  "isValid": false,
-  "issues": [
-    {
-      "sourceFile": "/abs/path/ddd-042.yml",
-      "errors": ["/assertions/0: Unknown assertion kind 'business-logic-quality'."]
-    }
-  ]
-}
-```
-
-The proposed change is to make each error structured:
+**Implemented.** `codeguard rules validate --format json` emits each error as a structured object,
+not a bare string — `RuleFileIssue.Errors` is `IReadOnlyList<RuleValidationError>`
+(`src/CodeGuard.Configuration/Validation/RuleValidationError.cs`), a
+`record(Code, Path, Message)` with a stable, closed set of codes (`RuleErrorCodes`:
+`SCHEMA_VIOLATION`, `UNKNOWN_SELECTOR_KIND`, `UNKNOWN_ASSERTION_KIND`, `UNKNOWN_ANALYZER_KIND`,
+`INVALID_PARAMETER`, `DUPLICATE_RULE_ID`, `UNREADABLE_RULE_FILE`, `PARSE_ERROR`):
 
 ```json
 {
@@ -423,10 +411,10 @@ The proposed change is to make each error structured:
 }
 ```
 
-This is cheap: `RuleSchemaValidator` already computes the JSON-pointer path
-(`detail.InstanceLocation`) and then concatenates it into the message. The work is widening
-`RuleFileIssue.Errors` from `IReadOnlyList<string>` to a record, and assigning codes at the throw
-sites in the selector/assertion/analyzer registries.
+`RuleSchemaValidator` assigns `SCHEMA_VIOLATION` from the JSON-pointer path it already computes
+(`detail.InstanceLocation`); `RuleParsingException.ToValidationError()` and `RuleFileLoader` assign
+the rest at their respective throw sites. Console output still renders the old `"path: message"`
+prose via `RuleValidationError.ToString()`, so this was purely additive for JSON consumers.
 
 This is particularly important for AI consumption.
 
@@ -489,48 +477,49 @@ This creates a deterministic feedback loop for AI rule generation.
 
 This command exposes the capabilities available to a rule author.
 
-**Prerequisite, and the largest single item in this document.** Selectors, assertions and their
-parsers are purely behavioural today — `ISelectorParser`/`IAssertionParser`/`IAnalyzerParser` expose
-a `Kind` string and a `Parse` method, and each parser reads its params imperatively. There is no
-parameter metadata anywhere, so `discover` can list kind *names* today but cannot describe a single
-parameter. Delivering §12, §13 and parts of §14 therefore requires first adding a declarative
-capability-descriptor layer across all 77 parser classes. That work is not optional and is not small;
-§27 must sequence it before those sections.
+**Implemented**, including its prerequisite — this was the largest single item in this document.
+`ISelectorParser`/`IAssertionParser`/`IAnalyzerParser` each now expose a
+`CapabilityDescriptor Descriptor` (`src/CodeGuard.Configuration/Capabilities/CapabilityDescriptor.cs`:
+`Kind`, `Summary`, `Parameters` — each a `ParameterDescriptor` with `Name`/`Type`/`Required`/
+`Summary`/`Default`/`AllowedValues` — plus `Produces`/`AppliesTo` `CandidateKind` metadata used by
+§14's Tier 2 checks), not just a bare `Kind` string. All 77 parser classes (21 selectors, 45
+assertions, 11 analyzers) implement it. `CapabilityCatalog.Create()` aggregates every registry's
+descriptors, and `tests/CodeGuard.Configuration.Tests/Capabilities/CapabilityCatalogTests.cs` fails
+the build if a parser and its descriptor ever drift apart (registered kinds must exactly match
+descriptor kinds).
 
-Once it exists, the same descriptors should **generate** `skills/codeguard-rule-generation/references/*.md`.
-Those files are hand-maintained today and have already drifted 18 primitives behind the engine,
-which is precisely the hallucination problem this section exists to solve.
-
-Example:
+The same descriptors **do generate** `skills/codeguard-rule-generation/references/{selectors,assertions,analyzers}.md`
+via `scripts/sync-skill-references.sh` (which calls `rules discover --format markdown --section <x>`
+and splices the result between generated-marker comments), enforced in CI (`ci.yml` re-runs the
+script and diffs `skills/`). **One exception**: `references/examples.md` is not derivable from
+descriptors and remains hand-maintained.
 
 ```bash
 codeguard rules discover
 ```
 
-Output should be the engine's **actual** vocabulary — currently 21 target selectors, 45 assertions
-and 11 analyzers — with each kind's parameters, not an abstract taxonomy:
-
 ```text
 Target selectors (21)
-  class              namespace (glob)
-  project            name (glob)
-  throw_site         exception_type (glob, default *), containing_type, containing_method, project
-  directory          path (glob, default *)
+  call_site  [yields CallSite]
+    Invocations, object creations and member accesses matching the given filters.
+      site_kind: invocation | object_creation | member_access
+      invoked_member: glob
+      ...
+  class  [yields Type]
+    Classes in a matching namespace.
+      namespace: glob
   ...
 
 Assertions (45)
-  must_inherit_from        type (glob)                     [types]
-  must_not_reference_project  name (glob)                  [projects]
-  must_have_count          selector + one of min|max|exactly
   ...
 
 Analyzers (11)
-  exhaustive-switch
-  const-yaml-value-consistency
   ...
 ```
 
-Machine-readable output should also be supported:
+`--format json` and `--format markdown --section selectors|assertions|analyzers` are both
+supported (`src/CodeGuard.Cli/Commands/Rules/DiscoverCommand.cs`,
+`src/CodeGuard.Cli/Support/CapabilityReportWriter.cs`):
 
 ```bash
 codeguard rules discover --format json
@@ -552,41 +541,48 @@ Example:
 codeguard rules explain DDD-042
 ```
 
-`codeguard rules explain <id>` exists today but is console-only: it prints a metadata summary
-followed by the rule's raw YAML. The proposal is a `--format json` mode.
-
-Assertion **parameter values** cannot be recovered from the in-memory model (`IAssertion` exposes
-only `Kind`; constructor arguments vanish into private fields — see §12). Rather than adding
-introspection to every assertion, `explain --format json` should emit the rule's metadata plus the
-**source document converted YAML→JSON**. The loader already parses YAML into a `JsonNode`, and
-`explain` already resolves the source file path, so this is faithful and cheap:
+**Implemented.** `codeguard rules explain <id> --format json` (`src/CodeGuard.Cli/Commands/Rules/ExplainCommand.cs`)
+emits the rule's metadata plus the **source document converted YAML→JSON**, exactly as this section
+originally proposed: since assertion parameter values can't be recovered from the in-memory model
+(`IAssertion` exposes only `Kind`; constructor arguments vanish into private fields — see §12), the
+`document` field is produced via a new `RuleFileLoader.ReadDocument`, reusing the existing
+`YamlDocumentReader` rather than adding introspection to every assertion. Real output:
 
 ```json
 {
-  "id": "ARCHITECTURE-DOMAIN-NO-INFRASTRUCTURE-001",
-  "name": "Domain projects must not reference Infrastructure",
+  "id": "DDD-ENTITY-001",
+  "name": "Domain entities must inherit from Entity",
+  "description": "All domain entities must inherit from the approved Entity<TId> base class.",
   "severity": "error",
-  "description": "...",
   "enforcement": { "classification": "deterministic" },
-  "tags": ["architecture"],
+  "tags": ["ddd", "domain", "entity"],
+  "remediation": "Inherit from Contoso.Domain.Entity<TId>.",
+  "documentation": [],
   "enabled": true,
-  "illustrative": false,
-  "sourceFile": "/abs/path/architecture-domain-no-infrastructure-001.yml",
+  "illustrative": true,
+  "shape": "declarative",
   "testCount": 2,
+  "sourceFile": "/abs/path/examples/rules/ddd/ddd-entity-001.yml",
   "document": {
-    "target": { "kind": "project", "name": "*.Domain" },
-    "assertions": [ { "must_not_reference_project": { "name": "*Infrastructure*" } } ]
+    "target": { "kind": "class", "namespace": "Contoso.Domain.Entities" },
+    "assertions": [ { "must_inherit_from": { "type": "Contoso.Domain.Entity<*>" } } ],
+    "tests": [ "..." ]
   }
 }
 ```
 
-`source` (document/section) appears here only once §6/§19's `metadata` block exists.
+`source` (document/section provenance) still doesn't appear here — that's blocked on §6/§19's
+`metadata` block, which remains unimplemented (see below).
 
 This is useful both for developers and AI agents.
 
 ---
 
 # 14. `codeguard rules analyze`
+
+**Not implemented yet** — no `AnalyzeCommand` exists under `src/CodeGuard.Cli/Commands/Rules/`. This
+section's own prerequisite (§12's descriptor layer) has since shipped, though, which changes the
+cost of some of the checks below.
 
 This capability should analyse a rule collection for mechanically detectable problems.
 
@@ -595,19 +591,33 @@ being treated as one piece of work. They split into three tiers:
 
 **Tier 1 — mechanically provable, cheap. Implement first.**
 
-* Invalid rules (reuses the existing rule-set validation)
-* Duplicate IDs (already detected during loading)
-* Missing tests
+* Invalid rules and duplicate IDs — **directly reusable**: `RuleFileLoader.ValidateDirectories`
+  already computes both during loading.
+* Missing tests — `rule.Tests.Count == 0`, a one-line filter.
 * One-sided tests — a rule with a `pass` case but no `fail` case. This is the cheap structural proxy
   for "tests don't exercise the intended assertion", and worth more than it looks: a `fail` case is
-  what stops a mis-specified `pass` case from passing vacuously.
-* Missing provenance (requires §6/§19's `metadata`)
-* Disabled rules; `illustrative: true` rules in a production rule set
+  what stops a mis-specified `pass` case from passing vacuously. Not implemented anywhere yet (the
+  existing vacuous-test guard in `RuleTestRunner` is a different, narrower check). As of this
+  writing all 117 example rules that carry `tests:` already have both a pass and a fail case, so
+  this check is forward-looking, not a fix for a known-existing gap.
+* Missing provenance — still correctly blocked on §6/§19's unimplemented `metadata` field.
+* Disabled rules; `illustrative: true` rules in a production rule set — the fields exist
+  (`RuleDefinition.Enabled`/`Illustrative`) and are already surfaced by `rules list`/`rules explain`,
+  but nothing today flags them as a problem to report on.
 
-**Tier 2 — needs the §12 descriptor layer.**
+**Tier 2 — needs the §12 descriptor layer, which has now shipped.**
 
-* Exact-duplicate rules (same target kind + params + assertion set)
-* Unreachable rules — an assertion kind that cannot apply to the target's candidate type
+* Unreachable rules — an assertion kind that cannot apply to the target's candidate type. **Cheaper
+  than expected**: `CapabilityDescriptor` carries exactly the metadata this needs —
+  `Produces` (a selector's `CandidateKind`) and `AppliesTo` (an assertion's valid `CandidateKind[]`)
+  — so this reduces to resolving the target's `Produces` and checking every assertion's `AppliesTo`
+  against it via `CapabilityCatalog`, including recursing into `must_all_match`/`must_any_match`/
+  `must_none_match`'s nested selectors.
+* Exact-duplicate rules (same target kind + params + assertion set) — has a real wrinkle: `IAssertion`
+  exposes only `Kind`, not parameter values (the same limitation §13 worked around). Detecting exact
+  duplicates needs the same workaround — compare each rule's raw source `JsonNode`
+  (`target`+`assertions`, via `RuleFileLoader.ReadDocument`) structurally, not the parsed
+  `RuleDefinition`.
 
 **Tier 3 — research, not scheduled work. Do not promise these.**
 
@@ -1074,19 +1084,23 @@ Before adding anything: this document's examples must parse (§6), the skill's r
 match the engine's actual vocabulary, rule tests must not be able to pass vacuously, and CI must
 actually run the shipped rule set. None of this depends on new architecture.
 
-### Phase 1 — Capability descriptors, then the authoring primitives
+### Phase 1 — Capability descriptors, then the authoring primitives — **DONE**
 
-`rules validate`, `rules test`, `rules list` and `rules explain` already exist (§9); only their
-gaps need closing. The genuinely new work is the descriptor layer:
+`rules validate`, `rules test`, `rules list` and `rules explain` already existed (§9). All four
+items below have since landed:
 
-1. Add declarative parameter descriptors to the selector/assertion/analyzer parsers (§12). This
-   gates `rules discover`, `rules explain --format json`, and §14's Tier 2 — it must come first.
-2. `codeguard rules discover` (§12), including a `markdown` format that regenerates the skill's
-   reference docs so they can no longer drift.
-3. Structured validation errors (§10).
-4. `codeguard rules explain --format json` (§13).
+1. ✅ Declarative parameter descriptors on all 77 selector/assertion/analyzer parsers (§12), guarded
+   against drift by `CapabilityCatalogTests`.
+2. ✅ `codeguard rules discover` (§12), including a `markdown` format wired into
+   `scripts/sync-skill-references.sh` and CI so the skill's reference docs can no longer drift
+   (except `examples.md`, still hand-maintained — see §12).
+3. ✅ Structured validation errors (§10) — `RuleValidationError(Code, Path, Message)`.
+4. ✅ `codeguard rules explain --format json` (§13).
 
-Ensure all have excellent JSON output.
+One consequence worth noting for sequencing Phase 3: descriptors carrying `Produces`/`AppliesTo`
+means §14's Tier 2 "unreachable rules" check is now cheap and doesn't itself need anything from
+Phase 2 — only "missing provenance" and "exact-duplicate rules" (the latter for an unrelated reason,
+see §14) have real dependencies left.
 
 ### Phase 2 — Rule metadata
 
@@ -1097,6 +1111,12 @@ Introduce:
 * test metadata
 * deterministic capability metadata
 
+Not started. The `metadata.source` shape needs a deliberate decision before implementation — a
+previous `RuleDefinition.Standard` field was removed after two incompatible conventions collided
+across hand-authored vs. generated rules (see `docs/IMPLEMENTATION_STATUS.md`), and the same risk
+applies here (exact field names, and whether the existing 125 example rules get backfilled or only
+new rules populate it).
+
 ### Phase 3 — Rule analysis
 
 Implement:
@@ -1105,7 +1125,9 @@ Implement:
 codeguard rules analyze
 ```
 
-with the Tier 1 and Tier 2 checks from §14. Tier 3 is explicitly out of scope.
+with the Tier 1 and Tier 2 checks from §14. Tier 3 is explicitly out of scope. Given the note under
+Phase 1 above, most of Tier 1 and all of Tier 2 can proceed without waiting on Phase 2 — only the
+"missing provenance" line item needs it.
 
 ### Phase 4 — MCP
 
