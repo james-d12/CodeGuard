@@ -3,16 +3,17 @@ using CodeGuard.Cli.Support;
 using CodeGuard.Configuration.Parsing;
 using CodeGuard.Configuration.Writing;
 using Microsoft.Extensions.Logging;
+using CodeGuard.Configuration.Capabilities;
 
 namespace CodeGuard.Cli.Commands.Rules;
 
 /// <summary>
 /// Interactively scaffolds a new rule YAML file. Deliberately doesn't hardcode per-selector/
 /// per-assertion parameter shapes (there are 21 target selector kinds and 45 assertion kinds in
-/// <see cref="DefaultParsers"/>, each with different parameter names) - instead drives a generic
-/// kind-picker + key/value parameter loop off <see cref="SelectorParserRegistry.Kinds"/>/
-/// <see cref="AssertionParserRegistry.Kinds"/>, so new kinds are picked up automatically. Only
-/// authors the `target`+`assertions` rule shape, not the `analyzer`-referencing shape.
+/// <see cref="DefaultParsers"/>, each with different parameter names) - instead drives the prompts
+/// off the registries' <see cref="CapabilityDescriptor"/>s, so new kinds and their parameters are
+/// picked up automatically. Only authors the `target`+`assertions` rule shape, not the
+/// `analyzer`-referencing shape.
 /// </summary>
 public static class CreateCommand
 {
@@ -80,79 +81,109 @@ public static class CreateCommand
                 return Task.FromResult(1);
             }
 
-            var id = PromptRequired(parseResult.GetValue(idOption), "Rule ID (e.g. DDD-ENTITY-003): ");
-            var name = PromptRequired(parseResult.GetValue(nameOption), "Rule name: ");
-            var description = PromptOptional(parseResult.GetValue(descriptionOption), "Description (optional, blank to skip): ");
-            var severity = PromptSeverity(parseResult.GetValue(severityOption), "Severity - info/warning/error/critical (blank = warning): ");
-            var tags = PromptTags(parseResult.GetValue(tagOption) ?? [], "Tags, comma-separated (optional, blank to skip): ");
-
-            var selectorRegistry = DefaultParsers.CreateSelectorRegistry();
-            var assertionRegistry = DefaultParsers.CreateAssertionRegistry(selectorRegistry);
-
-            Console.WriteLine();
-            Console.WriteLine("--- Target selector ---");
-            var target = PromptTargetSelector(selectorRegistry.Kinds);
-
-            Console.WriteLine();
-            Console.WriteLine("--- Assertions ---");
-            var assertions = new List<object>();
-            do
+            try
             {
-                var assertionKind = PromptKind("Assertion kind", assertionRegistry.Kinds);
-                var assertionParameters = PromptParameters();
-                assertions.Add(new Dictionary<string, object> { [assertionKind] = assertionParameters });
-            } while (PromptYesNo("Add another assertion?", defaultYes: false));
-
-            var document = new Dictionary<string, object>
-            {
-                ["id"] = id,
-                ["name"] = name
-            };
-            if (description is not null)
-            {
-                document["description"] = description;
+                return Task.FromResult(RunInteractive(parseResult, context, logger, idOption, nameOption, descriptionOption, severityOption, tagOption));
             }
-            if (severity is not null)
+            catch (EndOfInputException)
             {
-                document["severity"] = severity;
-            }
-            if (tags.Length > 0)
-            {
-                document["tags"] = tags;
-            }
-            document["target"] = target;
-            document["assertions"] = assertions;
-
-            var rulesDirectory = context.Layout.RulesPaths[0];
-            Directory.CreateDirectory(rulesDirectory);
-            var filePath = Path.Combine(rulesDirectory, $"{id.ToLowerInvariant()}.yml");
-            if (File.Exists(filePath))
-            {
-                Console.Error.WriteLine($"'{filePath}' already exists - refusing to overwrite.");
+                Console.Error.WriteLine("Unexpected end of input while prompting - stopping.");
                 return Task.FromResult(1);
             }
-
-            File.WriteAllText(filePath, RuleYamlWriter.Serialize(document));
-            logger.LogInformation("Created rule file {FilePath} (id={RuleId})", filePath, id);
-
-            var report = context.ValidateRules();
-            if (!report.IsValid)
-            {
-                logger.LogWarning("Created rule {RuleId} at {FilePath} failed validation: {IssueCount} issue(s)", id, filePath, report.Issues.Count);
-                Console.WriteLine();
-                Console.WriteLine($"Wrote {filePath}, but it did not pass validation:");
-                RuleValidationReportWriter.WriteConsole(report, Console.Out);
-                return Task.FromResult(1);
-            }
-
-            Console.WriteLine();
-            Console.WriteLine($"Created rule '{id}' at {filePath}.");
-            Console.WriteLine($"Run 'codeguard rules explain {id}' to review it.");
-            return Task.FromResult(0);
         });
 
         return command;
     }
+
+    private static int RunInteractive(
+        ParseResult parseResult,
+        CliRepositoryContext context,
+        ILogger logger,
+        Option<string?> idOption,
+        Option<string?> nameOption,
+        Option<string?> descriptionOption,
+        Option<string?> severityOption,
+        Option<string[]> tagOption)
+    {
+        var id = PromptRequired(parseResult.GetValue(idOption), "Rule ID (e.g. DDD-ENTITY-003): ");
+        var name = PromptRequired(parseResult.GetValue(nameOption), "Rule name: ");
+        var description = PromptOptional(parseResult.GetValue(descriptionOption), "Description (optional, blank to skip): ");
+        var severity = PromptSeverity(parseResult.GetValue(severityOption), "Severity - info/warning/error/critical (blank = warning): ");
+        var tags = PromptTags(parseResult.GetValue(tagOption) ?? [], "Tags, comma-separated (optional, blank to skip): ");
+
+        var selectorRegistry = DefaultParsers.CreateSelectorRegistry();
+        var assertionRegistry = DefaultParsers.CreateAssertionRegistry(selectorRegistry);
+
+        Console.WriteLine();
+        Console.WriteLine("--- Target selector ---");
+        var target = PromptTargetSelector(selectorRegistry.Descriptors);
+
+        Console.WriteLine();
+        Console.WriteLine("--- Assertions ---");
+        var assertions = new List<object>();
+        do
+        {
+            var assertionDescriptor = PromptKind("Assertion kind", assertionRegistry.Descriptors);
+            var assertionParameters = PromptParameters(assertionDescriptor);
+            assertions.Add(new Dictionary<string, object> { [assertionDescriptor.Kind] = assertionParameters });
+        } while (PromptYesNo("Add another assertion?", defaultYes: false));
+
+        var document = new Dictionary<string, object>
+        {
+            ["id"] = id,
+            ["name"] = name
+        };
+        if (description is not null)
+        {
+            document["description"] = description;
+        }
+        if (severity is not null)
+        {
+            document["severity"] = severity;
+        }
+        if (tags.Length > 0)
+        {
+            document["tags"] = tags;
+        }
+        document["target"] = target;
+        document["assertions"] = assertions;
+
+        var rulesDirectory = context.Layout.RulesPaths[0];
+        Directory.CreateDirectory(rulesDirectory);
+        var filePath = Path.Combine(rulesDirectory, $"{id.ToLowerInvariant()}.yml");
+        if (File.Exists(filePath))
+        {
+            Console.Error.WriteLine($"'{filePath}' already exists - refusing to overwrite.");
+            return 1;
+        }
+
+        File.WriteAllText(filePath, RuleYamlWriter.Serialize(document));
+        logger.LogInformation("Created rule file {FilePath} (id={RuleId})", filePath, id);
+
+        var report = context.ValidateRules();
+        if (!report.IsValid)
+        {
+            logger.LogWarning("Created rule {RuleId} at {FilePath} failed validation: {IssueCount} issue(s)", id, filePath, report.Issues.Count);
+            Console.WriteLine();
+            Console.WriteLine($"Wrote {filePath}, but it did not pass validation:");
+            RuleValidationReportWriter.WriteConsole(report, Console.Out);
+            return 1;
+        }
+
+        Console.WriteLine();
+        Console.WriteLine($"Created rule '{id}' at {filePath}.");
+        Console.WriteLine($"Run 'codeguard rules explain {id}' to review it.");
+        return 0;
+    }
+
+    /// <summary>
+    /// Thrown when a prompt hits end-of-input (<see cref="Console.ReadLine"/> returns <c>null</c>)
+    /// instead of looping forever re-issuing the same prompt - e.g. piped/scripted input that runs
+    /// out before every required answer is given.
+    /// </summary>
+    private sealed class EndOfInputException : Exception;
+
+    private static string ReadLineOrThrow() => Console.ReadLine() ?? throw new EndOfInputException();
 
     private static string PromptRequired(string? suppliedValue, string prompt)
     {
@@ -164,7 +195,7 @@ public static class CreateCommand
         while (true)
         {
             Console.Write(prompt);
-            var input = Console.ReadLine()?.Trim();
+            var input = ReadLineOrThrow().Trim();
             if (!string.IsNullOrWhiteSpace(input))
             {
                 return input;
@@ -182,7 +213,7 @@ public static class CreateCommand
         }
 
         Console.Write(prompt);
-        var input = Console.ReadLine()?.Trim();
+        var input = ReadLineOrThrow().Trim();
         return string.IsNullOrWhiteSpace(input) ? null : input;
     }
 
@@ -196,7 +227,7 @@ public static class CreateCommand
         while (true)
         {
             Console.Write(prompt);
-            var input = Console.ReadLine()?.Trim();
+            var input = ReadLineOrThrow().Trim();
             if (string.IsNullOrEmpty(input))
             {
                 return null;
@@ -219,7 +250,7 @@ public static class CreateCommand
         }
 
         Console.Write(prompt);
-        return SplitCommaList(Console.ReadLine());
+        return SplitCommaList(ReadLineOrThrow());
     }
 
     private static string[] SplitCommaList(string? input) =>
@@ -230,7 +261,7 @@ public static class CreateCommand
     private static bool PromptYesNo(string prompt, bool defaultYes)
     {
         Console.Write($"{prompt} ({(defaultYes ? "Y/n" : "y/N")}): ");
-        var input = Console.ReadLine()?.Trim();
+        var input = ReadLineOrThrow().Trim();
         if (string.IsNullOrEmpty(input))
         {
             return defaultYes;
@@ -239,49 +270,93 @@ public static class CreateCommand
         return input.Equals("y", StringComparison.OrdinalIgnoreCase) || input.Equals("yes", StringComparison.OrdinalIgnoreCase);
     }
 
-    private static string PromptKind(string label, IReadOnlyCollection<string> knownKinds)
+    private static CapabilityDescriptor PromptKind(string label, IReadOnlyList<CapabilityDescriptor> descriptors)
     {
-        var sorted = knownKinds.OrderBy(k => k, StringComparer.Ordinal).ToList();
+        var byKind = descriptors.ToDictionary(d => d.Kind, StringComparer.Ordinal);
         while (true)
         {
-            Console.WriteLine($"Known kinds: {string.Join(", ", sorted)}");
+            Console.WriteLine($"Known kinds: {string.Join(", ", byKind.Keys.Order(StringComparer.Ordinal))}");
             Console.Write($"{label}: ");
-            var input = Console.ReadLine()?.Trim();
-            if (input is not null && knownKinds.Contains(input))
+            var input = ReadLineOrThrow().Trim();
+            if (byKind.TryGetValue(input, out var descriptor))
             {
-                return input;
+                return descriptor;
             }
 
-            Console.WriteLine($"'{input}' is not a known kind.");
+            Console.WriteLine($"'{input}' is not a known kind.{KindSuggestionHint(input, byKind.Keys)}");
         }
     }
 
-    private static Dictionary<string, object> PromptParameters()
+    private static string KindSuggestionHint(string? input, IEnumerable<string> knownKinds) =>
+        string.IsNullOrEmpty(input)
+            ? ""
+            : knownKinds.FirstOrDefault(k => k.Contains(input, StringComparison.OrdinalIgnoreCase)) is { } near
+                ? $" Did you mean '{near}'?"
+                : "";
+
+    /// <summary>
+    /// Prompts for the chosen kind's declared parameters by name, then allows any extras. Required
+    /// parameters are re-prompted until answered, since omitting one makes the rule fail to parse.
+    /// </summary>
+    private static Dictionary<string, object> PromptParameters(CapabilityDescriptor descriptor)
     {
+        Console.WriteLine($"  {descriptor.Summary}");
         var parameters = new Dictionary<string, object>();
+
+        foreach (var parameter in descriptor.Parameters)
+        {
+            var hint = parameter.Required ? "required" : parameter.Default is { } d ? $"optional, default {d}" : "optional";
+            if (parameter.AllowedValues is { Count: > 0 } allowed)
+            {
+                hint += $"; one of {string.Join(", ", allowed)}";
+            }
+
+            while (true)
+            {
+                Console.Write($"  {parameter.Name} ({hint}): ");
+                var value = ReadLineOrThrow().Trim();
+                if (value.Length > 0)
+                {
+                    parameters[parameter.Name] = ParseValue(value);
+                    break;
+                }
+
+                if (!parameter.Required)
+                {
+                    break;
+                }
+
+                Console.WriteLine($"  '{parameter.Name}' is required.");
+            }
+        }
+
+        // Nested selector/assertion parameters can't be prompted for meaningfully, and a kind may
+        // gain a parameter this build doesn't know, so the free-form loop stays available.
         while (true)
         {
-            Console.Write("Parameter name (blank to finish): ");
-            var name = Console.ReadLine()?.Trim();
+            Console.Write("Additional parameter name (blank to finish): ");
+            var name = ReadLineOrThrow().Trim();
             if (string.IsNullOrEmpty(name))
             {
                 return parameters;
             }
 
             Console.Write($"Value for '{name}': ");
-            var value = Console.ReadLine()?.Trim() ?? "";
-            parameters[name] = value.Contains(',')
-                ? value.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
-                : value;
+            parameters[name] = ParseValue(ReadLineOrThrow().Trim());
         }
     }
 
-    private static Dictionary<string, object> PromptTargetSelector(IReadOnlyCollection<string> knownKinds)
-    {
-        var kind = PromptKind("Target selector kind", knownKinds);
-        var parameters = PromptParameters();
+    private static object ParseValue(string value) =>
+        value.Contains(',')
+            ? value.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+            : value;
 
-        var target = new Dictionary<string, object> { ["kind"] = kind };
+    private static Dictionary<string, object> PromptTargetSelector(IReadOnlyList<CapabilityDescriptor> descriptors)
+    {
+        var descriptor = PromptKind("Target selector kind", descriptors);
+        var parameters = PromptParameters(descriptor);
+
+        var target = new Dictionary<string, object> { ["kind"] = descriptor.Kind };
         foreach (var (key, value) in parameters)
         {
             target[key] = value;
