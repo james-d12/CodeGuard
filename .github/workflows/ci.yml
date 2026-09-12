@@ -82,8 +82,10 @@ jobs:
               /n:"CodeGuard" \
               /d:sonar.token="$SONAR_TOKEN" \
               /d:sonar.qualitygate.wait=false \
-              /d:sonar.exclusions="**/bin/**,**/obj/**"
-             
+              /d:sonar.exclusions="**/bin/**,**/obj/**" \
+              /d:sonar.cs.cobertura.reportsPaths="coverage/**/coverage.cobertura.xml" \
+              /d:sonar.coverage.exclusions="src/CodeGuard.Cli/Program.cs"
+
             dotnet build --no-restore
           
             dotnet test --no-build \
