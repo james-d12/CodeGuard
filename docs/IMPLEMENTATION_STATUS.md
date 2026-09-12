@@ -504,6 +504,17 @@ Mechanically: `RuleMetadata`/`RuleSource` (`CodeGuard.RuleModel/Rules/RuleDefini
 `rules explain --format json`'s `metadata` field and counted (not flagged as a failure - see
 `rules analyze` above) by `rules analyze`'s new `RulesMissingProvenance`.
 
+**Lifecycle state (`status: experimental|active|deprecated|retired`, `docs/REFACTORING.md` §12) was
+considered as a follow-up and rejected, not deferred.** Scoped down to "purely informational, no
+`rules analyze` check" - the same discipline `metadata.source` went through - it became clear the
+field would have zero consumers: nothing would read it, filter by it, or surface it anywhere, unlike
+`metadata.source`. `enabled`/`illustrative` already cover the on/off and real-vs-demonstrative axes;
+a third axis with no consumer wasn't worth the schema surface. `version` + diagnostic-level version
+stamping (the other half of that same REFACTORING.md section) was never evaluated on its own merits
+either way - it's a materially bigger, cross-cutting change (touches the evaluator and every
+`IViolationReporter`) that was out of scope for this decision regardless of the `status` outcome.
+Don't re-propose lifecycle state without first identifying a concrete consumer.
+
 ## The 11 starter rules
 
 All under `rules/`, all illustrative (`Contoso.*` namespace, `illustrative: true`), matching the
