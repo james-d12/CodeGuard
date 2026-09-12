@@ -438,8 +438,40 @@ it, plus the three authoring-primitive gaps that prerequisite gated.
   until the process OOMed instead of failing cleanly. Fixed by routing every prompt through a
   `ReadLineOrThrow()` helper that fails the command with a clear message on EOF.
 
-`docs/HIGH_LEVEL_AI_ASSISTING.md` §14 (`rules analyze`) and §6/§19 (rule `metadata`/provenance)
-remain unimplemented — see that document's §27 for current phase status.
+### Post-v1 addition: `codeguard rules analyze`
+
+Design doc: `docs/HIGH_LEVEL_AI_ASSISTING.md` §14 (Phase 3 of §27). Landed sooner than that document's
+original phase order expected, since §12's descriptor layer (above) already unlocked most of it
+without needing Phase 2's rule `metadata` first.
+
+- `CodeGuard.Configuration/Analysis/RuleSetAnalyzer.cs` (`RuleAnalysisReport`,
+  `RuleSetAnalyzer.Analyze`) implements Tier 1 and Tier 2 from §14; Tier 3 (overlapping selectors,
+  conflicting assertions) is explicitly out of scope, per that section.
+  - Tier 1: invalid rules and duplicate ids reuse `RuleFileLoader.ValidateDirectories` directly
+    (split back apart by `RuleErrorCodes.DuplicateRuleId`); missing-tests and one-sided-tests
+    (a rule with only `pass` cases or only `fail` cases — distinct from `RuleTestRunner`'s existing,
+    narrower vacuous-test guard) are new; disabled/`illustrative: true` rules are counted but
+    deliberately excluded from `RuleAnalysisReport.HasFindings`, since a rule set legitimately
+    containing them (like this repo's own `examples/rules/`, all illustrative) isn't itself a
+    problem. Missing provenance is correctly not implemented - still blocked on §6/§19's
+    unimplemented `metadata` field.
+  - Tier 2 "unreachable rules": a top-level assertion whose `CapabilityDescriptor.AppliesTo` doesn't
+    include the target selector's `Produces` kind. Doesn't recurse into `must_all_match`/
+    `must_any_match`/`must_none_match`'s nested `assertions:` - those objects aren't recoverable from
+    the parsed model (only `Kind` survives parsing), only from the raw document, and this check
+    works from the parsed model since `Kind` is all it needs for the top level.
+  - Tier 2 "exact-duplicate rules": needs the raw source document instead (`RuleFileLoader.ReadDocument`),
+    for the reason above once parameter values matter - a `Canonicalize` helper recursively
+    key-sorts each rule's `target`+`assertions` (or `analyzer`) before grouping, so two rules
+    differing only in parameter order still compare equal. Found real, true-positive duplicates in
+    `examples/rules/` on first run - e.g. `ARCH-DEPENDENCY-002`/`ARCH-DEPENDENCY-005` share an
+    identical enforceable body despite different names/tests/descriptions (each demonstrates the
+    same `must_not_depend_on` rule through a different code shape).
+- `codeguard rules analyze` (`CodeGuard.Cli/Commands/Rules/AnalyzeCommand.cs`,
+  `CodeGuard.Cli/Support/RuleAnalysisReportWriter.cs`): `--format console|json`. Exits non-zero
+  when `RuleAnalysisReport.HasFindings` (invalid rules, duplicate ids, missing/one-sided tests,
+  unreachable assertions, or exact duplicates) - disabled/illustrative counts don't affect the exit
+  code, per above.
 
 ## The 11 starter rules
 

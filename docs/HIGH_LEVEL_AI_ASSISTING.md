@@ -1,7 +1,7 @@
 # CodeGuard — AI-Assisted Rule Authoring & MCP
 
-**Status:** Proposed (Phase 1 of §27 implemented; see §9-§13)
-**Version:** 1.2
+**Status:** Proposed (Phases 1 and 3 of §27 implemented; see §9-§14)
+**Version:** 1.3
 **Scope:** CodeGuard rule authoring, validation, testing and AI integration
 
 > **All YAML and JSON in this document is real, current CodeGuard syntax**, checked against the
@@ -345,15 +345,13 @@ codeguard rules list      # (--format table|json)
 codeguard rules explain   # --format console|json; see §13
 codeguard rules discover  # --format console|json|markdown; see §12
 codeguard rules create    # interactive rule scaffolder, descriptor-driven; see §12
+codeguard rules analyze   # --format console|json; Tier 1 + opportunistic Tier 2 only, see §14
 codeguard setup           # configure the rule source
 codeguard info            # show the resolved rule source and counts
 ```
 
-**Proposed** — these do not exist yet:
-
-```bash
-codeguard rules analyze   # §14
-```
+**Proposed** — nothing left in this document remains fully unimplemented in the CLI itself; the
+remaining gaps are the rule `metadata` schema (§6/§19) and MCP (§15).
 
 Note the command group is nested (`codeguard rules <verb>`), not flat.
 
@@ -580,44 +578,48 @@ This is useful both for developers and AI agents.
 
 # 14. `codeguard rules analyze`
 
-**Not implemented yet** — no `AnalyzeCommand` exists under `src/CodeGuard.Cli/Commands/Rules/`. This
-section's own prerequisite (§12's descriptor layer) has since shipped, though, which changes the
-cost of some of the checks below.
+**Implemented — Tier 1 and Tier 2, exactly as scoped below.** Tier 3 remains explicitly out of
+scope, per this section's own original guidance.
 
-This capability should analyse a rule collection for mechanically detectable problems.
+This capability analyses a rule collection for mechanically detectable problems, beyond what `rules
+validate` checks (structural correctness) — a rule set can be 100% valid and still have these
+findings, so a non-empty report isn't the same signal as a failing `rules validate`.
 
-These checks are **not** of comparable cost, and listing them as one bullet list has led to them
-being treated as one piece of work. They split into three tiers:
+These checks are **not** of comparable cost, and listing them as one bullet list would have led to
+them being treated as one piece of work. They split into three tiers:
 
-**Tier 1 — mechanically provable, cheap. Implement first.**
+**Tier 1 — mechanically provable, cheap.**
 
-* Invalid rules and duplicate IDs — **directly reusable**: `RuleFileLoader.ValidateDirectories`
-  already computes both during loading.
-* Missing tests — `rule.Tests.Count == 0`, a one-line filter.
-* One-sided tests — a rule with a `pass` case but no `fail` case. This is the cheap structural proxy
-  for "tests don't exercise the intended assertion", and worth more than it looks: a `fail` case is
-  what stops a mis-specified `pass` case from passing vacuously. Not implemented anywhere yet (the
-  existing vacuous-test guard in `RuleTestRunner` is a different, narrower check). As of this
-  writing all 117 example rules that carry `tests:` already have both a pass and a fail case, so
-  this check is forward-looking, not a fix for a known-existing gap.
-* Missing provenance — still correctly blocked on §6/§19's unimplemented `metadata` field.
-* Disabled rules; `illustrative: true` rules in a production rule set — the fields exist
-  (`RuleDefinition.Enabled`/`Illustrative`) and are already surfaced by `rules list`/`rules explain`,
-  but nothing today flags them as a problem to report on.
+* Invalid rules and duplicate IDs — reused directly from `RuleFileLoader.ValidateDirectories`
+  (`context.ValidateRules()`), split back apart by `RuleErrorCodes.DuplicateRuleId`.
+* Missing tests — `rule.Tests.Count == 0`.
+* One-sided tests — a rule with only `pass` cases or only `fail` cases (distinct from the existing,
+  narrower vacuous-test guard in `RuleTestRunner`). As of this writing all 117 example rules that
+  carry `tests:` already have both, so this check has found nothing yet in this repo's own rule set
+  — it's there for the next rule that gets it wrong.
+* Missing provenance — still correctly skipped; blocked on §6/§19's unimplemented `metadata` field.
+* Disabled rules; `illustrative: true` rules — counted and listed, but deliberately excluded from
+  what makes the command exit non-zero (`RuleAnalysisReport.HasFindings`), since a rule set
+  legitimately containing them — like this repo's own `examples/rules/`, all illustrative — isn't
+  itself a problem.
 
-**Tier 2 — needs the §12 descriptor layer, which has now shipped.**
+**Tier 2 — needed the §12 descriptor layer, which has since shipped.**
 
-* Unreachable rules — an assertion kind that cannot apply to the target's candidate type. **Cheaper
-  than expected**: `CapabilityDescriptor` carries exactly the metadata this needs —
-  `Produces` (a selector's `CandidateKind`) and `AppliesTo` (an assertion's valid `CandidateKind[]`)
-  — so this reduces to resolving the target's `Produces` and checking every assertion's `AppliesTo`
-  against it via `CapabilityCatalog`, including recursing into `must_all_match`/`must_any_match`/
-  `must_none_match`'s nested selectors.
-* Exact-duplicate rules (same target kind + params + assertion set) — has a real wrinkle: `IAssertion`
-  exposes only `Kind`, not parameter values (the same limitation §13 worked around). Detecting exact
-  duplicates needs the same workaround — compare each rule's raw source `JsonNode`
-  (`target`+`assertions`, via `RuleFileLoader.ReadDocument`) structurally, not the parsed
-  `RuleDefinition`.
+* Unreachable rules — a top-level assertion whose `CapabilityDescriptor.AppliesTo` doesn't include
+  the target selector's `Produces` kind. Assertions with an empty `AppliesTo` (the quantifier/
+  existence kinds — `must_all_match`/`must_any_match`/`must_none_match`/`must_have_count`/
+  `must_exist`/`must_not_exist`, which evaluate a nested selector rather than the outer candidate)
+  are never flagged, by design. **Known limitation, not fixed**: this only checks the rule's
+  top-level assertions — it doesn't recurse into those quantifier assertions' own nested
+  `assertions:`, because the nested selector/assertion objects aren't recoverable from the parsed
+  model (only `Kind` survives parsing, the same limitation §13 works around for parameter values).
+* Exact-duplicate rules (identical `target`+`assertions`, or identical `analyzer`) — reads the raw
+  source document via `RuleFileLoader.ReadDocument` rather than the parsed model, for the same
+  reason, and canonicalizes (recursively key-sorts) it first so two rules that differ only in
+  parameter order still compare equal. Found real, true-positive duplicates in this repo's own
+  `examples/rules/` on first run (e.g. `ARCH-DEPENDENCY-002`/`ARCH-DEPENDENCY-005` share an
+  identical enforceable body despite different names/tests/descriptions — each demonstrates the
+  same `must_not_depend_on` rule through a different code shape).
 
 **Tier 3 — research, not scheduled work. Do not promise these.**
 
@@ -626,20 +628,24 @@ being treated as one piece of work. They split into three tiers:
 * "Rules whose tests don't exercise the intended assertion" in its full form is mutation testing
   (§22), not a static check.
 
-Example:
+Real output against this repo's own `examples/rules/`:
 
 ```text
 CodeGuard Rule Analysis
 
-Rules: 87
-
-Valid:                         84
-Invalid:                        3
-Rules without tests:            7
-Duplicate selectors:            2
-Potential conflicts:            1
-Missing provenance:             4
+Rules:                    125
+Invalid:                  0
+Duplicate ids:            0
+Rules without tests:      8
+One-sided tests:          0
+Unreachable assertions:   0
+Exact-duplicate rules:    5
+Disabled rules:           0
+Illustrative rules:       125
 ```
+
+(The 8 without tests are the analyzer-backed rules the virtual test-setup path can't drive — see
+CLAUDE.md's rules-directory notes; expected, not a defect.)
 
 This is **not** intended to replace semantic AI analysis.
 
@@ -1117,17 +1123,14 @@ across hand-authored vs. generated rules (see `docs/IMPLEMENTATION_STATUS.md`), 
 applies here (exact field names, and whether the existing 125 example rules get backfilled or only
 new rules populate it).
 
-### Phase 3 — Rule analysis
-
-Implement:
+### Phase 3 — Rule analysis — **DONE**
 
 ```bash
 codeguard rules analyze
 ```
 
-with the Tier 1 and Tier 2 checks from §14. Tier 3 is explicitly out of scope. Given the note under
-Phase 1 above, most of Tier 1 and all of Tier 2 can proceed without waiting on Phase 2 — only the
-"missing provenance" line item needs it.
+Tier 1 and Tier 2 from §14 both implemented, ahead of Phase 2 as anticipated — only the "missing
+provenance" line item still needs it, and remains skipped. Tier 3 is explicitly out of scope.
 
 ### Phase 4 — MCP
 
