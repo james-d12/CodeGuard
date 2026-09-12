@@ -35,6 +35,22 @@
     "documentation": { "type": "array", "items": { "type": "string" } },
     "enabled": { "type": "boolean" },
     "illustrative": { "type": "boolean" },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "source": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["document"],
+          "properties": {
+            "document": { "type": "string", "minLength": 1 },
+            "section": { "type": "string" },
+            "statement": { "type": "string" }
+          }
+        }
+      }
+    },
     "target": {
       "type": "object",
       "required": ["kind"],

@@ -68,6 +68,12 @@ remediation: >
   Inherit from Contoso.Domain.Entity<TId>.
 illustrative: true
 
+metadata:
+  source:
+    document: Architecture Standards
+    section: "3.1 Entity Base Class"
+    statement: Domain entities must inherit from the shared Entity base class.
+
 target:
   kind: class
   namespace: "Contoso.Domain.Entities"
@@ -183,5 +189,6 @@ assertions:
 ## Field order
 
 Match this field order when emitting a rule: `id`, `name`, `description`, `severity`,
-`enforcement`, `tags`, `remediation`, `illustrative`, blank line, `target` (or `analyzer`), blank
-line, `when` if present, blank line, `assertions` if present, blank line, `tests` if present.
+`enforcement`, `tags`, `remediation`, `illustrative`, `metadata` if present, blank line, `target`
+(or `analyzer`), blank line, `when` if present, blank line, `assertions` if present, blank line,
+`tests` if present.

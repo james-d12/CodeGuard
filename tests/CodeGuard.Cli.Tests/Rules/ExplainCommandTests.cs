@@ -91,6 +91,48 @@ public class ExplainCommandTests
             var assertion = root.GetProperty("document").GetProperty("assertions")[0];
             Assert.Equal("Entity<*>", assertion.GetProperty("must_inherit_from").GetProperty("type").GetString());
             Assert.Equal("class", root.GetProperty("document").GetProperty("target").GetProperty("kind").GetString());
+
+            // No metadata.source on this rule - serialized as an explicit JSON null, same as the
+            // other optional fields here (description/remediation), not omitted.
+            Assert.Equal(JsonValueKind.Null, root.GetProperty("metadata").ValueKind);
+        }
+        finally
+        {
+            Directory.Delete(rulesDir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task Run_Json_WithMetadataSource_IncludesProvenance()
+    {
+        var rulesDir = Directory.CreateTempSubdirectory("codeguard-explain-json-metadata-").FullName;
+        try
+        {
+            await File.WriteAllTextAsync(Path.Combine(rulesDir, "rule.yml"), """
+                id: DDD-ENTITY-001
+                name: Entities inherit Entity
+                metadata:
+                  source:
+                    document: Architecture Standards
+                    section: "4.2 Layering"
+                    statement: Domain entities must inherit from the shared Entity base.
+                target:
+                  kind: class
+                  namespace: "Contoso.Domain"
+                assertions:
+                  - must_inherit_from:
+                      type: "Entity<*>"
+                """);
+
+            var (exitCode, output) = await RunExplain(["--rules-source", rulesDir, "DDD-ENTITY-001", "--format", "json"]);
+
+            Assert.Equal(0, exitCode);
+            using var document = JsonDocument.Parse(output);
+            var source = document.RootElement.GetProperty("metadata").GetProperty("source");
+
+            Assert.Equal("Architecture Standards", source.GetProperty("document").GetString());
+            Assert.Equal("4.2 Layering", source.GetProperty("section").GetString());
+            Assert.Equal("Domain entities must inherit from the shared Entity base.", source.GetProperty("statement").GetString());
         }
         finally
         {

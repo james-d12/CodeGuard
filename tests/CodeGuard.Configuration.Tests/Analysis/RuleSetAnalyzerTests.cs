@@ -193,6 +193,39 @@ public class RuleSetAnalyzerTests : IDisposable
     }
 
     [Fact]
+    public void Analyze_RuleWithoutMetadataSource_IsReportedAsMissingProvenanceButNotAFinding()
+    {
+        WriteRuleFile("no-provenance.yml", RuleYaml("DDD-ENTITY-001", withTests: true));
+
+        var report = Analyze();
+
+        Assert.Equal(["DDD-ENTITY-001"], report.RulesMissingProvenance);
+        Assert.False(report.HasFindings);
+    }
+
+    [Fact]
+    public void Analyze_RuleWithMetadataSource_IsNotReportedAsMissingProvenance()
+    {
+        WriteRuleFile("with-provenance.yml", """
+            id: DDD-ENTITY-001
+            name: Some rule
+            metadata:
+              source:
+                document: Architecture Standards
+            target:
+              kind: class
+              namespace: "Contoso.Domain.Entities"
+            assertions:
+              - must_inherit_from:
+                  type: "Contoso.Domain.Entity<TId>"
+            """);
+
+        var report = Analyze();
+
+        Assert.Empty(report.RulesMissingProvenance);
+    }
+
+    [Fact]
     public void Analyze_DisabledAndIllustrativeRules_AreCountedButDoNotCountAsFindings()
     {
         WriteRuleFile("disabled.yml", $$"""

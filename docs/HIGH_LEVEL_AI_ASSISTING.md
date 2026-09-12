@@ -1,7 +1,7 @@
 # CodeGuard — AI-Assisted Rule Authoring & MCP
 
-**Status:** Proposed (Phases 1 and 3 of §27 implemented; see §9-§14)
-**Version:** 1.3
+**Status:** Proposed (Phase 1, provenance from Phase 2, and Phase 3 of §27 implemented; see §6, §9-§14, §19)
+**Version:** 1.4
 **Scope:** CodeGuard rule authoring, validation, testing and AI integration
 
 > **All YAML and JSON in this document is real, current CodeGuard syntax**, checked against the
@@ -176,11 +176,22 @@ This deliberately distinguishes between a **candidate rule** and an **approved o
 
 AI-generated rules should contain sufficient metadata to explain where they came from.
 
-Example:
+**Implemented, in a deliberately narrower shape than earlier drafts of this section proposed.**
+`metadata.source` is real schema now — but it's `{document, section, statement}` only, with no
+`generation` block, and singular (`source`, not a `sources` list). Both cuts were deliberate design
+decisions, not omissions: a prior field with the same intent
+(`RuleDefinition.Standard`, see `docs/IMPLEMENTATION_STATUS.md`) was removed after two incompatible
+authoring conventions collided across hand-authored vs. generated rules, so this one gives `document`/
+`section` **no structure to be inconsistent about** — they're free text, never resolved against a real
+file or used for grouping/lookup by the engine. `statement` is a paraphrase in the rule author's own
+words, not a verbatim quote — matching the register `description`/`remediation` already use, and
+deliberately not adding more of a source company's original standards-doc prose to what's committed
+in `examples/rules/` (see CLAUDE.md on that directory's content). `generation.method` (ai vs. human)
+and multi-source support were both considered and deferred rather than bundled in — each is its own
+convention to get right, and folding them in here risked the exact "one field, several ideas of what
+it means" problem this was designed to avoid.
 
-Everything below **except the `metadata:` block** is current, valid syntax. `metadata` does not
-exist yet: the rule schema is `additionalProperties: false` at the root, so adding it to a rule today
-is a hard validation failure. Implementing this section therefore means a schema change first.
+Example (real, valid syntax end to end):
 
 ```yaml
 id: ARCHITECTURE-DOMAIN-NO-INFRASTRUCTURE-001
@@ -197,15 +208,12 @@ tags:
 
 illustrative: false
 
-# PROPOSED — not yet supported by the schema.
 metadata:
   source:
-    document: architecture-standards.md
+    document: Architecture Standards
     section: Layering Rules
     statement: >
       Domain projects must not depend on Infrastructure projects.
-  generation:
-    method: ai
 
 target:
   kind: project
@@ -597,7 +605,10 @@ them being treated as one piece of work. They split into three tiers:
   narrower vacuous-test guard in `RuleTestRunner`). As of this writing all 117 example rules that
   carry `tests:` already have both, so this check has found nothing yet in this repo's own rule set
   — it's there for the next rule that gets it wrong.
-* Missing provenance — still correctly skipped; blocked on §6/§19's unimplemented `metadata` field.
+* Missing provenance — implemented now that §6/§19's `metadata.source` exists
+  (`RuleAnalysisReport.RulesMissingProvenance`). Also excluded from `HasFindings`, same reasoning as
+  disabled/illustrative below — `metadata.source` is optional, additive documentation, not a
+  requirement, so all 125 of this repo's own example rules currently lacking it isn't a problem.
 * Disabled rules; `illustrative: true` rules — counted and listed, but deliberately excluded from
   what makes the command exit non-zero (`RuleAnalysisReport.HasFindings`), since a rule set
   legitimately containing them — like this repo's own `examples/rules/`, all illustrative — isn't
@@ -642,6 +653,7 @@ Unreachable assertions:   0
 Exact-duplicate rules:    5
 Disabled rules:           0
 Illustrative rules:       125
+Missing provenance:       125
 ```
 
 (The 8 without tests are the analyzer-backed rules the virtual test-setup path can't drive — see
@@ -808,21 +820,27 @@ For an MVP, Git pull requests are sufficient.
 
 Every rule should ideally be traceable to its source.
 
-**Not implemented.** The rule schema is `additionalProperties: false` at the root, so `metadata:` is
-currently rejected outright rather than merely unused. The existing `documentation` field is
-`array<string>` and is used by none of the 125 example rules — too weak to carry document/section/
-statement provenance. Implementing this section means adding `metadata` to the schema, the rule
-model, and the parser first.
+**Implemented** — see §6 for the settled shape and the reasoning behind cutting it down from earlier
+drafts. `RuleDefinition.Metadata?.Source` (`CodeGuard.RuleModel.Rules.RuleMetadata`/`RuleSource`)
+carries `Document`/`Section`/`Statement`, all optional except `Document`. The existing
+`documentation` field (`array<string>`) is unrelated and still unused by any example rule — it was
+always too weak to carry structured document/section/statement provenance, which is why this is a
+new field rather than a reinterpretation of that one.
 
-Proposed shape:
+Real shape:
 
 ```yaml
 metadata:
   source:
-    document: architecture-standards.md
+    document: Architecture Standards
     section: "4.2 Layering"
-    statement: "Domain projects must not depend on Infrastructure."
+    statement: Domain projects must not depend on Infrastructure.
 ```
+
+`document`/`section` are free text — never resolved against a real file, never used by the engine
+for grouping or lookup (see §6 for why). `codeguard rules explain --format json` surfaces it under
+`metadata.source`, and `codeguard rules analyze` counts rules missing it (informational only — see
+§14; a rule set legitimately having none, like this repo's own `examples/rules/`, isn't a problem).
 
 This provides an answer to:
 
@@ -1112,16 +1130,14 @@ see §14) have real dependencies left.
 
 Introduce:
 
-* provenance
-* lifecycle state
-* test metadata
-* deterministic capability metadata
-
-Not started. The `metadata.source` shape needs a deliberate decision before implementation — a
-previous `RuleDefinition.Standard` field was removed after two incompatible conventions collided
-across hand-authored vs. generated rules (see `docs/IMPLEMENTATION_STATUS.md`), and the same risk
-applies here (exact field names, and whether the existing 125 example rules get backfilled or only
-new rules populate it).
+* provenance — **done**. `metadata.source: {document, section, statement}`, deliberately narrower
+  than this document originally sketched (no `generation` block, no multi-source list) — see §6/§19
+  for the shape and the reasoning. No backfill of the 125 existing example rules.
+* lifecycle state — not started, and not the same decision as provenance; deliberately kept separate
+  rather than bundled into the same field (see §6's reasoning). `docs/REFACTORING.md` §12 has a
+  related, not-yet-reconciled proposal (`version`/`status`: experimental/active/deprecated/retired).
+* test metadata, deterministic capability metadata — not started; this document never specified a
+  concrete shape for either, so there's nothing yet to implement.
 
 ### Phase 3 — Rule analysis — **DONE**
 

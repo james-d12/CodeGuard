@@ -27,13 +27,15 @@ public sealed record RuleAnalysisReport(
     IReadOnlyList<string> OneSidedTestRules,
     IReadOnlyList<string> DisabledRules,
     IReadOnlyList<string> IllustrativeRules,
+    IReadOnlyList<string> RulesMissingProvenance,
     IReadOnlyList<UnreachableAssertionIssue> UnreachableRules,
     IReadOnlyList<ExactDuplicateGroup> ExactDuplicateRules)
 {
     /// <summary>
-    /// Whether anything worth a human's attention was found. Illustrative/disabled rules are
-    /// reported as counts for visibility but don't affect this - a rule set legitimately containing
-    /// them (as this repo's own `examples/rules/` does) isn't itself a problem.
+    /// Whether anything worth a human's attention was found. Illustrative/disabled/no-provenance
+    /// rules are reported as counts for visibility but don't affect this - a rule set legitimately
+    /// containing them (as this repo's own `examples/rules/` does, for all three) isn't itself a
+    /// problem: `metadata.source` is optional, additive documentation, not a requirement.
     /// </summary>
     public bool HasFindings =>
         InvalidRules.Count > 0 || DuplicateIds.Count > 0 || RulesWithoutTests.Count > 0
@@ -82,6 +84,12 @@ public static class RuleSetAnalyzer
             .Order(StringComparer.Ordinal)
             .ToList();
 
+        var rulesMissingProvenance = validation.Rules
+            .Where(entry => entry.Rule.Metadata?.Source is null)
+            .Select(entry => entry.Rule.Id)
+            .Order(StringComparer.Ordinal)
+            .ToList();
+
         return new RuleAnalysisReport(
             validation.Rules.Count,
             invalidRules,
@@ -90,6 +98,7 @@ public static class RuleSetAnalyzer
             oneSidedTestRules,
             disabledRules,
             illustrativeRules,
+            rulesMissingProvenance,
             FindUnreachableAssertions(validation.Rules, catalog),
             FindExactDuplicates(validation.Rules));
     }

@@ -132,9 +132,30 @@ explicitly example/sample content rather than a mandatory requirement.
 * Set `enforcement.classification` per the rules above.
 * Include `remediation` guidance where useful.
 * Add relevant `tags` and `documentation` references where available.
+* Add `metadata.source` when you know which document motivated the rule (see below).
 * Add a `tests` block with both a `pass` and a `fail` case (see `references/examples.md`).
 * Set `illustrative` per the rules above.
 * Set `enabled` to `true` unless the source indicates otherwise.
+
+## `metadata.source`
+
+Optional, but add it whenever you can: it's how a human reviewer answers "why does CodeGuard enforce
+this?" without re-reading the source documentation. Shape:
+
+```yaml
+metadata:
+  source:
+    document: Architecture Standards
+    section: "4.2 Layering"
+    statement: Domain projects must not depend on Infrastructure projects.
+```
+
+* `document` (required if `source` is present) — the source document's name, free text. Not a file
+  path and not validated against anything — just enough for a human to find it.
+* `section` — a heading/section reference within that document, if there is one.
+* `statement` — **paraphrase** the requirement in your own words; do not quote the source verbatim.
+* Omit `metadata` entirely when you don't know the source document (e.g. a rule you're asked to
+  generate without a cited document) — don't invent a plausible-sounding one.
 
 ## Verify before you hand anything over
 

@@ -119,6 +119,17 @@ public static class ExplainCommand
             ["documentation"] = new JsonArray(rule.Documentation.Select(d => (JsonNode)d!).ToArray()),
             ["enabled"] = rule.Enabled,
             ["illustrative"] = rule.Illustrative,
+            ["metadata"] = rule.Metadata?.Source is { } source
+                ? new JsonObject
+                {
+                    ["source"] = new JsonObject
+                    {
+                        ["document"] = source.Document,
+                        ["section"] = source.Section,
+                        ["statement"] = source.Statement
+                    }
+                }
+                : null,
             // "declarative" is the target+assertions form. Spelled without a '+' so the value doesn't
             // come back unicode-escaped by the default JSON encoder.
             ["shape"] = rule.Analyzer is not null ? "analyzer" : "declarative",
@@ -146,6 +157,10 @@ public static class ExplainCommand
         Console.WriteLine($"Tags:          {(rule.Tags.Count == 0 ? "-" : string.Join(", ", rule.Tags))}");
         Console.WriteLine($"Enabled:       {rule.Enabled}");
         Console.WriteLine($"Illustrative:  {rule.Illustrative}");
+        if (rule.Metadata?.Source is { } source)
+        {
+            Console.WriteLine($"Source:        {source.Document}{(source.Section is null ? "" : $" - {source.Section}")}");
+        }
         if (rule.Analyzer is not null)
         {
             Console.WriteLine($"Analyzer:      {rule.Analyzer.Name}");

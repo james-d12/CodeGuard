@@ -61,6 +61,7 @@ public static class RuleDocumentParser
             Documentation = document.GetStringArray("documentation"),
             Enabled = document.GetOptionalBool("enabled", true),
             Illustrative = document.GetOptionalBool("illustrative", false),
+            Metadata = ParseMetadata(document),
             Tests = ParseTests(document),
             Target = target,
             When = when,
@@ -92,4 +93,23 @@ public static class RuleDocumentParser
         document["enforcement"]?.AsObject().GetOptionalString("classification") is { } value
             ? EnumParsing.ParseSnakeCase<EnforcementClassification>(value)
             : EnforcementClassification.Deterministic;
+
+    private static RuleMetadata? ParseMetadata(JsonObject document)
+    {
+        var metadataNode = document["metadata"]?.AsObject();
+        if (metadataNode is null)
+        {
+            return null;
+        }
+
+        var sourceNode = metadataNode["source"]?.AsObject();
+        var source = sourceNode is null
+            ? null
+            : new RuleSource(
+                sourceNode.GetRequiredString("document"),
+                sourceNode.GetOptionalString("section"),
+                sourceNode.GetOptionalString("statement"));
+
+        return new RuleMetadata { Source = source };
+    }
 }

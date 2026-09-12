@@ -51,6 +51,78 @@ public class RuleFileLoaderTests : IDisposable
         Assert.Equal(["ddd", "domain"], rule.Tags);
         Assert.True(rule.Illustrative);
         Assert.Single(rule.Assertions!);
+        Assert.Null(rule.Metadata);
+    }
+
+    [Fact]
+    public void LoadFromFile_WithMetadataSource_ParsesProvenance()
+    {
+        var file = WriteRuleFile("with-metadata.yml", """
+            id: DDD-ENTITY-001
+            name: Domain entities must inherit from Entity
+            metadata:
+              source:
+                document: Architecture Standards
+                section: "4.2 Layering"
+                statement: Domain entities must inherit from the approved base class.
+            target:
+              kind: class
+              namespace: "Contoso.Domain.Entities"
+            assertions:
+              - must_inherit_from:
+                  type: "Contoso.Domain.Entity<TId>"
+            """);
+
+        var rule = CreateLoader().LoadFromFile(file);
+
+        Assert.NotNull(rule.Metadata?.Source);
+        Assert.Equal("Architecture Standards", rule.Metadata!.Source!.Document);
+        Assert.Equal("4.2 Layering", rule.Metadata.Source.Section);
+        Assert.Equal("Domain entities must inherit from the approved base class.", rule.Metadata.Source.Statement);
+    }
+
+    [Fact]
+    public void LoadFromFile_WithMetadataSourceDocumentOnly_LeavesSectionAndStatementNull()
+    {
+        var file = WriteRuleFile("with-minimal-metadata.yml", """
+            id: DDD-ENTITY-001
+            name: Domain entities must inherit from Entity
+            metadata:
+              source:
+                document: Architecture Standards
+            target:
+              kind: class
+              namespace: "Contoso.Domain.Entities"
+            assertions:
+              - must_inherit_from:
+                  type: "Contoso.Domain.Entity<TId>"
+            """);
+
+        var rule = CreateLoader().LoadFromFile(file);
+
+        Assert.Equal("Architecture Standards", rule.Metadata?.Source?.Document);
+        Assert.Null(rule.Metadata?.Source?.Section);
+        Assert.Null(rule.Metadata?.Source?.Statement);
+    }
+
+    [Fact]
+    public void LoadFromFile_WithMetadataSourceMissingDocument_ThrowsSchemaValidationException()
+    {
+        var file = WriteRuleFile("bad-metadata.yml", """
+            id: DDD-ENTITY-001
+            name: Domain entities must inherit from Entity
+            metadata:
+              source:
+                section: "4.2 Layering"
+            target:
+              kind: class
+              namespace: "Contoso.Domain.Entities"
+            assertions:
+              - must_inherit_from:
+                  type: "Contoso.Domain.Entity<TId>"
+            """);
+
+        Assert.Throws<RuleSchemaValidationException>(() => CreateLoader().LoadFromFile(file));
     }
 
     [Fact]

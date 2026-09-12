@@ -119,14 +119,12 @@ public sealed class RuleValidationErrorTests : IDisposable
     [Fact]
     public void UnknownTopLevelField_IsReportedRatherThanIgnored()
     {
-        // The schema is additionalProperties:false, which is why `metadata` cannot simply be added to
-        // a rule file today - see docs/HIGH_LEVEL_AI_ASSISTING.md section 19.
+        // The schema is additionalProperties:false - `metadata` is a known field now (see the test
+        // below), but an invented one still isn't.
         var error = SingleErrorFor("""
             id: X-007
             name: Some rule
-            metadata:
-              source:
-                document: standards.md
+            provenance: standards.md
             target:
               kind: class
               namespace: "Contoso"

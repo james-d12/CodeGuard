@@ -473,6 +473,37 @@ without needing Phase 2's rule `metadata` first.
   unreachable assertions, or exact duplicates) - disabled/illustrative counts don't affect the exit
   code, per above.
 
+### Post-v1 addition: `metadata.source` (rule provenance)
+
+Design doc: `docs/HIGH_LEVEL_AI_ASSISTING.md` §6/§19 (the provenance slice of Phase 2 of §27) - see
+that doc for the design discussion this followed. Deliberately narrower than the doc's earlier
+drafts, both cuts made explicitly rather than by omission:
+
+- Singular `source:`, not a list - a rule maps to one motivating statement in the common case, and a
+  list is a schema shape that's harder to loosen later if wrong.
+- `document`/`section` are **free text**, never resolved against a real file (e.g. against
+  `.codeguard/config.yml`'s `standards` discovery path) and never used by the engine for grouping or
+  lookup. This is the direct fix for why `RuleDefinition.Standard` (above) had to be removed: that
+  field tried to be a strict categorization key, and rigid categorization is exactly what broke under
+  two authoring paths' incompatible conventions. Giving `document`/`section` no structure to be
+  inconsistent about closes off that failure mode rather than re-risking it.
+- `statement` is a **paraphrase**, not a verbatim quote - same register `description`/`remediation`
+  already use. Chosen over verbatim quoting because this repo's own rule content is derived from real
+  company conventions (see CLAUDE.md) and `examples/rules/` is committed to git even though never
+  packaged; a paraphrase doesn't add more of that original text to version control than exists today.
+- No `generation.method` (ai/human) or lifecycle `status` bundled in, despite the design doc grouping
+  "provenance / lifecycle state / test metadata / deterministic capability metadata" under one phase -
+  each is a separate convention to get right, and bundling risked the same "one field, several
+  meanings" problem this was meant to avoid.
+- No backfill of the 125 existing example rules - additive for rules written from here on, same
+  policy as the pre-existing unused `Documentation` field.
+
+Mechanically: `RuleMetadata`/`RuleSource` (`CodeGuard.RuleModel/Rules/RuleDefinition.cs`), parsed in
+`RuleDocumentParser.ParseMetadata`, added to `rule.schema.json` as one more optional top-level key
+(only `document` is required within `source`) - a purely additive schema change. Surfaced by
+`rules explain --format json`'s `metadata` field and counted (not flagged as a failure - see
+`rules analyze` above) by `rules analyze`'s new `RulesMissingProvenance`.
+
 ## The 11 starter rules
 
 All under `rules/`, all illustrative (`Contoso.*` namespace, `illustrative: true`), matching the

@@ -25,6 +25,7 @@ public static class RuleAnalysisReportWriter
         writer.WriteLine($"Exact-duplicate rules:    {report.ExactDuplicateRules.Count}");
         writer.WriteLine($"Disabled rules:           {report.DisabledRules.Count}");
         writer.WriteLine($"Illustrative rules:       {report.IllustrativeRules.Count}");
+        writer.WriteLine($"Missing provenance:       {report.RulesMissingProvenance.Count}");
 
         WriteFileList(writer, "Invalid rules", report.InvalidRules.Select(i => i.SourceFile));
         WriteFileList(writer, "Duplicate ids", report.DuplicateIds.Select(i => i.SourceFile));
