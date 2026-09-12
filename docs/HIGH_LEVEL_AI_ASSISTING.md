@@ -1168,20 +1168,30 @@ analyze_rules
 validate_repository
 ```
 
-### Phase 5 — Improve the existing AI skill
+### Phase 5 — Improve the existing AI skill — **DONE**
 
 Update the rule-authoring skill to:
 
-1. discover CodeGuard capabilities
-2. analyse documentation
-3. generate candidates
-4. generate tests
-5. validate
-6. test
-7. iterate
-8. report non-deterministic requirements
-9. report conflicts
-10. produce reviewable rules
+1. ✅ discover CodeGuard capabilities — via the CI-synced `references/*.md` tables (Phase 1), not a
+   live `rules discover` call per invocation; the skill's own vocabulary can't drift from the engine.
+2. ✅ analyse documentation — "Mapping strategy" section.
+3. ✅ generate candidates — same section, plus "Formalising vs. inventing"/"Selector specificity"
+   guardrails.
+4. ✅ generate tests — "For every rule" requires a `tests` block with both a `pass` and `fail` case.
+5. ✅ validate — `codeguard rules validate` in "Verify before you hand anything over".
+6. ✅ test — `codeguard rules test`, same section.
+7. ✅ iterate — "fix whatever they report and re-run until clean", now extended to all three
+   verification commands (see item 9).
+8. ✅ report non-deterministic requirements — the "not yet enforceable" appendix, plus
+   `enforcement.classification`.
+9. ✅ report conflicts — was the one gap: the skill verified with `validate`/`test` but never ran
+   `codeguard rules analyze`, so it could produce rules that were exact duplicates of existing ones
+   or contained unreachable assertions without ever finding out. Now wired in as a third
+   verification step, with explicit handling per finding kind (fix unreachable assertions; surface
+   exact-duplicate rules to the human reviewer via a new "Report conflicts" section rather than
+   resolving them itself).
+10. ✅ produce reviewable rules — "Output" section (one YAML file per rule, appendix/conflicts note
+    as a separate markdown block).
 
 ### Phase 6 — Advanced capabilities
 
