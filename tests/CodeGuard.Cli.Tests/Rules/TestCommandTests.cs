@@ -121,6 +121,92 @@ public class TestCommandTests : IDisposable
         Assert.Contains("Errored: 1", output);
     }
 
+    [Fact]
+    public async Task Run_PassCaseMatchingNoCandidates_ReportsErroredNotPassed()
+    {
+        // Zero candidates means zero violations, which would otherwise satisfy `expect: pass` without
+        // ever running the rule's assertions.
+        WriteRuleFile("vacuous.yml", """
+            id: DDD-ENTITY-003
+            name: Some rule
+            target:
+              kind: class
+              namespace: "Contoso.Domain.Entities"
+            assertions:
+              - must_inherit_from:
+                  type: "Contoso.Domain.Entity<*>"
+            tests:
+              - name: Setup describes a type the target never selects
+                setup:
+                  types:
+                    - name: Unrelated
+                      namespace: Somewhere.Else
+                expect: pass
+            """);
+
+        var (exitCode, output) = await RunRulesTest();
+
+        Assert.Equal(1, exitCode);
+        Assert.Contains("Errored: 1", output);
+        Assert.Contains("Vacuous test", output);
+    }
+
+    [Fact]
+    public async Task Run_UnknownSetupKey_ReportsErrored()
+    {
+        WriteRuleFile("typo.yml", """
+            id: DDD-ENTITY-004
+            name: Some rule
+            target:
+              kind: class
+              namespace: "Contoso.Domain.Entities"
+            assertions:
+              - must_inherit_from:
+                  type: "Contoso.Domain.Entity<*>"
+            tests:
+              - name: Setup uses a key the builder does not know
+                setup:
+                  typez:
+                    - name: Order
+                expect: pass
+            """);
+
+        var (exitCode, output) = await RunRulesTest();
+
+        Assert.Equal(1, exitCode);
+        Assert.Contains("Errored: 1", output);
+        Assert.Contains("Unknown rule test setup key", output);
+    }
+
+    [Fact]
+    public async Task Run_FailCaseMatchingNoCandidates_StillFails_NotErrored()
+    {
+        // The vacuity guard is deliberately pass-only: a `fail` case with no candidates already fails.
+        WriteRuleFile("vacuous-fail.yml", """
+            id: DDD-ENTITY-005
+            name: Some rule
+            target:
+              kind: class
+              namespace: "Contoso.Domain.Entities"
+            assertions:
+              - must_inherit_from:
+                  type: "Contoso.Domain.Entity<*>"
+            tests:
+              - name: Setup describes a type the target never selects
+                setup:
+                  types:
+                    - name: Unrelated
+                      namespace: Somewhere.Else
+                expect: fail
+            """);
+
+        var (exitCode, output) = await RunRulesTest();
+
+        Assert.Equal(1, exitCode);
+        Assert.Contains("Failed: 1", output);
+        Assert.DoesNotContain("Vacuous test", output);
+    }
+
     private static string PassingRuleYaml(string id) => $$"""
         id: {{id}}
         name: Some rule

@@ -28,6 +28,8 @@ public static class RuleValidationReportWriter
             writer.WriteLine(issue.SourceFile);
             foreach (var error in issue.Errors)
             {
+                // Console output stays prose-first: the code is useful to a machine, the message to a
+                // person, so lead with the message and append the path where there is one.
                 writer.WriteLine($"  - {error}");
             }
         }

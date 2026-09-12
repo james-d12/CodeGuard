@@ -69,7 +69,7 @@ tests:
     expect: fail
 ```
 
-(This example uses `must_not_reference_project`, one of the ~35 assertion kinds the engine actually
+(This example uses `must_not_reference_project`, one of the 45 assertion kinds the engine actually
 implements today — see `DefaultParsers.cs`. Earlier drafts of this document used an illustrative
 `dependency`/`not` shorthand that doesn't correspond to any real selector or assertion kind; treat
 any YAML in this document as the real, current syntax unless stated otherwise.)
@@ -154,7 +154,7 @@ The initial implementation covers **files, directories, projects/types (with nes
 properties, constructors, fields, and attributes), and call sites**. Together these back the large
 majority of the existing rule set's selector/assertion kinds (`class`, `type`, `record`, `enum`,
 `method`, `property`, `constructor`, `field`, `inherits_from`, `implements`, `project`, `file`,
-`repository`, `call_site`, and the ~35 `must_*` assertion kinds built on them).
+`repository`, `call_site`, and the 45 `must_*` assertion kinds built on them).
 
 **Extended scope**: switch statements, throw sites, mutation sites, try blocks, method-body
 shapes, and raw compiler diagnostics — the Roslyn syntax-fact records backing the

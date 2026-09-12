@@ -249,7 +249,7 @@ mirrored the move (`CheckRulesCommandTests` → `tests/CodeGuard.Cli.Tests/Rules
 
 A new `rules create` command (`Rules/CreateCommand.cs`) interactively scaffolds a rule YAML file.
 Rather than hardcoding each target-selector/assertion kind's parameter shape into the CLI (there
-are 14 selector kinds and ~35 assertion kinds in `DefaultParsers`, each with different parameter
+are 21 selector kinds and 45 assertion kinds in `DefaultParsers`, each with different parameter
 names), it drives a generic kind-picker + key/value parameter loop off
 `SelectorParserRegistry.Kinds`/`AssertionParserRegistry.Kinds` (new one-line accessors added to
 both registries, backed by the `_byKind` dictionary each already had) — so it automatically
@@ -375,6 +375,134 @@ Both additions ship with unit tests (`CodeGuard.Evaluation.Tests/{Assertions,Sel
 `SelectorTemplateResolverTests`) and `illustrative: true` example rules with embedded `tests:`
 (`examples/rules/ddd/ddd-aggregate-004.yml`, `ddd-cqrs-001.yml`), verified via `codeguard rules
 validate`/`codeguard rules test`.
+
+### Post-v1 addition: capability descriptors, `rules discover`, structured validation errors, `rules explain --format json`
+
+Design doc: `docs/HIGH_LEVEL_AI_ASSISTING.md` (Phase 1 of §27). Implements the AI-assisting doc's
+prerequisite for letting an agent discover CodeGuard's actual rule vocabulary instead of guessing at
+it, plus the three authoring-primitive gaps that prerequisite gated.
+
+- **Capability descriptors** (`CodeGuard.Configuration/Capabilities/CapabilityDescriptor.cs`):
+  `ISelectorParser`/`IAssertionParser`/`IAnalyzerParser` each gained a `CapabilityDescriptor
+  Descriptor` property (`Kind`, `Summary`, `Parameters`), where each `ParameterDescriptor` carries
+  `Name`/`Type` (`ParameterType`: String/Glob/Regex/Bool/Int/StringList/Enum/Selector/AssertionList)/
+  `Required`/`Summary`/`Default`/`AllowedValues`. Selectors additionally set `Produces` (the
+  `CandidateKind` they yield); assertions set `AppliesTo` (the `CandidateKind[]` they're valid
+  against) — metadata with no other use yet but designed for §14's future "unreachable rule" check
+  (an assertion that can't apply to its target's candidate kind). All 77 parser classes (21
+  selectors, 45 assertions, 11 analyzers) implement `Descriptor`; landed as three sequential commits
+  (selectors, then assertions, then analyzers) since it's a mechanical but not-small change across
+  every parser file.
+  - `CodeGuard.Configuration/Capabilities/CapabilityCatalog.cs` aggregates every registry's
+    descriptors (`SelectorParserRegistry`/`AssertionParserRegistry`/`AnalyzerParserRegistry` each
+    gained a `Descriptors` property) plus a hardcoded list for `and`/`or`/`not` conditions (not a
+    descriptor-bearing registry).
+  - **Drift guard**: `CapabilityCatalogTests` asserts each registry's actual `.Kinds` exactly matches
+    the catalog's descriptor kinds for that category, so a parser added without a matching
+    descriptor (or vice versa) fails the build immediately rather than silently drifting the way
+    the skill's reference docs had (see below).
+- **`codeguard rules discover`** (`CodeGuard.Cli/Commands/Rules/DiscoverCommand.cs`,
+  `CodeGuard.Cli/Support/CapabilityReportWriter.cs`): reads no rule files, just calls
+  `CapabilityCatalog.Create()`. `--format console|json|markdown`; markdown additionally takes
+  `--section selectors|assertions|analyzers`.
+  - `scripts/sync-skill-references.sh` calls `rules discover --format markdown --section <x>` for
+    each of the three sections and splices the result between generated-marker comments in
+    `skills/codeguard-rule-generation/references/{selectors,assertions,analyzers}.md`, plus copies
+    the schema to `references/rule-schema.json`. CI (`.github/workflows/ci.yml`) re-runs the script
+    and diffs `skills/`, failing the build if a primitive is added without regenerating — the exact
+    drift (18 primitives behind the engine at the time) that motivated this work in the first place.
+    `references/examples.md` is **not** covered — it isn't derivable from descriptors and stays
+    hand-maintained.
+- **Structured validation errors** (`CodeGuard.Configuration/Validation/RuleValidationError.cs`):
+  `RuleFileIssue.Errors` widened from `IReadOnlyList<string>` to `IReadOnlyList<RuleValidationError>`,
+  a `record(Code, Path, Message)` with a stable code set (`RuleErrorCodes`: `SCHEMA_VIOLATION`,
+  `UNKNOWN_SELECTOR_KIND`, `UNKNOWN_ASSERTION_KIND`, `UNKNOWN_ANALYZER_KIND`, `INVALID_PARAMETER`,
+  `DUPLICATE_RULE_ID`, `UNREADABLE_RULE_FILE`, `PARSE_ERROR`) assigned at each throw site
+  (`RuleSchemaValidator`, `RuleParsingException.ToValidationError()`, `RuleFileLoader`). Console
+  output is unaffected (`ToString()` reproduces the old `"path: message"` prose); JSON output now
+  serializes the three fields separately instead of one flattened string.
+- **`codeguard rules explain --format json`** (`ExplainCommand.cs`): since assertion parameter
+  values can't be recovered from the parsed model (`IAssertion` exposes only `Kind`), JSON output
+  pairs rule metadata with the **source document converted YAML→JSON** via a new
+  `RuleFileLoader.ReadDocument(filePath)`, which reuses the existing `YamlDocumentReader` rather than
+  adding introspection to every assertion class.
+- **`RuleTestRunner` relocated** `CodeGuard.Cli.Support` → `CodeGuard.Configuration.Testing`, so it
+  can be driven by something other than the CLI (e.g. a future `rules analyze` or an MCP server, per
+  `docs/HIGH_LEVEL_AI_ASSISTING.md`'s Phase 4). Pure move — added a `CodeGuard.Configuration →
+  CodeGuard.Core` project reference (for `RuleEvaluator`, which `RuleTestRunner` drives), no
+  behavior change. While re-validating this move, `CreateCommand` (`rules create`) was reworked to
+  prompt for each selector/assertion kind's declared parameters by name (via the new descriptors)
+  instead of a blind free-form key/value loop; this surfaced a real bug — none of `CreateCommand`'s
+  prompt loops distinguished end-of-input (`Console.ReadLine()` returning `null`) from a blank line,
+  so a script/pipe that ran out of input before every required prompt was answered spun forever
+  until the process OOMed instead of failing cleanly. Fixed by routing every prompt through a
+  `ReadLineOrThrow()` helper that fails the command with a clear message on EOF.
+
+### Post-v1 addition: `codeguard rules analyze`
+
+Design doc: `docs/HIGH_LEVEL_AI_ASSISTING.md` §14 (Phase 3 of §27). Landed sooner than that document's
+original phase order expected, since §12's descriptor layer (above) already unlocked most of it
+without needing Phase 2's rule `metadata` first.
+
+- `CodeGuard.Configuration/Analysis/RuleSetAnalyzer.cs` (`RuleAnalysisReport`,
+  `RuleSetAnalyzer.Analyze`) implements Tier 1 and Tier 2 from §14; Tier 3 (overlapping selectors,
+  conflicting assertions) is explicitly out of scope, per that section.
+  - Tier 1: invalid rules and duplicate ids reuse `RuleFileLoader.ValidateDirectories` directly
+    (split back apart by `RuleErrorCodes.DuplicateRuleId`); missing-tests and one-sided-tests
+    (a rule with only `pass` cases or only `fail` cases — distinct from `RuleTestRunner`'s existing,
+    narrower vacuous-test guard) are new; disabled/`illustrative: true` rules are counted but
+    deliberately excluded from `RuleAnalysisReport.HasFindings`, since a rule set legitimately
+    containing them (like this repo's own `examples/rules/`, all illustrative) isn't itself a
+    problem. Missing provenance is correctly not implemented - still blocked on §6/§19's
+    unimplemented `metadata` field.
+  - Tier 2 "unreachable rules": a top-level assertion whose `CapabilityDescriptor.AppliesTo` doesn't
+    include the target selector's `Produces` kind. Doesn't recurse into `must_all_match`/
+    `must_any_match`/`must_none_match`'s nested `assertions:` - those objects aren't recoverable from
+    the parsed model (only `Kind` survives parsing), only from the raw document, and this check
+    works from the parsed model since `Kind` is all it needs for the top level.
+  - Tier 2 "exact-duplicate rules": needs the raw source document instead (`RuleFileLoader.ReadDocument`),
+    for the reason above once parameter values matter - a `Canonicalize` helper recursively
+    key-sorts each rule's `target`+`assertions` (or `analyzer`) before grouping, so two rules
+    differing only in parameter order still compare equal. Found real, true-positive duplicates in
+    `examples/rules/` on first run - e.g. `ARCH-DEPENDENCY-002`/`ARCH-DEPENDENCY-005` share an
+    identical enforceable body despite different names/tests/descriptions (each demonstrates the
+    same `must_not_depend_on` rule through a different code shape).
+- `codeguard rules analyze` (`CodeGuard.Cli/Commands/Rules/AnalyzeCommand.cs`,
+  `CodeGuard.Cli/Support/RuleAnalysisReportWriter.cs`): `--format console|json`. Exits non-zero
+  when `RuleAnalysisReport.HasFindings` (invalid rules, duplicate ids, missing/one-sided tests,
+  unreachable assertions, or exact duplicates) - disabled/illustrative counts don't affect the exit
+  code, per above.
+
+### Post-v1 addition: `metadata.source` (rule provenance)
+
+Design doc: `docs/HIGH_LEVEL_AI_ASSISTING.md` §6/§19 (the provenance slice of Phase 2 of §27) - see
+that doc for the design discussion this followed. Deliberately narrower than the doc's earlier
+drafts, both cuts made explicitly rather than by omission:
+
+- Singular `source:`, not a list - a rule maps to one motivating statement in the common case, and a
+  list is a schema shape that's harder to loosen later if wrong.
+- `document`/`section` are **free text**, never resolved against a real file (e.g. against
+  `.codeguard/config.yml`'s `standards` discovery path) and never used by the engine for grouping or
+  lookup. This is the direct fix for why `RuleDefinition.Standard` (above) had to be removed: that
+  field tried to be a strict categorization key, and rigid categorization is exactly what broke under
+  two authoring paths' incompatible conventions. Giving `document`/`section` no structure to be
+  inconsistent about closes off that failure mode rather than re-risking it.
+- `statement` is a **paraphrase**, not a verbatim quote - same register `description`/`remediation`
+  already use. Chosen over verbatim quoting because this repo's own rule content is derived from real
+  company conventions (see CLAUDE.md) and `examples/rules/` is committed to git even though never
+  packaged; a paraphrase doesn't add more of that original text to version control than exists today.
+- No `generation.method` (ai/human) or lifecycle `status` bundled in, despite the design doc grouping
+  "provenance / lifecycle state / test metadata / deterministic capability metadata" under one phase -
+  each is a separate convention to get right, and bundling risked the same "one field, several
+  meanings" problem this was meant to avoid.
+- No backfill of the 125 existing example rules - additive for rules written from here on, same
+  policy as the pre-existing unused `Documentation` field.
+
+Mechanically: `RuleMetadata`/`RuleSource` (`CodeGuard.RuleModel/Rules/RuleDefinition.cs`), parsed in
+`RuleDocumentParser.ParseMetadata`, added to `rule.schema.json` as one more optional top-level key
+(only `document` is required within `source`) - a purely additive schema change. Surfaced by
+`rules explain --format json`'s `metadata` field and counted (not flagged as a failure - see
+`rules analyze` above) by `rules analyze`'s new `RulesMissingProvenance`.
 
 ## The 11 starter rules
 

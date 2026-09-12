@@ -176,4 +176,45 @@ public sealed class TestSetupBuilderTests
         Assert.Equal("CS1591", diagnostic.Id);
         Assert.Equal("Missing XML comment", diagnostic.Message);
     }
+
+    [Fact]
+    public void Build_RejectsUnknownSetupKey()
+    {
+        // An ignored key would contribute nothing to the model, letting an `expect: pass` case pass
+        // vacuously - see the vacuity guard in RuleTestRunner for the other half of this.
+        var exception = Assert.Throws<RuleParsingException>(() => TestSetupBuilder.Build(Setup("""
+            { "typez": [ { "name": "Order" } ] }
+            """)));
+
+        Assert.Contains("typez", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("types", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Build_ReportsEveryUnknownSetupKey()
+    {
+        var exception = Assert.Throws<RuleParsingException>(() => TestSetupBuilder.Build(Setup("""
+            { "typez": [], "fyles": [], "types": [] }
+            """)));
+
+        Assert.Contains("fyles, typez", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Build_AcceptsEveryDocumentedSetupKey()
+    {
+        // Guards the KnownSetupKeys list against drifting from the keys Build actually reads.
+        var model = TestSetupBuilder.Build(Setup("""
+            {
+              "projects": [], "types": [], "files": [], "callSites": [], "switches": [],
+              "throwSites": [], "mutationSites": [], "tryBlocks": [], "methodBodyShapes": [],
+              "diagnostics": [], "directories": []
+            }
+            """));
+
+        // Only asserting the keys are accepted; an empty `types: []` still yields the synthetic
+        // project, which is pre-existing Build behaviour and not what this test is about.
+        Assert.Empty(model.Files);
+        Assert.Empty(model.Directories);
+    }
 }

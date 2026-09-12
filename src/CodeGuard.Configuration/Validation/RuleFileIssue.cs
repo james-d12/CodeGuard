@@ -1,3 +1,4 @@
 namespace CodeGuard.Configuration.Validation;
 
-public sealed record RuleFileIssue(string SourceFile, IReadOnlyList<string> Errors);
+/// <summary>Every validation failure found in one rule file.</summary>
+public sealed record RuleFileIssue(string SourceFile, IReadOnlyList<RuleValidationError> Errors);

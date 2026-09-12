@@ -18,8 +18,33 @@ public static class TestSetupBuilder
     private const string DefaultSolutionPath = "TestSolution.sln";
     private const string VirtualRootPath = "<virtual>";
 
+    /// <summary>
+    /// Every top-level key <see cref="Build"/> understands. A setup block naming anything else is
+    /// rejected rather than ignored: an unrecognised key contributes nothing to the model, so a rule
+    /// whose target then matches no candidates produces no violations and an <c>expect: pass</c> case
+    /// passes vacuously, having tested nothing. Keep this in sync with the keys read in <see cref="Build"/>.
+    /// </summary>
+    private static readonly HashSet<string> KnownSetupKeys = new(StringComparer.Ordinal)
+    {
+        "projects", "types", "files", "callSites", "switches", "throwSites", "mutationSites",
+        "tryBlocks", "methodBodyShapes", "diagnostics", "directories"
+    };
+
     public static RepositoryModel Build(JsonObject setup)
     {
+        var unknownKeys = setup
+            .Select(pair => pair.Key)
+            .Where(key => !KnownSetupKeys.Contains(key))
+            .Order(StringComparer.Ordinal)
+            .ToList();
+
+        if (unknownKeys.Count > 0)
+        {
+            throw new RuleParsingException(
+                $"Unknown rule test setup key(s): {string.Join(", ", unknownKeys)}. " +
+                $"Known keys: {string.Join(", ", KnownSetupKeys.Order(StringComparer.Ordinal))}.");
+        }
+
         var projects = new List<ProjectModel>();
 
         if (setup["projects"]?.AsArray() is { } projectsNode)

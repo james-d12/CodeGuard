@@ -37,14 +37,29 @@ public sealed class RuleSchemaValidator
             return;
         }
 
+        // detail.InstanceLocation is a JSON Pointer to the offending node. Keeping it as a separate
+        // field rather than folding it into the message is what lets a caller navigate to the node.
+        //
+        // Ordered deepest-path-first, because JsonSchema.Net reports the whole failure chain and the
+        // root-level entries are the least actionable: a rule using the target+assertions form emits
+        // `Required properties ["analyzer"] are not present` from the losing `oneOf` branch, which is
+        // noise. The pinpointed error must lead, since a caller reading errors[0] should get the one
+        // naming the offending property. Nothing is discarded - a genuine root-level failure is still
+        // reported, just after the specific ones.
         var errors = (results.Details ?? [])
             .Where(detail => detail.Errors is { Count: > 0 })
-            .SelectMany(detail => detail.Errors!.Values.Select(message => $"{detail.InstanceLocation}: {message}"))
+            .SelectMany(detail => detail.Errors!.Values.Select(message => new RuleValidationError(
+                RuleErrorCodes.SchemaViolation,
+                detail.InstanceLocation.ToString() is { Length: > 0 } location ? location : null,
+                message)))
+            .OrderByDescending(error => error.Path is null ? -1 : error.Path.Count(c => c == '/'))
+            .ThenBy(error => error.Path, StringComparer.Ordinal)
             .ToList();
 
         if (errors.Count == 0)
         {
-            errors.Add("Document does not conform to the rule schema.");
+            errors.Add(new RuleValidationError(
+                RuleErrorCodes.SchemaViolation, null, "Document does not conform to the rule schema."));
         }
 
         throw new RuleSchemaValidationException(source, errors);

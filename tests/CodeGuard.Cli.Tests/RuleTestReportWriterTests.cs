@@ -1,4 +1,5 @@
 using CodeGuard.Cli.Support;
+using CodeGuard.Configuration.Testing;
 
 namespace CodeGuard.Cli.Tests;
 
