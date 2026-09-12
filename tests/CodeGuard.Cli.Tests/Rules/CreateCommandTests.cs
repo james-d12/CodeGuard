@@ -24,13 +24,11 @@ public class CreateCommandTests : IDisposable
             "",                             // severity (blank -> default)
             "",                             // tags (blank)
             "class",                        // target selector kind
-            "namespace",                    // target param name
-            "Contoso.Domain.Entities",      // target param value
-            "",                             // target params finished
+            "Contoso.Domain.Entities",      // value for the declared "namespace" param
+            "",                             // additional target params finished
             "must_inherit_from",            // assertion kind
-            "type",                         // assertion param name
-            "Contoso.Domain.Entity<TId>",   // assertion param value
-            "",                             // assertion params finished
+            "Contoso.Domain.Entity<TId>",   // value for the declared "type" param
+            "",                             // additional assertion params finished
             "");                            // "add another assertion?" -> no
 
         var (exitCode, output) = await RunCreate(input);
@@ -57,11 +55,9 @@ public class CreateCommandTests : IDisposable
             "",
             "",
             "class",
-            "namespace",
             "Contoso.Domain.Entities",
             "",
             "must_inherit_from",
-            "type",
             "Contoso.Domain.Entity<TId>",
             "",
             "");
@@ -79,14 +75,12 @@ public class CreateCommandTests : IDisposable
             "",                             // description (blank) - id/name/severity prompts skipped via flags
             "",                             // tags (blank)
             "class",                        // target selector kind
-            "namespace",
-            "Contoso.Domain.Entities",
-            "",
-            "must_inherit_from",
-            "type",
-            "Contoso.Domain.Entity<TId>",
-            "",
-            "");
+            "Contoso.Domain.Entities",      // value for the declared "namespace" param
+            "",                             // additional target params finished
+            "must_inherit_from",            // assertion kind
+            "Contoso.Domain.Entity<TId>",   // value for the declared "type" param
+            "",                             // additional assertion params finished
+            "");                            // "add another assertion?" -> no
 
         var (exitCode, output) = await RunCreate(
             input,

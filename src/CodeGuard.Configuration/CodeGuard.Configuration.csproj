@@ -7,6 +7,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Core is referenced for RuleEvaluator, which RuleTestRunner drives. Core depends only on
+         Analysis + RuleModel, so this adds no cycle. -->
+    <ProjectReference Include="..\CodeGuard.Core\CodeGuard.Core.csproj" />
     <ProjectReference Include="..\CodeGuard.Analysis\CodeGuard.Analysis.csproj" />
     <ProjectReference Include="..\CodeGuard.RuleModel\CodeGuard.RuleModel.csproj" />
     <ProjectReference Include="..\CodeGuard.Evaluation\CodeGuard.Evaluation.csproj" />

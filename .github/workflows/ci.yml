@@ -82,8 +82,10 @@ jobs:
               /n:"CodeGuard" \
               /d:sonar.token="$SONAR_TOKEN" \
               /d:sonar.qualitygate.wait=false \
-              /d:sonar.exclusions="**/bin/**,**/obj/**"
-             
+              /d:sonar.exclusions="**/bin/**,**/obj/**" \
+              /d:sonar.cs.cobertura.reportsPaths="coverage/**/coverage.cobertura.xml" \
+              /d:sonar.coverage.exclusions="src/CodeGuard.Cli/Program.cs"
+
             dotnet build --no-restore
           
             dotnet test --no-build \
@@ -92,6 +94,22 @@ jobs:
             
             "${{ runner.temp }}/scanner/dotnet-sonarscanner" end \
               /d:sonar.token="$SONAR_TOKEN"
+
+      - name: Validate and test example rules
+        run: |
+          dotnet run --project src/CodeGuard.Cli --no-build -- \
+            rules validate --rules-source examples/rules
+
+          dotnet run --project src/CodeGuard.Cli --no-build -- \
+            rules test --rules-source examples/rules
+
+      # The skill's reference tables are generated from the parser registries. Regenerate and diff:
+      # a primitive added without a descriptor, or a descriptor changed without re-running the script,
+      # fails here rather than silently leaving the authoring skill behind the engine.
+      - name: Check skill references are in sync
+        run: |
+          ./scripts/sync-skill-references.sh --no-build
+          git diff --exit-code skills/
 
       - name: Publish
         run: dotnet publish --no-restore
