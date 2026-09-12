@@ -3,6 +3,7 @@ using CodeGuard.Configuration.Validation;
 using CodeGuard.RuleModel.Rules;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using System.Text.Json.Nodes;
 
 namespace CodeGuard.Configuration.Loading;
 
@@ -102,6 +103,16 @@ public sealed class RuleFileLoader(
 
         return RuleDocumentParser.Parse(document.AsObject(), selectorParsers, assertionParsers, conditionParsers, analyzerParsers);
     }
+
+    /// <summary>
+    /// Reads a rule file as a JSON document without parsing it into a <see cref="RuleDefinition"/>.
+    /// Selectors and assertions keep their constructor arguments in private fields, so a parsed rule
+    /// cannot be rendered back to its parameters - `rules explain --format json` reports the source
+    /// document instead, which is both faithful and free.
+    /// </summary>
+    public static JsonNode ReadDocument(string filePath) =>
+        YamlDocumentReader.ReadDocument(File.ReadAllText(filePath))
+            ?? throw new RuleLoadException($"Rule file '{filePath}' is empty.");
 
     /// <summary>Non-throwing counterpart to <see cref="LoadFromFile"/>, used to build aggregate reports.</summary>
     public bool TryLoadFromFile(string filePath, out RuleDefinition? rule, out IReadOnlyList<RuleValidationError> errors)

@@ -1,5 +1,9 @@
 using System.CommandLine;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 using CodeGuard.Cli.Support;
+using CodeGuard.Configuration.Loading;
 using CodeGuard.RuleModel.Rules;
 using Microsoft.Extensions.Logging;
 
@@ -19,6 +23,13 @@ public static class ExplainCommand
             Description = "The rule ID to explain, e.g. DDD-ENTITY-001."
         };
 
+        var formatOption = new Option<string>("--format")
+        {
+            Description = "Output format: console or json.",
+            DefaultValueFactory = _ => "console"
+        };
+        formatOption.AcceptOnlyFromAmong("console", "json");
+
         var command = new Command("explain", "Print full metadata and source YAML for a single rule");
         command.Add(pathOption);
         command.Add(configOption);
@@ -26,6 +37,7 @@ public static class ExplainCommand
         command.Add(branchOption);
         command.Add(verbosityOption);
         command.Add(ruleIdArgument);
+        command.Add(formatOption);
 
         command.SetAction((parseResult, _) =>
         {
@@ -55,18 +67,71 @@ public static class ExplainCommand
                 return Task.FromResult(1);
             }
 
-            PrintSummary(entry.Rule);
-            Console.WriteLine();
-            Console.WriteLine($"Source: {entry.SourceFile}");
-            Console.WriteLine();
-            Console.WriteLine("--- Raw YAML ---");
-            Console.WriteLine(File.ReadAllText(entry.SourceFile));
+            if (parseResult.GetValue(formatOption) == "json")
+            {
+                PrintJson(entry.Rule, entry.SourceFile);
+            }
+            else
+            {
+                PrintSummary(entry.Rule);
+                Console.WriteLine();
+                Console.WriteLine($"Source: {entry.SourceFile}");
+                Console.WriteLine();
+                Console.WriteLine("--- Raw YAML ---");
+                Console.WriteLine(File.ReadAllText(entry.SourceFile));
+            }
 
             return Task.FromResult(0);
         });
 
         return command;
     }
+
+
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        WriteIndented = true,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+        Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) }
+    };
+
+    /// <summary>
+    /// Emits the parsed rule's metadata plus its source document. The document is included verbatim
+    /// (converted YAML to JSON) rather than reconstructed from the parsed rule: IAssertion exposes
+    /// only a Kind, so a selector's or assertion's parameter *values* cannot be recovered from the
+    /// model at all - see docs/HIGH_LEVEL_AI_ASSISTING.md section 13.
+    /// </summary>
+    private static void PrintJson(RuleDefinition rule, string sourceFile)
+    {
+        var payload = new JsonObject
+        {
+            ["id"] = rule.Id,
+            ["name"] = rule.Name,
+            ["description"] = rule.Description?.Trim(),
+            ["severity"] = rule.Severity.ToString().ToLowerInvariant(),
+            ["enforcement"] = new JsonObject
+            {
+                ["classification"] = ToSnakeCase(rule.Enforcement.Classification.ToString())
+            },
+            ["tags"] = new JsonArray(rule.Tags.Select(t => (JsonNode)t!).ToArray()),
+            ["remediation"] = rule.Remediation?.Trim(),
+            ["documentation"] = new JsonArray(rule.Documentation.Select(d => (JsonNode)d!).ToArray()),
+            ["enabled"] = rule.Enabled,
+            ["illustrative"] = rule.Illustrative,
+            // "declarative" is the target+assertions form. Spelled without a '+' so the value doesn't
+            // come back unicode-escaped by the default JSON encoder.
+            ["shape"] = rule.Analyzer is not null ? "analyzer" : "declarative",
+            ["testCount"] = rule.Tests.Count,
+            ["sourceFile"] = sourceFile,
+            ["document"] = RuleFileLoader.ReadDocument(sourceFile)
+        };
+
+        Console.WriteLine(JsonSerializer.Serialize(payload, JsonOptions));
+    }
+
+    private static string ToSnakeCase(string value) =>
+        string.Concat(value.Select((c, i) => char.IsUpper(c) && i > 0 ? "_" + char.ToLowerInvariant(c) : char.ToLowerInvariant(c).ToString()));
 
     private static void PrintSummary(RuleDefinition rule)
     {

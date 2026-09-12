@@ -1,3 +1,5 @@
+using CodeGuard.Configuration.Testing;
+
 namespace CodeGuard.Cli.Support;
 
 /// <summary>ANSI colors for `rules test` console output symbols (✓/✗/!). Mirrors

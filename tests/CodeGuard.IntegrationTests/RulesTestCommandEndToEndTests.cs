@@ -1,6 +1,7 @@
 using System.Runtime.CompilerServices;
 using CodeGuard.Cli.Support;
 using CodeGuard.Configuration.Loading;
+using CodeGuard.Configuration.Testing;
 
 namespace CodeGuard.IntegrationTests;
 

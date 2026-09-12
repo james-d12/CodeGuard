@@ -1,6 +1,7 @@
 using System.CommandLine;
 using CodeGuard.Cli.Support;
 using Microsoft.Extensions.Logging;
+using CodeGuard.Configuration.Testing;
 
 namespace CodeGuard.Cli.Commands.Rules;
 

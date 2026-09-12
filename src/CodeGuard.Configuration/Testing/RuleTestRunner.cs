@@ -1,8 +1,7 @@
-using CodeGuard.Configuration.Testing;
 using CodeGuard.Core.Evaluation;
 using CodeGuard.RuleModel.Rules;
 
-namespace CodeGuard.Cli.Support;
+namespace CodeGuard.Configuration.Testing;
 
 public enum TestOutcome
 {
