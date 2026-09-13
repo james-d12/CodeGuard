@@ -18,15 +18,15 @@ public class ValidateCommandPreflightTests : IDisposable
     [Fact]
     public async Task Validate_WithBrokenRuleFile_ExitsOneWithReport_WithoutReachingAnalysis()
     {
-        File.WriteAllText(Path.Combine(_rulesDir, "bad.yml"), """
-            id: DDD-ENTITY-001
-            name: Some rule
-            target:
-              kind: not_a_real_kind
-            assertions:
-              - must_inherit_from:
-                  type: "Contoso.Domain.Entity<TId>"
-            """);
+        await File.WriteAllTextAsync(Path.Combine(_rulesDir, "bad.yml"), """
+                                                                         id: DDD-ENTITY-001
+                                                                         name: Some rule
+                                                                         target:
+                                                                           kind: not_a_real_kind
+                                                                         assertions:
+                                                                           - must_inherit_from:
+                                                                               type: "Contoso.Domain.Entity<TId>"
+                                                                         """);
 
         var originalOut = Console.Out;
         var writer = new StringWriter();
@@ -111,7 +111,47 @@ public class ValidateCommandPreflightTests : IDisposable
         Assert.Contains("codeguard:", errorOutput);
         Assert.Contains("does-not-exist.sln", errorOutput);
         Assert.DoesNotContain("Unhandled exception", errorOutput);
-        Assert.DoesNotContain("at System.CommandLine", errorOutput);
+        Assert.DoesNotContain(" at ", errorOutput);
+    }
+
+    [Fact]
+    public async Task Validate_WithMultipleSolutionsFound_PrintsCleanErrorListingThemAndExitsOne()
+    {
+        var firstSlnDir = Directory.CreateDirectory(Path.Combine(_repoDir, "proj1"));
+        var firstSlnPath = Path.Combine(firstSlnDir.FullName, "First.sln");
+        await File.WriteAllTextAsync(firstSlnPath, "");
+
+        var secondSlnDir = Directory.CreateDirectory(Path.Combine(_repoDir, "proj2"));
+        var secondSlnPath = Path.Combine(secondSlnDir.FullName, "Second.sln");
+        await File.WriteAllTextAsync(secondSlnPath, "");
+
+        var originalOut = Console.Out;
+        var originalError = Console.Error;
+        var outWriter = new StringWriter();
+        var errorWriter = new StringWriter();
+        Console.SetOut(outWriter);
+        Console.SetError(errorWriter);
+        int exitCode;
+        try
+        {
+            exitCode = await ValidateCommand.Build()
+                .Parse(["--path", _repoDir, "--rules-source", _rulesDir])
+                .InvokeAsync();
+        }
+        finally
+        {
+            Console.SetOut(originalOut);
+            Console.SetError(originalError);
+        }
+
+        var errorOutput = errorWriter.ToString();
+        Assert.Equal(1, exitCode);
+        Assert.Contains("codeguard:", errorOutput);
+        Assert.Contains(firstSlnPath, errorOutput);
+        Assert.Contains(secondSlnPath, errorOutput);
+        Assert.Contains("--solution", errorOutput);
+        Assert.DoesNotContain("Unhandled exception", errorOutput);
+        Assert.DoesNotContain(" at ", errorOutput);
     }
 
     public void Dispose()

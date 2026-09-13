@@ -4,7 +4,11 @@ namespace CodeGuard.Cli.Support;
 
 /// <summary>
 /// Discovers .sln/.slnx files under a repository root for the validate command, recursively so the
-/// solution doesn't need to sit at the repo root, skipping build/tooling directories.
+/// solution doesn't need to sit at the repo root, skipping build/tooling directories. Auto-discovery
+/// (no explicit solution paths) only succeeds unattended when exactly one is found - if more than one
+/// turns up, that's ambiguous (a genuine multi-solution repo vs. --path pointed at a parent directory
+/// containing several unrelated repos, which look identical from here) so Resolve throws and lists
+/// what it found rather than silently analyzing all of them together.
 /// </summary>
 public static class SolutionFileLocator
 {
@@ -40,6 +44,17 @@ public static class SolutionFileLocator
         {
             logger?.LogError("No .sln or .slnx file found under {RepoRoot}", repoRoot);
             throw new InvalidOperationException($"No .sln or .slnx file found under '{repoRoot}'.");
+        }
+
+        if (candidates.Count > 1)
+        {
+            candidates.Sort(StringComparer.OrdinalIgnoreCase);
+            var list = string.Join(Environment.NewLine, candidates.Select(c => "  " + c));
+            logger?.LogError(
+                "Multiple solution files found under {RepoRoot}: {Candidates}", repoRoot, string.Join(", ", candidates));
+            throw new InvalidOperationException(
+                $"Multiple solution files found under '{repoRoot}':{Environment.NewLine}{list}{Environment.NewLine}" +
+                "Specify which to analyze with --solution <path> (repeatable).");
         }
 
         logger?.LogDebug("Discovered {Count} solution file(s) under {RepoRoot}", candidates.Count, repoRoot);

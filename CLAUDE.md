@@ -208,3 +208,33 @@ package+version it names; don't guess in advance.
   independent check-then-act registrations race.
 - The SARIF NuGet package is `Sarif.Sdk`, not `Microsoft.CodeAnalysis.Sarif` (that's just the C#
   namespace it exposes).
+
+## Documentation lifecycle (docs/ → docs/done/)
+
+`docs/` mixes three kinds of files: (1) evergreen scope/vision documents that never
+"complete" (`CORE_RULES.md`, `HIGH_LEVEL_ROADMAP.md`), (2) living design/status
+documents that are actively maintained alongside the code they describe and get
+updated in place rather than archived (`IMPLEMENTATION_STATUS.md`,
+`HIGH_LEVEL_AI_ASSISTING.md`, `RULES_TEST_DESIGN.md`), and (3) narrow, single-initiative
+plans that are meant to close. `docs/done/` holds only the third kind, once genuinely
+finished — see it for the pattern (`RULE_COVERAGE_PLAN.md`, `SETUP_COMMAND_PLAN.md`,
+etc.), which stay cross-referenced from code/README after moving, so "done" means
+"archived design record," not "deleted."
+
+Before moving any `docs/` file into `docs/done/`:
+
+- Confirm the *entire* document's proposal has shipped — find the actual classes,
+  CLI commands, or tests it describes in `src/`/`tests/`, not just a "DONE" marker the
+  doc asserts about itself.
+- If only part of a document is done (e.g. a multi-phase roadmap where some phases
+  remain open), leave it in place. Never move a partially-open document on the
+  strength of its finished parts; splitting the completed portion into its own new
+  `docs/done/` file is fine if done deliberately, but that's a distinct, explicit edit,
+  not a move.
+- Never move `docs/PRIMITIVES.md` (original design doc — frozen, do not edit or move)
+  or `docs/REFACTORING.md` (separate architectural-evolution proposal — explicitly not
+  started), regardless of how much current code happens to resemble what they
+  describe.
+- When you do move a file, keep it discoverable: search the repo (`docs/`,
+  `README.md`, code comments, this file) for references to its old path and update
+  them to `docs/done/<file>`.

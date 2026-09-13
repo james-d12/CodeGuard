@@ -31,7 +31,7 @@ public class SolutionFileLocatorTests : IDisposable
     }
 
     [Fact]
-    public void Resolve_WithNoExplicitPaths_DiscoversMixOfSlnAndSlnxAcrossDirectories()
+    public void Resolve_WithNoExplicitPaths_AndMultipleSolutionsDiscovered_ThrowsAndListsAllOfThem()
     {
         var slnPath = Path.Combine(_repoDir, "Root.sln");
         File.WriteAllText(slnPath, "");
@@ -40,9 +40,29 @@ public class SolutionFileLocatorTests : IDisposable
         var slnxPath = Path.Combine(nested.FullName, "Nested.slnx");
         File.WriteAllText(slnxPath, "");
 
-        var resolved = SolutionFileLocator.Resolve(_repoDir, []);
+        var ex = Assert.Throws<InvalidOperationException>(() => SolutionFileLocator.Resolve(_repoDir, []));
 
-        Assert.Equal(new HashSet<string> { slnPath, slnxPath }, new HashSet<string>(resolved));
+        Assert.Contains(slnPath, ex.Message);
+        Assert.Contains(slnxPath, ex.Message);
+        Assert.Contains("--solution", ex.Message);
+    }
+
+    [Fact]
+    public void Resolve_WithNoExplicitPaths_AndThreeOrMoreSolutionsDiscovered_ListsEveryOneOfThem()
+    {
+        var paths = Enumerable.Range(1, 3)
+            .Select(i =>
+            {
+                var dir = Directory.CreateDirectory(Path.Combine(_repoDir, $"proj{i}"));
+                var path = Path.Combine(dir.FullName, $"Proj{i}.sln");
+                File.WriteAllText(path, "");
+                return path;
+            })
+            .ToList();
+
+        var ex = Assert.Throws<InvalidOperationException>(() => SolutionFileLocator.Resolve(_repoDir, []));
+
+        Assert.All(paths, path => Assert.Contains(path, ex.Message));
     }
 
     [Fact]

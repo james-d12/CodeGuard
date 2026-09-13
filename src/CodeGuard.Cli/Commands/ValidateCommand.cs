@@ -56,7 +56,7 @@ public static class ValidateCommand
 
         var solutionOption = new Option<string[]>("--solution")
         {
-            Description = "Restrict analysis to these .sln/.slnx file(s) (repeatable). Default: every .sln/.slnx file found recursively under --path."
+            Description = "Restrict analysis to these .sln/.slnx file(s) (repeatable). Default: the single .sln/.slnx file found recursively under --path; if more than one is found, this must be specified to disambiguate."
         };
 
         var severityThresholdOption = new Option<string>("--severity-threshold")
@@ -148,17 +148,29 @@ public static class ValidateCommand
                 logger.LogDebug("Using all {TotalCount} discovered rule(s) (no --rule filter)", rules.Count);
             }
 
+            IReadOnlyList<string> solutionPaths;
+            try
+            {
+                solutionPaths = SolutionFileLocator.Resolve(
+                    context.RepoRoot, parseResult.GetValue(solutionOption) ?? [], loggerFactory.CreateLogger(typeof(SolutionFileLocator)));
+            }
+            catch (Exception ex) when (ex is FileNotFoundException or InvalidOperationException)
+            {
+                // SolutionFileLocator already logged the specific reason (not found / ambiguous) before
+                // throwing, so this is deliberately not re-logged via ILogger - just the clean, user-facing
+                // line. These are expected, user-fixable conditions, not pipeline bugs, so no stack trace.
+                await Console.Error.WriteLineAsync($"codeguard: {ex.Message}");
+                return 1;
+            }
+
+            logger.LogInformation("Analyzing {SolutionCount} solution(s) under {RepoRoot}", solutionPaths.Count, context.RepoRoot);
+
             // Known limitation: if one of the resolved solutions is this tool's own currently-running
             // solution, Buildalyzer's design-time "Clean" step can delete shared output files (such as
             // its own logger assembly) still needed by this process, causing analysis of one of the
             // projects to fail. This doesn't affect validating any other repository.
             try
             {
-                var solutionPaths = SolutionFileLocator.Resolve(
-                    context.RepoRoot, parseResult.GetValue(solutionOption) ?? [], loggerFactory.CreateLogger(typeof(SolutionFileLocator)));
-
-                logger.LogInformation("Analyzing {SolutionCount} solution(s) under {RepoRoot}", solutionPaths.Count, context.RepoRoot);
-
                 var maxParallelism = parseResult.GetValue(maxParallelismOption);
 
                 var builder = new AnalysisModelBuilder(
