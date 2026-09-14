@@ -50,12 +50,18 @@ public static class InfoCommand
             var rulesSourceValue = parseResult.GetValue(rulesSourceOption);
             var branchValue = parseResult.GetValue(branchOption);
 
-            var context = CliRepositoryContext.Resolve(
-                parseResult.GetValue(pathOption),
-                parseResult.GetValue(configOption),
-                rulesSourceValue,
-                branchValue,
-                loggerFactory: loggerFactory);
+            if (!CliRepositoryContext.TryResolve(
+                    parseResult.GetValue(pathOption),
+                    parseResult.GetValue(configOption),
+                    out var context,
+                    out var resolveError,
+                    rulesSourceValue,
+                    branchValue,
+                    loggerFactory: loggerFactory))
+            {
+                Console.Error.WriteLine($"codeguard: {resolveError}");
+                return Task.FromResult(1);
+            }
 
             // ValidateRules(), not LoadRules()/LoadRulesWithSource(): info must keep working (and say
             // so) when a rule file is malformed, since that's exactly the situation someone runs it to

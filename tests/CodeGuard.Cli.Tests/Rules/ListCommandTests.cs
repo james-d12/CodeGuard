@@ -31,6 +31,31 @@ public class ListCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task Run_MalformedConfig_PrintsFriendlyErrorAndExitsOne()
+    {
+        using var globalSettings = new IsolatedGlobalSettingsScope();
+        var repoDir = Directory.CreateTempSubdirectory("codeguard-list-malformed-repo-").FullName;
+        try
+        {
+            var configDir = Directory.CreateDirectory(Path.Combine(repoDir, ".codeguard"));
+            var configPath = Path.Combine(configDir.FullName, "config.yml");
+            File.WriteAllText(configPath, "repository: [this, is, not, a, map]");
+
+            var (exitCode, _, error) = await RunListRulesRaw(["--path", repoDir]);
+
+            Assert.Equal(1, exitCode);
+            Assert.Contains("codeguard:", error);
+            Assert.Contains(configPath, error);
+            Assert.DoesNotContain("Unhandled exception", error);
+            Assert.DoesNotContain(" at ", error);
+        }
+        finally
+        {
+            Directory.Delete(repoDir, recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task Run_TableFormat_PrintsHeaderSeparatorAndAlignedRows()
     {
         WriteRuleFile("short.yml", RuleYaml("A-1", severity: "info", tags: ["x"]));
