@@ -5,7 +5,7 @@ using System.Text;
 namespace CodeGuard.Configuration.GlobalConfig;
 
 /// <summary>
-/// Resolves the OS-appropriate user/app-data root for RuleEngine's global (cross-repo) config.
+/// Resolves the OS-appropriate user/app-data root for CodeGuard's global (cross-repo) config.
 /// Deliberately does not use <see cref="Environment.SpecialFolder.ApplicationData"/> - .NET's Unix
 /// implementation follows XDG (`~/.config`) for both Linux *and* macOS, which isn't macOS's native
 /// `~/Library/Application Support` convention. The resolution logic is a pure function of

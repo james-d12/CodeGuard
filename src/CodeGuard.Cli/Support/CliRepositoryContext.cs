@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using CodeGuard.Configuration.Discovery;
 using CodeGuard.Configuration.GlobalConfig;
 using CodeGuard.Configuration.Loading;
@@ -100,6 +101,42 @@ public sealed class CliRepositoryContext
             GlobalSettings = globalSettings,
             LoggerFactory = loggerFactory
         };
+    }
+
+    /// <summary>
+    /// Non-throwing counterpart to <see cref="Resolve"/> - every command should call this instead,
+    /// so a broken/missing <c>.codeguard/config.yml</c> or global <c>settings.yml</c> (from a
+    /// partial `codeguard setup` run), an explicit <c>--config</c> path that doesn't exist, a
+    /// <c>--rules-source</c>/global-settings directory that doesn't exist, or a git-sourced rules
+    /// fetch failure produces a clean, actionable CLI message instead of an unhandled exception.
+    /// Only catches the specific "expected, user-fixable" exception types those failure modes are
+    /// known to throw (see <see cref="CodeGuard.Configuration.Discovery.CodeGuardConfigLoader"/>,
+    /// <see cref="GlobalSettingsStore"/>, <see cref="RuleSourceResolver"/>, <see cref="GitRuleSourceSync"/>)
+    /// - anything else still propagates as a genuine bug.
+    /// </summary>
+    public static bool TryResolve(
+        string? path, string? configPath,
+        [NotNullWhen(true)] out CliRepositoryContext? context,
+        [NotNullWhen(false)] out string? errorMessage,
+        string? rulesSource = null, string? branch = null,
+        string? globalSettingsRoot = null, ILoggerFactory? loggerFactory = null)
+    {
+        try
+        {
+            context = Resolve(path, configPath, rulesSource, branch, globalSettingsRoot, loggerFactory);
+            errorMessage = null;
+            return true;
+        }
+        catch (Exception ex) when (ex is FileNotFoundException or DirectoryNotFoundException or InvalidOperationException)
+        {
+            // Deliberately not re-logged via ILogger (would print the exception's full stack trace
+            // to stderr, defeating the point) - this is an expected, user-fixable condition, not a
+            // pipeline bug, so the caller's clean "codeguard: {errorMessage}" line is the only
+            // output. Mirrors ValidateCommand's local SolutionFileLocator catch.
+            context = null;
+            errorMessage = ex.Message;
+            return false;
+        }
     }
 
     public IReadOnlyList<RuleDefinition> LoadRules() =>
