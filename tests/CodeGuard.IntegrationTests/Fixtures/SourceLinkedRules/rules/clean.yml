@@ -1,0 +1,15 @@
+id: SRC-CLEAN-001
+name: Domain must not reference Infrastructure
+metadata:
+  source:
+    document: Architecture Standards
+    section: Domain Layer
+    statement: Domain projects must not reference Infrastructure.
+    file: docs/architecture.md
+    fingerprint: sha256:790a2de809da2018ffd6337a4d1764a4eb3c33e32231133658b1fe014c83b614
+target:
+  kind: class
+  namespace: "Contoso.Domain"
+assertions:
+  - must_inherit_from:
+      type: "Entity<*>"
