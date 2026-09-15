@@ -43,9 +43,14 @@ public sealed record MarkdownResolution(
 /// (<c>#</c>..<c>######</c>); Setext headings and fuzzy/case-insensitive matching are out of scope
 /// for v1.
 /// </summary>
-public static class MarkdownSourceResolver
+public static partial class MarkdownSourceResolver
 {
-    private static readonly Regex AtxHeading = new(@"^(#{1,6})\s+(.+?)\s*$", RegexOptions.Compiled);
+    // Source-generated at compile time (faster startup than RegexOptions.Compiled's runtime IL-emit)
+    // with an explicit match timeout, satisfying Sonar's "regex could hang on pathological input" rule
+    // even though this pattern (bounded #{1,6}, no nested/overlapping quantifiers) isn't itself prone
+    // to catastrophic backtracking.
+    [GeneratedRegex(@"^(#{1,6})\s+(.+?)\s*$", RegexOptions.None, matchTimeoutMilliseconds: 1000)]
+    private static partial Regex AtxHeadingRegex();
 
     /// <param name="markdownContent">The full text of the linked markdown file.</param>
     /// <param name="heading">
@@ -97,7 +102,7 @@ public static class MarkdownSourceResolver
         var headings = new List<(int Level, string Text, int LineIndex)>();
         for (var i = 0; i < lines.Length; i++)
         {
-            var match = AtxHeading.Match(lines[i]);
+            var match = AtxHeadingRegex().Match(lines[i]);
             if (match.Success)
             {
                 headings.Add((match.Groups[1].Length, match.Groups[2].Value.Trim(), i));
