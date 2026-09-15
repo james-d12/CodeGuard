@@ -10,9 +10,9 @@ internal static class CompilationFactory
         .Select(a => (MetadataReference)MetadataReference.CreateFromFile(a.Location))
         .ToList();
 
-    public static CSharpCompilation Create(string source)
+    public static CSharpCompilation Create(string source, string path = "Test.cs")
     {
-        var tree = CSharpSyntaxTree.ParseText(source);
+        var tree = CSharpSyntaxTree.ParseText(source, path: path);
         return CSharpCompilation.Create(
             "TestAssembly",
             [tree],
