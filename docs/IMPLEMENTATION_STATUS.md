@@ -515,6 +515,70 @@ either way - it's a materially bigger, cross-cutting change (touches the evaluat
 `IViolationReporter`) that was out of scope for this decision regardless of the `status` outcome.
 Don't re-propose lifecycle state without first identifying a concrete consumer.
 
+### Post-v1 addition: `metadata.source.file`/`fingerprint` + `rules validate` drift warnings
+
+Design doc: `docs/done/RULE_SOURCE_AND_LINKED_DOCUMENTATION.md` (the "stale-rule detection" /
+"documentation-to-rule impact analysis" item `docs/HIGH_LEVEL_AI_ASSISTING.md` §26/§27 Phase 6 named
+as future, undesigned work - this is that work). Extends the `metadata.source` shape above rather
+than introducing a second, competing "source" concept:
+
+- `RuleSource` gains two new optional fields, `file` (repo-relative path to the linked markdown doc)
+  and `fingerprint` (`sha256:<64 hex>` of the resolved content). `document`/`section`/`statement` are
+  **unchanged** - same names, same meaning, same free-text-never-resolved behavior when `file` is
+  absent. Setting `file` is what opts a rule into checking; nothing else about `metadata.source`
+  changes for rules that don't set it (all 125 example rules, today).
+- `section`, when `file` is set, doubles as the exact-match heading `rules validate` looks up within
+  that file to scope the fingerprint to just that section rather than the whole document - kept the
+  fingerprint precise (editing an unrelated section of a large standards doc shouldn't warn every
+  rule linked to that file) without adding a redundant field alongside `section` for the same text.
+- `statement` stays display-only, even when `file` is set - it is **not** used to search the linked
+  document verbatim. A "the heading was renamed but the same text still exists elsewhere in the
+  file" (moved-section) feature would need a verbatim string to search for, and `statement` was
+  deliberately kept a paraphrase (see above) specifically so this repo's own rule content doesn't get
+  more of the original company-standards text copied into a git-committed file than exists today.
+  Reusing it for verbatim search would silently break that guarantee, so moved-section detection was
+  cut from this pass rather than adding a second, verbatim-text field to work around it.
+- Checking is folded into `codeguard rules validate` rather than a new `rules check-sources` command
+  (considered and rejected - a fourth structural-ish verb where `validate`/`test`/`analyze` already
+  exist, for a check that's naturally a superset of what `validate` already does per rule). Every
+  finding - file missing, section not found, section name ambiguous, content changed, fingerprint not
+  yet captured - is a **warning only**; none affect `rules validate`'s exit code, which stays governed
+  solely by the pre-existing schema/structural checks. This fits "no automatic decisions" better than
+  a fail-the-build design would: a stale doc reference is a signal for a human to review, not a reason
+  to block CI. `rules validate` is otherwise unaffected when no rule sets `file` (the section is
+  omitted from output entirely), and this is the one place it reads files outside the configured
+  rules directory - both call sites it shares `RuleValidationReportWriter` with (the top-level
+  `validate` pre-flight gate, and `rules create`'s post-scaffold summary) are untouched, via new
+  writer overloads rather than changes to the existing ones.
+- `rules validate --update-fingerprints` (in scope for this pass, not deferred - without it there's
+  no way to resolve a warning once a human has decided the documentation change doesn't require a
+  rule change, short of hand-computing a sha256 hex string) recomputes and writes fingerprints for
+  rules flagged as drifted or never-captured. Off by default - the only CodeGuard command that
+  mutates rule files as a side effect of a check. Implemented as a surgical text splice
+  (`RuleSourceFingerprintWriter`, `CodeGuard.Configuration/Sources/`) using YamlDotNet's
+  `RepresentationModel` node tree only to locate character offsets in the original file text, never
+  to round-trip the file through a serializer - every other YAML write in this repo (`RuleYamlWriter`,
+  used by `rules create`) fully regenerates a file from a fresh in-memory model, which would drop
+  comments/reorder keys if used to "resave" a hand-authored rule file. Rules with a broken link
+  (missing file/section, or an ambiguous section) have nothing to fingerprint and are left for a
+  human to fix regardless of the flag.
+- Mechanically: `MarkdownSourceResolver` (pure string logic - ATX headings only in v1, exact
+  case-sensitive match, ends a section at the next heading of the same or shallower level; Setext
+  headings and fuzzy matching are out of scope) and `RuleSourceChecker` (the file-I/O layer, called
+  only from `rules validate`) live alongside `RuleSourceFingerprintWriter` in the new
+  `CodeGuard.Configuration/Sources/` namespace. `rule.schema.json`'s `metadata.source` gained `file`/
+  `fingerprint` as two more optional properties plus `dependentRequired: { fingerprint: [file] }` -
+  purely additive, no existing rule breaks.
+- Three of the 125 example rules were given real `file`/`fingerprint` links as a deliberate,
+  small-scale exception to the "no backfill" policy `metadata.source` itself followed - not a
+  reversal of that policy, but a demonstration that the feature works end-to-end against real
+  content (dogfooding, and free regression coverage since CI already runs `rules validate` over
+  `examples/rules`): `DDD-ENTITY-001` → `examples/docs/ddd-standards.md` § Entities,
+  `ARCH-DEPENDENCY-001` → `examples/docs/architecture-standards.md` § Domain Layer,
+  `CODING-DI-CONSTRUCTOR-INJECTION-ONLY-001` → `examples/docs/csharp-conventions.md` § Dependency
+  Injection. The other 122 rules are untouched - `metadata.source` (with or without `file`) remains
+  fully optional.
+
 ## The 11 starter rules
 
 All under `rules/`, all illustrative (`Contoso.*` namespace, `illustrative: true`), matching the

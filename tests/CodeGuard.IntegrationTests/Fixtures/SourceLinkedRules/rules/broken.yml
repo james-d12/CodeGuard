@@ -1,0 +1,12 @@
+id: SRC-BROKEN-001
+name: A rule whose linked source document no longer exists
+metadata:
+  source:
+    document: Retired Standards Document
+    file: docs/does-not-exist.md
+target:
+  kind: class
+  namespace: "Contoso.Domain.Infrastructure"
+assertions:
+  - must_inherit_from:
+      type: "Entity<*>"
