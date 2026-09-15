@@ -64,14 +64,19 @@ Conditions detected:
 * Source content has changed (fingerprint mismatch).
 * `file`/`section` resolve fine but no `fingerprint` has been captured yet.
 
-Console output, appended to `rules validate`'s existing summary only when at least one rule uses
-`file` (silent no-op otherwise):
+Console output, appended to `rules validate`'s existing summary only when at least one rule has an
+issue to report (a clean, matching-fingerprint rule prints nothing at all - not even a confirmation
+line; the section is entirely absent when every checked rule is clean):
 
 ```text
+Checked 3 rule files: 3 passed, 0 failed.
+
 Source checks:
-  ✓ domain-no-infrastructure - source unchanged
-  ⚠ events-must-be-past-tense - source content changed
-  ✗ service-ownership - source document no longer exists
+  ⚠ events-must-be-past-tense - source content changed (docs/conventions.md § Event Naming)
+      Recorded statement: Domain events are named in the past tense.
+      Current content:    Domain events must use past-tense verb names, e.g. OrderPlaced.
+      New fingerprint:    sha256:...
+  ✗ service-ownership - source document no longer exists (docs/ownership.md)
 ```
 
 ## No Automatic Decisions
@@ -84,15 +89,10 @@ analyzer kinds, no duplicate ids) do that. A stale doc reference is a signal for
 not a reason to block CI.
 
 ```text
-Source changed since rule was created.
-
-Recorded statement:
-  Domain projects must not reference Infrastructure.
-
-Current section content:
-  Domain projects should not directly depend on Infrastructure.
-
-New fingerprint: sha256:...
+  ⚠ domain-no-infrastructure - source content changed (docs/architecture.md § Domain Layer)
+      Recorded statement: Domain projects must not reference Infrastructure.
+      Current content:    Domain projects should not directly depend on Infrastructure.
+      New fingerprint:    sha256:...
 ```
 
 The user remains responsible for deciding whether to update the rule, update the documentation, or

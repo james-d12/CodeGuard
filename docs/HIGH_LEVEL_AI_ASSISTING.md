@@ -1083,7 +1083,9 @@ Mitigation:
 
 ## Rules become stale
 
-Future capability:
+**Implemented** (`docs/done/RULE_SOURCE_AND_LINKED_DOCUMENTATION.md`, `docs/IMPLEMENTATION_STATUS.md`
+"Post-v1 addition: `metadata.source.file`/`fingerprint` + `rules validate` drift warnings") - the
+workflow originally sketched here:
 
 ```text
 Source documentation changed
@@ -1092,6 +1094,17 @@ Potentially affected rules
         ↓
 Review required
 ```
+
+ships as: a rule opts in with `metadata.source.file` (+ optional `section`, to scope the check to one
+heading rather than the whole document) and a captured `fingerprint`; `codeguard rules validate`
+resolves the link on every run and warns (never fails the build - see "No Automatic Decisions" in the
+design doc) when the fingerprint no longer matches, printing the recorded statement next to the
+current content as evidence for a human to review; `rules validate --update-fingerprints` resolves a
+reviewed warning by recomputing and writing the new fingerprint back into the rule file, editing only
+that value in place. Cut from this pass: moved-section detection (relocating a renamed heading by
+searching for the recorded statement verbatim - would require a verbatim-text field, and `statement`
+is deliberately a paraphrase, not a verbatim quote, for reasons the design doc covers) and non-
+repo-local sources (Confluence/SharePoint etc. - scope stays repository-local Markdown for now).
 
 ## CodeGuard becomes too complex
 
@@ -1218,8 +1231,11 @@ Only after the workflow is proven:
 
 * rule mutation testing
 * policy conflict detection
-* documentation-to-rule impact analysis
-* stale-rule detection
+* documentation-to-rule impact analysis / stale-rule detection — **DONE**, ahead of the stated order
+  (Phase 4/MCP isn't started yet). `metadata.source.file`/`fingerprint` + `rules validate` drift
+  warnings — see "Rules become stale" above and
+  `docs/IMPLEMENTATION_STATUS.md` ("Post-v1 addition: `metadata.source.file`/`fingerprint` + `rules
+  validate` drift warnings").
 * rule confidence scoring
 * policy coverage reporting
 
