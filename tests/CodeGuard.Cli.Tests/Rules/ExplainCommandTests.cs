@@ -116,6 +116,8 @@ public class ExplainCommandTests
                     document: Architecture Standards
                     section: "4.2 Layering"
                     statement: Domain entities must inherit from the shared Entity base.
+                    file: docs/architecture.md
+                    fingerprint: "sha256:0000000000000000000000000000000000000000000000000000000000000000"
                 target:
                   kind: class
                   namespace: "Contoso.Domain"
@@ -133,6 +135,47 @@ public class ExplainCommandTests
             Assert.Equal("Architecture Standards", source.GetProperty("document").GetString());
             Assert.Equal("4.2 Layering", source.GetProperty("section").GetString());
             Assert.Equal("Domain entities must inherit from the shared Entity base.", source.GetProperty("statement").GetString());
+            Assert.Equal("docs/architecture.md", source.GetProperty("file").GetString());
+            Assert.Equal(
+                "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+                source.GetProperty("fingerprint").GetString());
+        }
+        finally
+        {
+            Directory.Delete(rulesDir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task Run_Json_WithMetadataSource_NoFileOrFingerprint_SerializedAsExplicitNull()
+    {
+        var rulesDir = Directory.CreateTempSubdirectory("codeguard-explain-json-metadata-nofile-").FullName;
+        try
+        {
+            await File.WriteAllTextAsync(Path.Combine(rulesDir, "rule.yml"), """
+                id: DDD-ENTITY-001
+                name: Entities inherit Entity
+                metadata:
+                  source:
+                    document: Architecture Standards
+                target:
+                  kind: class
+                  namespace: "Contoso.Domain"
+                assertions:
+                  - must_inherit_from:
+                      type: "Entity<*>"
+                """);
+
+            var (exitCode, output) = await RunExplain(["--rules-source", rulesDir, "DDD-ENTITY-001", "--format", "json"]);
+
+            Assert.Equal(0, exitCode);
+            using var document = JsonDocument.Parse(output);
+            var source = document.RootElement.GetProperty("metadata").GetProperty("source");
+
+            // file/fingerprint are optional, same "explicit null, not omitted" convention as
+            // document/section/statement - the feature is opt-in, this rule doesn't use it.
+            Assert.Equal(JsonValueKind.Null, source.GetProperty("file").ValueKind);
+            Assert.Equal(JsonValueKind.Null, source.GetProperty("fingerprint").ValueKind);
         }
         finally
         {

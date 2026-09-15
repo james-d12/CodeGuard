@@ -1,6 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <!-- Exposes RuleSourceFingerprintWriter.SpliceFingerprint (internal, pure string logic) for fast,
+         disk-free edge-case coverage - same pattern as CodeGuard.Evaluation.csproj. -->
+    <InternalsVisibleTo Include="CodeGuard.Configuration.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="JsonSchema.Net" Version="9.4.0" />
     <PackageReference Include="YamlDotNet" Version="18.1.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.11" />

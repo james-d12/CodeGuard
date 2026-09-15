@@ -108,7 +108,9 @@ public static class RuleDocumentParser
             : new RuleSource(
                 sourceNode.GetRequiredString("document"),
                 sourceNode.GetOptionalString("section"),
-                sourceNode.GetOptionalString("statement"));
+                sourceNode.GetOptionalString("statement"),
+                sourceNode.GetOptionalString("file"),
+                sourceNode.GetOptionalString("fingerprint"));
 
         return new RuleMetadata { Source = source };
     }

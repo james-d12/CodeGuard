@@ -126,7 +126,9 @@ public static class ExplainCommand
                     {
                         ["document"] = source.Document,
                         ["section"] = source.Section,
-                        ["statement"] = source.Statement
+                        ["statement"] = source.Statement,
+                        ["file"] = source.File,
+                        ["fingerprint"] = source.Fingerprint
                     }
                 }
                 : null,
@@ -160,6 +162,10 @@ public static class ExplainCommand
         if (rule.Metadata?.Source is { } source)
         {
             Console.WriteLine($"Source:        {source.Document}{(source.Section is null ? "" : $" - {source.Section}")}");
+            if (source.File is not null)
+            {
+                Console.WriteLine($"Source file:   {source.File}{(source.Fingerprint is null ? " (no fingerprint captured)" : "")}");
+            }
         }
         if (rule.Analyzer is not null)
         {
