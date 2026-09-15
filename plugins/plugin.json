@@ -1,0 +1,13 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "codeguard-rules-generator",
+  "description": "Generate CodeGuard rules from existing code, architecture and engineering standards.",
+  "version": "0.1.0",
+  "repository": "https://github.com/james-d12/CodeGuard",
+  "license": "Apache-2.0",
+  "keywords": [
+    "codeguard",
+    "rules",
+    "generation"
+  ]
+}
