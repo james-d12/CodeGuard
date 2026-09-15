@@ -125,6 +125,7 @@ public static class RoslynTypeExtractor
 
     private static string TypedConstantToString(TypedConstant constant) => constant.Kind switch
     {
+        TypedConstantKind.Array when constant.IsNull => "null",
         TypedConstantKind.Array => $"[{string.Join(", ", constant.Values.Select(TypedConstantToString))}]",
         _ => constant.Value?.ToString() ?? "null"
     };
