@@ -11,7 +11,7 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-REFS="skills/codeguard-rule-generation/references"
+REFS="plugins/codeguard-rules-generator/skills/codeguard-rule-generation/references"
 SCHEMA="src/CodeGuard.Configuration/Validation/Schemas/rule.schema.json"
 
 run_codeguard() {
