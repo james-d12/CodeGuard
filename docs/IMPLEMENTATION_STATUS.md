@@ -569,7 +569,15 @@ than introducing a second, competing "source" concept:
   `CodeGuard.Configuration/Sources/` namespace. `rule.schema.json`'s `metadata.source` gained `file`/
   `fingerprint` as two more optional properties plus `dependentRequired: { fingerprint: [file] }` -
   purely additive, no existing rule breaks.
-- No backfill of the 125 existing example rules, same policy as `metadata.source` itself.
+- Three of the 125 example rules were given real `file`/`fingerprint` links as a deliberate,
+  small-scale exception to the "no backfill" policy `metadata.source` itself followed - not a
+  reversal of that policy, but a demonstration that the feature works end-to-end against real
+  content (dogfooding, and free regression coverage since CI already runs `rules validate` over
+  `examples/rules`): `DDD-ENTITY-001` → `examples/docs/ddd-standards.md` § Entities,
+  `ARCH-DEPENDENCY-001` → `examples/docs/architecture-standards.md` § Domain Layer,
+  `CODING-DI-CONSTRUCTOR-INJECTION-ONLY-001` → `examples/docs/csharp-conventions.md` § Dependency
+  Injection. The other 122 rules are untouched - `metadata.source` (with or without `file`) remains
+  fully optional.
 
 ## The 11 starter rules
 
