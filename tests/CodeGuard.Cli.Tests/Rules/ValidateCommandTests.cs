@@ -1,14 +1,13 @@
 using CodeGuard.Cli.Commands.Rules;
-using CodeGuard.Cli.Tests;
 
 namespace CodeGuard.Cli.Tests.Rules;
 
 /// <summary>Covers the `rules validate` command end-to-end via its System.CommandLine `Command`, and the
 /// pre-flight gate `validate` shares with it (docs/done/RULE_VALIDATION_PLAN.md).</summary>
 [Collection(ConsoleOutputCollection.Name)]
-public class ValidateCommandTests : IDisposable
+public sealed class ValidateCommandTests : IDisposable
 {
-    private readonly string _rulesDir = Directory.CreateTempSubdirectory("rulesengine-rulesvalidate-").FullName;
+    private readonly string _rulesDir = Directory.CreateTempSubdirectory("codeguard-rulesvalidate-").FullName;
 
     [Fact]
     public async Task Run_AllRulesValid_ExitsZeroAndReportsAllPassed()

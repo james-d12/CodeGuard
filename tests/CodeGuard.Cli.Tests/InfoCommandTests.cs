@@ -4,7 +4,7 @@ namespace CodeGuard.Cli.Tests;
 
 /// <summary>Covers `codeguard info` end-to-end via its System.CommandLine `Command`.</summary>
 [Collection(ConsoleOutputCollection.Name)]
-public class InfoCommandTests : IDisposable
+public sealed class InfoCommandTests : IDisposable
 {
     private readonly string _rulesDir = Directory.CreateTempSubdirectory("codeguard-info-rules-").FullName;
 
@@ -30,11 +30,11 @@ public class InfoCommandTests : IDisposable
         {
             WriteRuleFile("ddd", "a.yml", RuleYaml("DDD-ENTITY-001", severity: "error"));
             var configDir = Directory.CreateDirectory(Path.Combine(repoDir, ".codeguard"));
-            File.WriteAllText(Path.Combine(configDir.FullName, "config.yml"), $"""
-                repository:
-                  rules:
-                    - "{_rulesDir.Replace("\\", "/")}"
-                """);
+            await File.WriteAllTextAsync(Path.Combine(configDir.FullName, "config.yml"), $"""
+                 repository:
+                   rules:
+                     - "{_rulesDir.Replace("\\", "/")}"
+                 """);
 
             var (exitCode, output) = await RunInfo(["--path", repoDir]);
 
@@ -129,7 +129,7 @@ public class InfoCommandTests : IDisposable
         {
             var configDir = Directory.CreateDirectory(Path.Combine(repoDir, ".codeguard"));
             var configPath = Path.Combine(configDir.FullName, "config.yml");
-            File.WriteAllText(configPath, "repository: [this, is, not, a, map]");
+            await File.WriteAllTextAsync(configPath, "repository: [this, is, not, a, map]");
 
             var (exitCode, _, errorOutput) = await RunInfoCapturingError(["--path", repoDir]);
 
@@ -145,7 +145,7 @@ public class InfoCommandTests : IDisposable
         }
     }
 
-    private async Task<(int ExitCode, string Output, string ErrorOutput)> RunInfoCapturingError(IReadOnlyList<string> args)
+    private static async Task<(int ExitCode, string Output, string ErrorOutput)> RunInfoCapturingError(IReadOnlyList<string> args)
     {
         var originalOut = Console.Out;
         var originalError = Console.Error;
@@ -165,7 +165,7 @@ public class InfoCommandTests : IDisposable
         }
     }
 
-    private async Task<(int ExitCode, string Output)> RunInfo(IReadOnlyList<string> args)
+    private static async Task<(int ExitCode, string Output)> RunInfo(IReadOnlyList<string> args)
     {
         var originalOut = Console.Out;
         var writer = new StringWriter();

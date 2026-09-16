@@ -7,12 +7,12 @@ namespace CodeGuard.Cli.Tests;
 /// Exercises GitRuleSourceSync against a throwaway local repo used as the "remote" - no network
 /// access needed, `git clone`/`fetch` work fine against a local filesystem path.
 /// </summary>
-public class GitRuleSourceSyncTests : IDisposable
+public sealed class GitRuleSourceSyncTests : IDisposable
 {
     private const string Branch = "main";
 
-    private readonly string _remoteDir = Directory.CreateTempSubdirectory("rulesengine-gitsync-remote-").FullName;
-    private readonly string _destinationDir = Path.Combine(Directory.CreateTempSubdirectory("rulesengine-gitsync-dest-").FullName, "clone");
+    private readonly string _remoteDir = Directory.CreateTempSubdirectory("codeguard-gitsync-remote-").FullName;
+    private readonly string _destinationDir = Path.Combine(Directory.CreateTempSubdirectory("codeguard-gitsync-dest-").FullName, "clone");
 
     public GitRuleSourceSyncTests()
     {

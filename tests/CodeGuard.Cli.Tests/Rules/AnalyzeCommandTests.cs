@@ -4,9 +4,9 @@ namespace CodeGuard.Cli.Tests.Rules;
 
 /// <summary>Covers the `rules analyze` command end-to-end via its System.CommandLine `Command`.</summary>
 [Collection(ConsoleOutputCollection.Name)]
-public class AnalyzeCommandTests : IDisposable
+public sealed class AnalyzeCommandTests : IDisposable
 {
-    private readonly string _rulesDir = Directory.CreateTempSubdirectory("rulesengine-rulesanalyze-").FullName;
+    private readonly string _rulesDir = Directory.CreateTempSubdirectory("codeguard-rulesanalyze-").FullName;
 
     [Fact]
     public async Task Run_CleanRuleSet_ExitsZero()

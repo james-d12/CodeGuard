@@ -1,12 +1,11 @@
 using CodeGuard.Cli.Commands.Rules;
-using CodeGuard.Cli.Tests;
 
 namespace CodeGuard.Cli.Tests.Rules;
 
 /// <summary>Covers the `rules list` command end-to-end via its System.CommandLine `Command`: the
 /// "no rules directory configured" guard, table/json output, and --tag/--enabled-only filtering.</summary>
 [Collection(ConsoleOutputCollection.Name)]
-public class ListCommandTests : IDisposable
+public sealed class ListCommandTests : IDisposable
 {
     private readonly string _rulesDir = Directory.CreateTempSubdirectory("codeguard-list-rules-").FullName;
 
@@ -39,7 +38,7 @@ public class ListCommandTests : IDisposable
         {
             var configDir = Directory.CreateDirectory(Path.Combine(repoDir, ".codeguard"));
             var configPath = Path.Combine(configDir.FullName, "config.yml");
-            File.WriteAllText(configPath, "repository: [this, is, not, a, map]");
+            await File.WriteAllTextAsync(configPath, "repository: [this, is, not, a, map]");
 
             var (exitCode, _, error) = await RunListRulesRaw(["--path", repoDir]);
 

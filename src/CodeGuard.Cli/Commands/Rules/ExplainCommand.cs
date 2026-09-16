@@ -120,9 +120,9 @@ public static class ExplainCommand
             {
                 ["classification"] = ToSnakeCase(rule.Enforcement.Classification.ToString())
             },
-            ["tags"] = new JsonArray(rule.Tags.Select(t => (JsonNode)t!).ToArray()),
+            ["tags"] = new JsonArray(rule.Tags.Select(t => (JsonNode)t).ToArray()),
             ["remediation"] = rule.Remediation?.Trim(),
-            ["documentation"] = new JsonArray(rule.Documentation.Select(d => (JsonNode)d!).ToArray()),
+            ["documentation"] = new JsonArray(rule.Documentation.Select(d => (JsonNode)d).ToArray()),
             ["enabled"] = rule.Enabled,
             ["illustrative"] = rule.Illustrative,
             ["metadata"] = rule.Metadata?.Source is { } source

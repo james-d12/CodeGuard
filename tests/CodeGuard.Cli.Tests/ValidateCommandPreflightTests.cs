@@ -10,10 +10,10 @@ namespace CodeGuard.Cli.Tests;
 /// instead of the rule-validation report asserted below.
 /// </summary>
 [Collection(ConsoleOutputCollection.Name)]
-public class ValidateCommandPreflightTests : IDisposable
+public sealed class ValidateCommandPreflightTests : IDisposable
 {
-    private readonly string _rulesDir = Directory.CreateTempSubdirectory("rulesengine-validate-rules-").FullName;
-    private readonly string _repoDir = Directory.CreateTempSubdirectory("rulesengine-validate-repo-").FullName;
+    private readonly string _rulesDir = Directory.CreateTempSubdirectory("codeguard-validate-rules-").FullName;
+    private readonly string _repoDir = Directory.CreateTempSubdirectory("codeguard-validate-repo-").FullName;
 
     [Fact]
     public async Task Validate_WithBrokenRuleFile_ExitsOneWithReport_WithoutReachingAnalysis()

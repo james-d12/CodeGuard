@@ -5,9 +5,9 @@ using CodeGuard.RuleModel.Rules;
 
 namespace CodeGuard.Configuration.Tests;
 
-public class RuleFileLoaderTests : IDisposable
+public sealed class RuleFileLoaderTests : IDisposable
 {
-    private readonly string _directory = Directory.CreateTempSubdirectory("rulesengine-tests-").FullName;
+    private readonly string _directory = Directory.CreateTempSubdirectory("codeguard-tests-").FullName;
 
     private static RuleFileLoader CreateLoader()
     {
@@ -76,7 +76,7 @@ public class RuleFileLoaderTests : IDisposable
         var rule = CreateLoader().LoadFromFile(file);
 
         Assert.NotNull(rule.Metadata?.Source);
-        Assert.Equal("Architecture Standards", rule.Metadata!.Source!.Document);
+        Assert.Equal("Architecture Standards", rule.Metadata.Source.Document);
         Assert.Equal("4.2 Layering", rule.Metadata.Source.Section);
         Assert.Equal("Domain entities must inherit from the approved base class.", rule.Metadata.Source.Statement);
     }
@@ -214,7 +214,7 @@ public class RuleFileLoaderTests : IDisposable
         var rule = CreateLoader().LoadFromFile(file);
 
         Assert.NotNull(rule.Analyzer);
-        Assert.Equal("exhaustive-switch", rule.Analyzer!.Name);
+        Assert.Equal("exhaustive-switch", rule.Analyzer.Name);
         Assert.Null(rule.Target);
         Assert.Null(rule.Assertions);
     }

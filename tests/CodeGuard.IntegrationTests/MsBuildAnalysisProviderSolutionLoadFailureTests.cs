@@ -19,7 +19,7 @@ public class MsBuildAnalysisProviderSolutionLoadFailureTests
         try
         {
             var solutionPath = Path.Combine(tempDir.FullName, "broken.sln");
-            File.WriteAllText(solutionPath, "this is not a valid solution file");
+            await File.WriteAllTextAsync(solutionPath, "this is not a valid solution file");
 
             var builder = new AnalysisModelBuilder([new MsBuildAnalysisProvider([solutionPath])]);
 

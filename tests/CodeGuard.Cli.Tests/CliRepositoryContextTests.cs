@@ -9,7 +9,7 @@ namespace CodeGuard.Cli.Tests;
 /// and docs/SETUP_COMMAND_PLAN.md. Every test passes an explicit, temp-directory `globalSettingsRoot`
 /// so tier 4 (a prior `setup` run) never reads or writes the machine's real app-data directory.
 /// </summary>
-public class CliRepositoryContextTests : IDisposable
+public sealed class CliRepositoryContextTests : IDisposable
 {
     private readonly string _repoRoot = Directory.CreateTempSubdirectory("codeguard-clictx-repo-").FullName;
     private readonly string _globalSettingsRoot = Directory.CreateTempSubdirectory("codeguard-clictx-global-").FullName;
@@ -76,7 +76,7 @@ public class CliRepositoryContextTests : IDisposable
         Assert.Equal([globalConfiguredRules], context.Layout.RulesPaths);
         Assert.Equal(RulesSourceProvenance.GlobalSettings, context.RulesProvenance);
         Assert.NotNull(context.GlobalSettings);
-        Assert.Equal(globalConfiguredRules, context.GlobalSettings!.Location);
+        Assert.Equal(globalConfiguredRules, context.GlobalSettings.Location);
     }
 
     [Fact]

@@ -1,5 +1,4 @@
 using CodeGuard.Cli.Commands.Rules;
-using CodeGuard.Cli.Tests;
 
 namespace CodeGuard.Cli.Tests.Rules;
 
@@ -10,9 +9,9 @@ namespace CodeGuard.Cli.Tests.Rules;
 /// deterministically.
 /// </summary>
 [Collection(ConsoleOutputCollection.Name)]
-public class CreateCommandTests : IDisposable
+public sealed class CreateCommandTests : IDisposable
 {
-    private readonly string _rulesDir = Directory.CreateTempSubdirectory("rulesengine-createrule-").FullName;
+    private readonly string _rulesDir = Directory.CreateTempSubdirectory("codeguard-createrule-").FullName;
 
     [Fact]
     public async Task Run_FullInteractiveWalkthrough_WritesValidRuleAndExitsZero()
@@ -36,7 +35,7 @@ public class CreateCommandTests : IDisposable
         Assert.Equal(0, exitCode);
         var filePath = Path.Combine(_rulesDir, "test-create-001.yml");
         Assert.True(File.Exists(filePath));
-        var yaml = File.ReadAllText(filePath);
+        var yaml = await File.ReadAllTextAsync(filePath);
         Assert.Contains("TEST-CREATE-001", yaml);
         Assert.Contains("namespace: Contoso.Domain.Entities", yaml);
         Assert.Contains("must_inherit_from", yaml);
@@ -89,7 +88,7 @@ public class CreateCommandTests : IDisposable
         Assert.Equal(0, exitCode);
         var filePath = Path.Combine(_rulesDir, "test-create-002.yml");
         Assert.True(File.Exists(filePath));
-        var yaml = File.ReadAllText(filePath);
+        var yaml = await File.ReadAllTextAsync(filePath);
         Assert.Contains("severity: error", yaml);
         Assert.Contains($"Created rule 'TEST-CREATE-002' at {filePath}", output);
     }
@@ -135,5 +134,8 @@ public class CreateCommandTests : IDisposable
     private void WriteRuleFile(string relativePath, string yaml) =>
         File.WriteAllText(Path.Combine(_rulesDir, relativePath), yaml);
 
-    public void Dispose() => Directory.Delete(_rulesDir, recursive: true);
+    public void Dispose()
+    {
+        Directory.Delete(_rulesDir, recursive: true);
+    } 
 }

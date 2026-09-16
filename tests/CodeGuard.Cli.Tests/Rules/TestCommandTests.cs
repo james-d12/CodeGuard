@@ -1,11 +1,10 @@
 using CodeGuard.Cli.Commands.Rules;
-using CodeGuard.Cli.Tests;
 
 namespace CodeGuard.Cli.Tests.Rules;
 
 /// <summary>Covers the `rules test` command end-to-end via its System.CommandLine `Command`.</summary>
 [Collection(ConsoleOutputCollection.Name)]
-public class TestCommandTests : IDisposable
+public sealed class TestCommandTests : IDisposable
 {
     private readonly string _rulesDir = Directory.CreateTempSubdirectory("codeguard-rulestest-").FullName;
 

@@ -3,9 +3,9 @@ using YamlDotNet.Core;
 
 namespace CodeGuard.Configuration.Tests.GlobalConfig;
 
-public class GlobalSettingsStoreTests : IDisposable
+public sealed class GlobalSettingsStoreTests : IDisposable
 {
-    private readonly string _root = Directory.CreateTempSubdirectory("rulesengine-globalsettings-").FullName;
+    private readonly string _root = Directory.CreateTempSubdirectory("codeguard-globalsettings-").FullName;
 
     [Fact]
     public void Load_ReturnsNull_WhenNoSettingsFileExists()

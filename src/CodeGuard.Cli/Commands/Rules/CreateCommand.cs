@@ -7,6 +7,15 @@ using CodeGuard.Configuration.Capabilities;
 
 namespace CodeGuard.Cli.Commands.Rules;
 
+public sealed record CreateCommandOptions
+{
+    public required Option<string?> Id { get; init; }
+    public required Option<string?> Name { get; init; }
+    public required Option<string?> Description { get; init; }
+    public required Option<string?> Severity { get; init; }
+    public required Option<string[]> Tag { get; init; }
+}
+
 /// <summary>
 /// Interactively scaffolds a new rule YAML file. Deliberately doesn't hardcode per-selector/
 /// per-assertion parameter shapes (there are 21 target selector kinds and 45 assertion kinds in
@@ -52,17 +61,19 @@ public static class CreateCommand
         var command = new Command(
             "create",
             "Interactively scaffold a new rule YAML file: prompts for metadata, then a target " +
-            "selector and one or more assertions, then validates the result before saving.");
-        command.Add(pathOption);
-        command.Add(configOption);
-        command.Add(rulesSourceOption);
-        command.Add(branchOption);
-        command.Add(verbosityOption);
-        command.Add(idOption);
-        command.Add(nameOption);
-        command.Add(descriptionOption);
-        command.Add(severityOption);
-        command.Add(tagOption);
+            "selector and one or more assertions, then validates the result before saving.")
+        {
+            pathOption,
+            configOption,
+            rulesSourceOption,
+            branchOption,
+            verbosityOption,
+            idOption,
+            nameOption,
+            descriptionOption,
+            severityOption,
+            tagOption
+        };
 
         command.SetAction((parseResult, _) =>
         {
@@ -89,7 +100,16 @@ public static class CreateCommand
 
             try
             {
-                return Task.FromResult(RunInteractive(parseResult, context, logger, idOption, nameOption, descriptionOption, severityOption, tagOption));
+                var createCommandOptions = new CreateCommandOptions()
+                {
+                    Id = idOption,
+                    Name = nameOption,
+                    Description = descriptionOption,
+                    Severity = severityOption,
+                    Tag = tagOption
+                };
+                
+                return Task.FromResult(RunInteractive(parseResult, context, logger, createCommandOptions));
             }
             catch (EndOfInputException)
             {
@@ -105,17 +125,13 @@ public static class CreateCommand
         ParseResult parseResult,
         CliRepositoryContext context,
         ILogger logger,
-        Option<string?> idOption,
-        Option<string?> nameOption,
-        Option<string?> descriptionOption,
-        Option<string?> severityOption,
-        Option<string[]> tagOption)
+        CreateCommandOptions options)
     {
-        var id = PromptRequired(parseResult.GetValue(idOption), "Rule ID (e.g. DDD-ENTITY-003): ");
-        var name = PromptRequired(parseResult.GetValue(nameOption), "Rule name: ");
-        var description = PromptOptional(parseResult.GetValue(descriptionOption), "Description (optional, blank to skip): ");
-        var severity = PromptSeverity(parseResult.GetValue(severityOption), "Severity - info/warning/error/critical (blank = warning): ");
-        var tags = PromptTags(parseResult.GetValue(tagOption) ?? [], "Tags, comma-separated (optional, blank to skip): ");
+        var id = PromptRequired(parseResult.GetValue(options.Id), "Rule ID (e.g. DDD-ENTITY-003): ");
+        var name = PromptRequired(parseResult.GetValue(options.Name), "Rule name: ");
+        var description = PromptOptional(parseResult.GetValue(options.Description), "Description (optional, blank to skip): ");
+        var severity = PromptSeverity(parseResult.GetValue(options.Severity), "Severity - info/warning/error/critical (blank = warning): ");
+        var tags = PromptTags(parseResult.GetValue(options.Tag) ?? [], "Tags, comma-separated (optional, blank to skip): ");
 
         var selectorRegistry = DefaultParsers.CreateSelectorRegistry();
         var assertionRegistry = DefaultParsers.CreateAssertionRegistry(selectorRegistry);
@@ -187,7 +203,7 @@ public static class CreateCommand
     /// instead of looping forever re-issuing the same prompt - e.g. piped/scripted input that runs
     /// out before every required answer is given.
     /// </summary>
-    private sealed class EndOfInputException : Exception;
+    public sealed class EndOfInputException : Exception;
 
     private static string ReadLineOrThrow() => Console.ReadLine() ?? throw new EndOfInputException();
 
@@ -259,10 +275,15 @@ public static class CreateCommand
         return SplitCommaList(ReadLineOrThrow());
     }
 
-    private static string[] SplitCommaList(string? input) =>
-        string.IsNullOrWhiteSpace(input)
-            ? []
-            : input.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+    private static string[] SplitCommaList(string? input)
+    {
+        if (string.IsNullOrWhiteSpace(input))
+        {
+            return [];
+        }
+        
+        return input.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries); 
+    }
 
     private static bool PromptYesNo(string prompt, bool defaultYes)
     {
@@ -293,12 +314,16 @@ public static class CreateCommand
         }
     }
 
-    private static string KindSuggestionHint(string? input, IEnumerable<string> knownKinds) =>
-        string.IsNullOrEmpty(input)
-            ? ""
-            : knownKinds.FirstOrDefault(k => k.Contains(input, StringComparison.OrdinalIgnoreCase)) is { } near
-                ? $" Did you mean '{near}'?"
-                : "";
+    private static string KindSuggestionHint(string? input, IEnumerable<string> knownKinds)
+    {
+        if (string.IsNullOrEmpty(input))
+        {
+            return string.Empty;
+        }
+
+        var near = knownKinds.FirstOrDefault(k => k.Contains(input, StringComparison.OrdinalIgnoreCase));
+        return near != null ? $" Did you mean '{near}'?" : string.Empty;
+    }
 
     /// <summary>
     /// Prompts for the chosen kind's declared parameters by name, then allows any extras. Required
@@ -311,29 +336,13 @@ public static class CreateCommand
 
         foreach (var parameter in descriptor.Parameters)
         {
-            var hint = parameter.Required ? "required" : parameter.Default is { } d ? $"optional, default {d}" : "optional";
+            var hint = GetHint(parameter);
             if (parameter.AllowedValues is { Count: > 0 } allowed)
             {
                 hint += $"; one of {string.Join(", ", allowed)}";
             }
 
-            while (true)
-            {
-                Console.Write($"  {parameter.Name} ({hint}): ");
-                var value = ReadLineOrThrow().Trim();
-                if (value.Length > 0)
-                {
-                    parameters[parameter.Name] = ParseValue(value);
-                    break;
-                }
-
-                if (!parameter.Required)
-                {
-                    break;
-                }
-
-                Console.WriteLine($"  '{parameter.Name}' is required.");
-            }
+            ProcessParameter(parameter, hint, parameters);
         }
 
         // Nested selector/assertion parameters can't be prompted for meaningfully, and a kind may
@@ -352,11 +361,47 @@ public static class CreateCommand
         }
     }
 
+    private static void ProcessParameter(ParameterDescriptor parameter, string hint, Dictionary<string, object> parameters)
+    {
+        while (true)
+        {
+            Console.Write($"  {parameter.Name} ({hint}): ");
+            var value = ReadLineOrThrow().Trim();
+            if (value.Length > 0)
+            {
+                parameters[parameter.Name] = ParseValue(value);
+                break;
+            }
+
+            if (!parameter.Required)
+            {
+                break;
+            }
+
+            Console.WriteLine($"  '{parameter.Name}' is required.");
+        }
+    }
+
     private static object ParseValue(string value) =>
         value.Contains(',')
             ? value.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
             : value;
 
+    private static string GetHint(ParameterDescriptor parameter)
+    {
+        if (parameter.Required)
+        {
+            return "required";
+        }
+
+        if (parameter.Default != null)
+        {
+            return $"optional, default {parameter.Default}";
+        }
+        
+        return "optional";
+    }
+    
     private static Dictionary<string, object> PromptTargetSelector(IReadOnlyList<CapabilityDescriptor> descriptors)
     {
         var descriptor = PromptKind("Target selector kind", descriptors);

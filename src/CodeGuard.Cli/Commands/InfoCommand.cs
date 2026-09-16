@@ -4,7 +4,6 @@ using System.Text.Json.Serialization;
 using CodeGuard.Cli.Support;
 using CodeGuard.Configuration.GlobalConfig;
 using CodeGuard.Configuration.Validation;
-using Microsoft.Extensions.Logging;
 
 namespace CodeGuard.Cli.Commands;
 
