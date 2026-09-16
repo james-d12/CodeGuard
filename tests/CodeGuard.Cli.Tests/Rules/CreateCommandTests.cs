@@ -137,5 +137,5 @@ public sealed class CreateCommandTests : IDisposable
     public void Dispose()
     {
         Directory.Delete(_rulesDir, recursive: true);
-    } 
+    }
 }

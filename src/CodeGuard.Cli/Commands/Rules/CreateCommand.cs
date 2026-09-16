@@ -108,7 +108,7 @@ public static class CreateCommand
                     Severity = severityOption,
                     Tag = tagOption
                 };
-                
+
                 return Task.FromResult(RunInteractive(parseResult, context, logger, createCommandOptions));
             }
             catch (EndOfInputException)
@@ -281,8 +281,8 @@ public static class CreateCommand
         {
             return [];
         }
-        
-        return input.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries); 
+
+        return input.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
     }
 
     private static bool PromptYesNo(string prompt, bool defaultYes)
@@ -398,10 +398,10 @@ public static class CreateCommand
         {
             return $"optional, default {parameter.Default}";
         }
-        
+
         return "optional";
     }
-    
+
     private static Dictionary<string, object> PromptTargetSelector(IReadOnlyList<CapabilityDescriptor> descriptors)
     {
         var descriptor = PromptKind("Target selector kind", descriptors);
