@@ -17,6 +17,14 @@ remediation: >
   IServiceProvider.GetService/GetRequiredService.
 illustrative: true
 
+metadata:
+  source:
+    document: C# Conventions
+    section: Dependency Injection
+    statement: Dependencies are injected through the constructor, not resolved via the service-locator pattern.
+    file: examples/docs/csharp-conventions.md
+    fingerprint: sha256:59c5051a8b276bb89e88928cd2f6bdd7e717899d6016ebd088d071704000809d
+
 target:
   kind: repository
 

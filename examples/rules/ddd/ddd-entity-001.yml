@@ -13,6 +13,14 @@ remediation: >
   Inherit from Contoso.Domain.Entity<TId>.
 illustrative: true
 
+metadata:
+  source:
+    document: DDD Standards
+    section: Entities
+    statement: Every domain entity inherits from the shared Entity<TId> base class.
+    file: examples/docs/ddd-standards.md
+    fingerprint: sha256:5b1b4e48288337c841fff197c1f348b490296ec620528ef2eebfacedd4768cc6
+
 target:
   kind: class
   namespace: "Contoso.Domain.Entities"

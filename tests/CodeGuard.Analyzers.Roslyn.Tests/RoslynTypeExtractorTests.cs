@@ -139,6 +139,7 @@ public class RoslynTypeExtractorTests
         Assert.True(readOnlyName.HasGetter);
         Assert.False(readOnlyName.HasSetter);
         Assert.Null(readOnlyName.SetterAccessibility);
+        Assert.False(readOnlyName.IsInit);
     }
 
     [Fact]
@@ -171,7 +172,137 @@ public class RoslynTypeExtractorTests
             """, "Contoso.Domain.Order");
 
         Assert.Equal(3, type.Line);
-        Assert.True(type.Column > 0);
+        Assert.Equal(14, type.Column);
+    }
+
+    [Fact]
+    public void ExtractTypes_PopulatesFilePathFromCompilation()
+    {
+        var compilation = CompilationFactory.Create("""
+            namespace Contoso.Domain;
+            public class Order { }
+            """, path: "Contoso/Domain/Order.cs");
+        var type = RoslynTypeExtractor.ExtractTypes(compilation, "Contoso.Domain")
+            .Single(t => t.FullName == "Contoso.Domain.Order");
+
+        Assert.Equal("Contoso/Domain/Order.cs", type.FilePath);
+    }
+
+    [Fact]
+    public void ExtractTypes_MapsNamespace_ForNamespacedAndGlobalTypes()
+    {
+        var namespaced = ExtractSingle("""
+            namespace Contoso.Domain.Entities;
+            public class Order { }
+            """, "Contoso.Domain.Entities.Order");
+        Assert.Equal("Contoso.Domain.Entities", namespaced.Namespace);
+
+        var global = ExtractSingle("""
+            public class Order { }
+            """, "Order");
+        Assert.Equal(string.Empty, global.Namespace);
+    }
+
+    [Fact]
+    public void ExtractTypes_PopulatesExactMemberLineAndColumn()
+    {
+        var type = ExtractSingle("""
+            namespace Contoso.Domain;
+            public class Order
+            {
+                public void Save() { }
+            }
+            """, "Contoso.Domain.Order");
+
+        var method = Assert.Single(type.Methods);
+        Assert.Equal(4, method.Line);
+        Assert.Equal(17, method.Column);
+        Assert.Equal("Test.cs", method.FilePath);
+    }
+
+    [Fact]
+    public void ExtractTypes_MapsStaticAndAbstractTypeModifierFlags()
+    {
+        var staticType = ExtractSingle("""
+            namespace Contoso.Domain;
+            public static class Utilities { }
+            """, "Contoso.Domain.Utilities");
+        Assert.True(staticType.Modifiers.HasFlag(TypeModifiers.Static));
+
+        var abstractType = ExtractSingle("""
+            namespace Contoso.Domain;
+            public abstract class Base { }
+            """, "Contoso.Domain.Base");
+        Assert.True(abstractType.Modifiers.HasFlag(TypeModifiers.Abstract));
+    }
+
+    [Fact]
+    public void ExtractTypes_MapsMethodModifierFlags()
+    {
+        var type = ExtractSingle("""
+            namespace Contoso.Domain;
+            public abstract class Base
+            {
+                public abstract void DoWork();
+                public virtual void Save() { }
+                public async System.Threading.Tasks.Task RunAsync() => await System.Threading.Tasks.Task.CompletedTask;
+            }
+            """, "Contoso.Domain.Base");
+
+        Assert.True(type.Methods.Single(m => m.Name == "DoWork").Modifiers.HasFlag(MethodModifiers.Abstract));
+        Assert.True(type.Methods.Single(m => m.Name == "Save").Modifiers.HasFlag(MethodModifiers.Virtual));
+        Assert.True(type.Methods.Single(m => m.Name == "RunAsync").Modifiers.HasFlag(MethodModifiers.Async));
+
+        var derived = ExtractSingle("""
+            namespace Contoso.Domain;
+            public class Base2
+            {
+                public virtual void Save() { }
+            }
+            public class Derived : Base2
+            {
+                public override void Save() { }
+            }
+            """, "Contoso.Domain.Derived");
+        Assert.True(derived.Methods.Single(m => m.Name == "Save").Modifiers.HasFlag(MethodModifiers.Override));
+    }
+
+    [Fact]
+    public void ExtractTypes_MapsNullAndArrayAttributeConstructorArguments()
+    {
+        var type = ExtractSingle("""
+            namespace Contoso.Domain;
+            public class TagsAttribute : System.Attribute
+            {
+                public TagsAttribute(string[] tags) { }
+            }
+            public class DescriptionAttribute : System.Attribute
+            {
+                public DescriptionAttribute(string text) { }
+            }
+            [Tags(null)]
+            [Description(null)]
+            public class NullArgs { }
+            """, "Contoso.Domain.NullArgs");
+
+        var tags = type.Attributes.Single(a => a.TypeName == "Contoso.Domain.TagsAttribute");
+        Assert.Equal("null", Assert.Single(tags.ConstructorArgumentLiterals));
+
+        var description = type.Attributes.Single(a => a.TypeName == "Contoso.Domain.DescriptionAttribute");
+        Assert.Equal("null", Assert.Single(description.ConstructorArgumentLiterals));
+
+        var withArray = ExtractSingle("""
+            namespace Contoso.Domain;
+            public class TagsAttribute : System.Attribute
+            {
+                public TagsAttribute(int[] values) { }
+            }
+            [Tags(new[] { 1, 2, 3 })]
+            public class WithArray { }
+            """, "Contoso.Domain.WithArray");
+
+        var populated = withArray.Attributes.Single();
+        Assert.Equal("[1, 2, 3]", Assert.Single(populated.ConstructorArgumentLiterals));
     }
 
     [Fact]
@@ -206,6 +337,13 @@ public class RoslynTypeExtractorTests
         Assert.Contains(type.Fields, f => f.Name == "MaxItems" && f.Modifiers.HasFlag(FieldModifiers.Const));
         Assert.Contains(type.Fields, f => f.Name == "_name" && f.Modifiers.HasFlag(FieldModifiers.Readonly));
         Assert.DoesNotContain(type.Fields, f => f.Name.Contains("Name") && f.Name != "_name");
+
+        var maxItems = type.Fields.Single(f => f.Name == "MaxItems");
+        Assert.True(maxItems.Modifiers.HasFlag(FieldModifiers.Static));
+        Assert.Equal("10", maxItems.ConstantValue);
+
+        var name = type.Fields.Single(f => f.Name == "_name");
+        Assert.Null(name.ConstantValue);
 
         var enumType = ExtractSingle("""
             namespace Contoso.Domain;

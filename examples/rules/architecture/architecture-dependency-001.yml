@@ -14,6 +14,14 @@ remediation: >
   Remove the project reference and depend on an abstraction defined in Domain instead.
 illustrative: true
 
+metadata:
+  source:
+    document: Architecture Standards
+    section: Domain Layer
+    statement: Domain projects must not take a project reference on an Infrastructure project.
+    file: examples/docs/architecture-standards.md
+    fingerprint: sha256:368ef7a31ae24b0c79abbc09856a0000e0a5428b08613fa9b86d04af687223b4
+
 target:
   kind: project
   name: "*.Domain"

@@ -1,4 +1,5 @@
 using CodeGuard.Cli.Commands.Rules;
+using CodeGuard.Configuration.Sources;
 
 namespace CodeGuard.Cli.Tests.Rules;
 
@@ -8,6 +9,7 @@ namespace CodeGuard.Cli.Tests.Rules;
 public sealed class ValidateCommandTests : IDisposable
 {
     private readonly string _rulesDir = Directory.CreateTempSubdirectory("codeguard-rulesvalidate-").FullName;
+    private readonly string _repoRoot = Directory.CreateTempSubdirectory("codeguard-rulesvalidate-repo-").FullName;
 
     [Fact]
     public async Task Run_AllRulesValid_ExitsZeroAndReportsAllPassed()
@@ -92,6 +94,126 @@ public sealed class ValidateCommandTests : IDisposable
         }
     }
 
+    [Fact]
+    public async Task Run_SourceFileWithMatchingFingerprint_NoWarningAndExitsZero()
+    {
+        WriteMarkdown("docs/architecture.md", "## Domain Layer\n\nContent.\n");
+        var resolution = MarkdownSourceResolver.Resolve(
+            await File.ReadAllTextAsync(Path.Combine(_repoRoot, "docs/architecture.md")), "Domain Layer");
+        WriteRuleFile("a.yml", RuleYamlWithSource("DDD-ENTITY-001", resolution.Fingerprint));
+
+        var (exitCode, output) = await RunValidateRules(["--path", _repoRoot]);
+
+        Assert.Equal(0, exitCode);
+        Assert.DoesNotContain("Source checks:", output);
+    }
+
+    [Fact]
+    public async Task Run_SourceFileWithDriftedFingerprint_WarnsButStillExitsZero()
+    {
+        WriteMarkdown("docs/architecture.md", "## Domain Layer\n\nUpdated content.\n");
+        WriteRuleFile("a.yml", RuleYamlWithSource("DDD-ENTITY-001", "sha256:" + new string('0', 64)));
+
+        var (exitCode, output) = await RunValidateRules(["--path", _repoRoot]);
+
+        Assert.Equal(0, exitCode);
+        Assert.Contains("Source checks:", output);
+        Assert.Contains("source content changed", output);
+    }
+
+    [Fact]
+    public async Task Run_SourceFileMissing_WarnsButStillExitsZero()
+    {
+        WriteRuleFile("a.yml", RuleYamlWithSource("DDD-ENTITY-001", fingerprint: null));
+
+        var (exitCode, output) = await RunValidateRules(["--path", _repoRoot]);
+
+        Assert.Equal(0, exitCode);
+        Assert.Contains("Source checks:", output);
+        Assert.Contains("source document no longer exists", output);
+    }
+
+    [Fact]
+    public async Task Run_SourceDriftAlongsideAStructuralError_StillExitsOneForTheStructuralError()
+    {
+        WriteMarkdown("docs/architecture.md", "## Domain Layer\n\nUpdated content.\n");
+        WriteRuleFile("a.yml", RuleYamlWithSource("DDD-ENTITY-001", "sha256:" + new string('0', 64)));
+        WriteRuleFile("bad.yml", """
+            id: DDD-ENTITY-002
+            name: Some rule
+            target:
+              kind: not_a_real_kind
+            assertions:
+              - must_inherit_from:
+                  type: "Contoso.Domain.Entity<TId>"
+            """);
+
+        var (exitCode, output) = await RunValidateRules(["--path", _repoRoot]);
+
+        Assert.Equal(1, exitCode);
+        Assert.Contains("Source checks:", output);
+        Assert.Contains("not_a_real_kind", output);
+    }
+
+    [Fact]
+    public async Task Run_UpdateFingerprints_RewritesOnlyDriftedOrMissingRulesAndLeavesBrokenLinksAlone()
+    {
+        WriteMarkdown("docs/architecture.md", "## Domain Layer\n\nUpdated content.\n");
+        WriteRuleFile("drifted.yml", RuleYamlWithSource("DDD-ENTITY-001", "sha256:" + new string('0', 64)));
+        WriteRuleFile("broken.yml", RuleYamlWithSource("DDD-ENTITY-002", fingerprint: null, file: "docs/missing.md"));
+
+        var (exitCode, output) = await RunValidateRules(["--path", _repoRoot, "--update-fingerprints"]);
+
+        Assert.Equal(0, exitCode);
+        Assert.Contains("Updated fingerprint: DDD-ENTITY-001", output);
+        Assert.DoesNotContain("DDD-ENTITY-002", output.Split("Source checks:")[0]);
+
+        var drifted = await File.ReadAllTextAsync(Path.Combine(_rulesDir, "drifted.yml"));
+        Assert.DoesNotContain("sha256:" + new string('0', 64), drifted);
+        Assert.Contains("Contoso.Domain.Entities", drifted); // sanity: still the same file, not clobbered
+
+        var broken = await File.ReadAllTextAsync(Path.Combine(_rulesDir, "broken.yml"));
+        Assert.Contains("docs/missing.md", broken);
+        Assert.DoesNotContain("fingerprint", broken);
+    }
+
+    private void WriteMarkdown(string relativePath, string content)
+    {
+        var fullPath = Path.Combine(_repoRoot, relativePath);
+        Directory.CreateDirectory(Path.GetDirectoryName(fullPath)!);
+        File.WriteAllText(fullPath, content);
+    }
+
+    private static string RuleYamlWithSource(string id, string? fingerprint, string file = "docs/architecture.md")
+    {
+        var lines = new List<string>
+        {
+            $"id: {id}",
+            "name: Some rule",
+            "metadata:",
+            "  source:",
+            "    document: Architecture Standards",
+            "    section: Domain Layer",
+            $"    file: {file}"
+        };
+
+        if (fingerprint is not null)
+        {
+            lines.Add($"    fingerprint: \"{fingerprint}\"");
+        }
+
+        lines.AddRange([
+            "target:",
+            "  kind: class",
+            "  namespace: \"Contoso.Domain.Entities\"",
+            "assertions:",
+            "  - must_inherit_from:",
+            "      type: \"Contoso.Domain.Entity<TId>\""
+        ]);
+
+        return string.Join('\n', lines);
+    }
+
     private static async Task<(int ExitCode, string Output, string Error)> RunValidateRulesRaw(IReadOnlyList<string> args)
     {
         var originalOut = Console.Out;
@@ -148,5 +270,9 @@ public sealed class ValidateCommandTests : IDisposable
     private void WriteRuleFile(string relativePath, string yaml) =>
         File.WriteAllText(Path.Combine(_rulesDir, relativePath), yaml);
 
-    public void Dispose() => Directory.Delete(_rulesDir, recursive: true);
+    public void Dispose()
+    {
+        Directory.Delete(_rulesDir, recursive: true);
+        Directory.Delete(_repoRoot, recursive: true);
+    }
 }

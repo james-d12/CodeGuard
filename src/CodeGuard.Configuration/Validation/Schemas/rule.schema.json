@@ -46,8 +46,11 @@
           "properties": {
             "document": { "type": "string", "minLength": 1 },
             "section": { "type": "string" },
-            "statement": { "type": "string" }
-          }
+            "statement": { "type": "string" },
+            "file": { "type": "string", "minLength": 1 },
+            "fingerprint": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" }
+          },
+          "dependentRequired": { "fingerprint": ["file"] }
         }
       }
     },
