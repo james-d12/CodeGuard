@@ -6,7 +6,7 @@ namespace CodeGuard.Evaluation.Tests.Assertions;
 public sealed class MustHaveJsonFieldAssertionTests : IDisposable
 {
     private static readonly RepositoryModel EmptyModel = new(".", [], [], [], [], [], [], [], [], []);
-    private readonly string _path = Path.Combine(Path.GetTempPath(), $"rulesengine-json-{Guid.NewGuid():N}.json");
+    private readonly string _path = Path.Combine(Path.GetTempPath(), $"codeguard-json-{Guid.NewGuid():N}.json");
 
     private FileModel WriteFile(string json)
     {

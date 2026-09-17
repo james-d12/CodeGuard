@@ -3,7 +3,7 @@ using CodeGuard.RuleModel.Rules;
 
 namespace CodeGuard.Configuration.Tests.Sources;
 
-public class RuleSourceCheckerTests : IDisposable
+public sealed class RuleSourceCheckerTests : IDisposable
 {
     private readonly string _repoRoot = Directory.CreateTempSubdirectory("codeguard-rulesourcechecker-").FullName;
 
@@ -35,7 +35,7 @@ public class RuleSourceCheckerTests : IDisposable
     [Fact]
     public void Check_MissingFile_ReportsFileMissing()
     {
-        var rule = RuleWithSource(new RuleSource("Standards", null, null, "docs/missing.md", null));
+        var rule = RuleWithSource(new RuleSource("Standards", null, null, "docs/missing.md"));
 
         var report = RuleSourceChecker.Check([(rule, "rule.yml")], _repoRoot);
 
@@ -48,7 +48,7 @@ public class RuleSourceCheckerTests : IDisposable
     public void Check_SectionNotFound_ReportsSectionNotFound()
     {
         WriteMarkdown("docs/architecture.md", "## Something Else\n\nContent.\n");
-        var rule = RuleWithSource(new RuleSource("Standards", "Domain Layer", null, "docs/architecture.md", null));
+        var rule = RuleWithSource(new RuleSource("Standards", "Domain Layer", null, "docs/architecture.md"));
 
         var report = RuleSourceChecker.Check([(rule, "rule.yml")], _repoRoot);
 
@@ -60,7 +60,7 @@ public class RuleSourceCheckerTests : IDisposable
     public void Check_AmbiguousSection_ReportsSectionAmbiguous()
     {
         WriteMarkdown("docs/architecture.md", "## Domain Layer\n\nFirst.\n\n## Domain Layer\n\nSecond.\n");
-        var rule = RuleWithSource(new RuleSource("Standards", "Domain Layer", null, "docs/architecture.md", null));
+        var rule = RuleWithSource(new RuleSource("Standards", "Domain Layer", null, "docs/architecture.md"));
 
         var report = RuleSourceChecker.Check([(rule, "rule.yml")], _repoRoot);
 
@@ -73,7 +73,7 @@ public class RuleSourceCheckerTests : IDisposable
     public void Check_NoFingerprintCaptured_ReportsFingerprintMissing()
     {
         WriteMarkdown("docs/architecture.md", "## Domain Layer\n\nContent.\n");
-        var rule = RuleWithSource(new RuleSource("Standards", "Domain Layer", null, "docs/architecture.md", null));
+        var rule = RuleWithSource(new RuleSource("Standards", "Domain Layer", null, "docs/architecture.md"));
 
         var report = RuleSourceChecker.Check([(rule, "rule.yml")], _repoRoot);
 
@@ -118,8 +118,8 @@ public class RuleSourceCheckerTests : IDisposable
     public void Check_MultipleRules_OnlyChecksOnesWithSourceFile()
     {
         WriteMarkdown("docs/architecture.md", "## Domain Layer\n\nContent.\n");
-        var withFile = RuleWithSource(new RuleSource("Standards", "Domain Layer", null, "docs/architecture.md", null), id: "RULE-1");
-        var withoutFile = RuleWithSource(new RuleSource("Standards", "Domain Layer", "statement", null, null), id: "RULE-2");
+        var withFile = RuleWithSource(new RuleSource("Standards", "Domain Layer", null, "docs/architecture.md"), id: "RULE-1");
+        var withoutFile = RuleWithSource(new RuleSource("Standards", "Domain Layer", "statement"), id: "RULE-2");
         var withNoSourceAtAll = RuleWithSource(source: null, id: "RULE-3");
 
         var report = RuleSourceChecker.Check(

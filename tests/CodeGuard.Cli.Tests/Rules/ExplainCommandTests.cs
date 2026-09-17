@@ -1,6 +1,5 @@
 using System.Text.Json;
 using CodeGuard.Cli.Commands.Rules;
-using CodeGuard.Cli.Tests;
 
 namespace CodeGuard.Cli.Tests.Rules;
 
@@ -36,6 +35,30 @@ public class ExplainCommandTests
             Assert.Contains("No rules directory is configured.", errorWriter.ToString());
             Assert.Contains("codeguard setup", errorWriter.ToString());
             Assert.Contains("--rules-source", errorWriter.ToString());
+        }
+        finally
+        {
+            Directory.Delete(repoDir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task Run_MalformedConfig_PrintsFriendlyErrorAndExitsOne()
+    {
+        var repoDir = Directory.CreateTempSubdirectory("codeguard-explain-malformed-repo-").FullName;
+        try
+        {
+            var configDir = Directory.CreateDirectory(Path.Combine(repoDir, ".codeguard"));
+            var configPath = Path.Combine(configDir.FullName, "config.yml");
+            await File.WriteAllTextAsync(configPath, "repository: [this, is, not, a, map]");
+
+            var (exitCode, _, error) = await RunExplainRaw(["--path", repoDir, "ANY-001"]);
+
+            Assert.Equal(1, exitCode);
+            Assert.Contains("codeguard:", error);
+            Assert.Contains(configPath, error);
+            Assert.DoesNotContain("Unhandled exception", error);
+            Assert.DoesNotContain(" at ", error);
         }
         finally
         {
@@ -209,6 +232,26 @@ public class ExplainCommandTests
         {
             var exitCode = await ExplainCommand.Build().Parse(args.ToArray()).InvokeAsync();
             return (exitCode, writer.ToString());
+        }
+        finally
+        {
+            Console.SetOut(originalOut);
+            Console.SetError(originalError);
+        }
+    }
+
+    private static async Task<(int ExitCode, string Output, string Error)> RunExplainRaw(IReadOnlyList<string> args)
+    {
+        var originalOut = Console.Out;
+        var originalError = Console.Error;
+        var outWriter = new StringWriter();
+        var errorWriter = new StringWriter();
+        Console.SetOut(outWriter);
+        Console.SetError(errorWriter);
+        try
+        {
+            var exitCode = await ExplainCommand.Build().Parse(args.ToArray()).InvokeAsync();
+            return (exitCode, outWriter.ToString(), errorWriter.ToString());
         }
         finally
         {

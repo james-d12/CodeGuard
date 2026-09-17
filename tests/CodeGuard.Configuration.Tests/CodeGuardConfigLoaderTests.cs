@@ -1,4 +1,5 @@
 using CodeGuard.Configuration.Discovery;
+using YamlDotNet.Core;
 
 namespace CodeGuard.Configuration.Tests;
 
@@ -61,6 +62,31 @@ public class CodeGuardConfigLoaderTests : IDisposable
         var missingPath = Path.Combine(_repoRoot, "does-not-exist.yml");
 
         Assert.Throws<FileNotFoundException>(() => CodeGuardConfigLoader.LoadOrDefault(_repoRoot, missingPath));
+    }
+
+    [Fact]
+    public void LoadOrDefault_ThrowsInvalidOperationException_WhenConfigFileIsMalformedYaml()
+    {
+        var configDir = Directory.CreateDirectory(Path.Combine(_repoRoot, ".codeguard"));
+        var configPath = Path.Combine(configDir.FullName, "config.yml");
+        File.WriteAllText(configPath, "repository: [this, is, not, a, map]");
+
+        var ex = Assert.Throws<InvalidOperationException>(() => CodeGuardConfigLoader.LoadOrDefault(_repoRoot));
+
+        Assert.Contains(configPath, ex.Message);
+        Assert.IsType<YamlException>(ex.InnerException);
+    }
+
+    [Fact]
+    public void LoadOrDefault_ThrowsInvalidOperationException_WhenExplicitConfigFileIsMalformedYaml()
+    {
+        var explicitConfigPath = Path.Combine(_repoRoot, "custom-config.yml");
+        File.WriteAllText(explicitConfigPath, "repository: [this, is, not, a, map]");
+
+        var ex = Assert.Throws<InvalidOperationException>(() => CodeGuardConfigLoader.LoadOrDefault(_repoRoot, explicitConfigPath));
+
+        Assert.Contains(explicitConfigPath, ex.Message);
+        Assert.IsType<YamlException>(ex.InnerException);
     }
 
     public void Dispose() => Directory.Delete(_repoRoot, recursive: true);

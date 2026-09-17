@@ -5,7 +5,7 @@ namespace CodeGuard.Evaluation.Tests.Analyzers;
 
 public sealed class ConstYamlValueConsistencyAnalyzerTests : IDisposable
 {
-    private readonly string _path = Path.Combine(Path.GetTempPath(), $"rulesengine-typename-{Guid.NewGuid():N}.yml");
+    private readonly string _path = Path.Combine(Path.GetTempPath(), $"codeguard-typename-{Guid.NewGuid():N}.yml");
 
     private FileModel WriteYamlFile(string yaml)
     {

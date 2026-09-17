@@ -1,12 +1,11 @@
 using CodeGuard.Cli.Commands.Rules;
-using CodeGuard.Cli.Tests;
 
 namespace CodeGuard.Cli.Tests.Rules;
 
 /// <summary>Covers the `rules list` command end-to-end via its System.CommandLine `Command`: the
 /// "no rules directory configured" guard, table/json output, and --tag/--enabled-only filtering.</summary>
 [Collection(ConsoleOutputCollection.Name)]
-public class ListCommandTests : IDisposable
+public sealed class ListCommandTests : IDisposable
 {
     private readonly string _rulesDir = Directory.CreateTempSubdirectory("codeguard-list-rules-").FullName;
 
@@ -23,6 +22,31 @@ public class ListCommandTests : IDisposable
             Assert.Contains("No rules directory is configured.", error);
             Assert.Contains("codeguard setup", error);
             Assert.Contains("--rules-source", error);
+        }
+        finally
+        {
+            Directory.Delete(repoDir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task Run_MalformedConfig_PrintsFriendlyErrorAndExitsOne()
+    {
+        using var globalSettings = new IsolatedGlobalSettingsScope();
+        var repoDir = Directory.CreateTempSubdirectory("codeguard-list-malformed-repo-").FullName;
+        try
+        {
+            var configDir = Directory.CreateDirectory(Path.Combine(repoDir, ".codeguard"));
+            var configPath = Path.Combine(configDir.FullName, "config.yml");
+            await File.WriteAllTextAsync(configPath, "repository: [this, is, not, a, map]");
+
+            var (exitCode, _, error) = await RunListRulesRaw(["--path", repoDir]);
+
+            Assert.Equal(1, exitCode);
+            Assert.Contains("codeguard:", error);
+            Assert.Contains(configPath, error);
+            Assert.DoesNotContain("Unhandled exception", error);
+            Assert.DoesNotContain(" at ", error);
         }
         finally
         {

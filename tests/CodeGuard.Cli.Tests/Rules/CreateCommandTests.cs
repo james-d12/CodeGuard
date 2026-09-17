@@ -1,5 +1,4 @@
 using CodeGuard.Cli.Commands.Rules;
-using CodeGuard.Cli.Tests;
 
 namespace CodeGuard.Cli.Tests.Rules;
 
@@ -10,9 +9,9 @@ namespace CodeGuard.Cli.Tests.Rules;
 /// deterministically.
 /// </summary>
 [Collection(ConsoleOutputCollection.Name)]
-public class CreateCommandTests : IDisposable
+public sealed class CreateCommandTests : IDisposable
 {
-    private readonly string _rulesDir = Directory.CreateTempSubdirectory("rulesengine-createrule-").FullName;
+    private readonly string _rulesDir = Directory.CreateTempSubdirectory("codeguard-createrule-").FullName;
 
     [Fact]
     public async Task Run_FullInteractiveWalkthrough_WritesValidRuleAndExitsZero()
@@ -36,7 +35,7 @@ public class CreateCommandTests : IDisposable
         Assert.Equal(0, exitCode);
         var filePath = Path.Combine(_rulesDir, "test-create-001.yml");
         Assert.True(File.Exists(filePath));
-        var yaml = File.ReadAllText(filePath);
+        var yaml = await File.ReadAllTextAsync(filePath);
         Assert.Contains("TEST-CREATE-001", yaml);
         Assert.Contains("namespace: Contoso.Domain.Entities", yaml);
         Assert.Contains("must_inherit_from", yaml);
@@ -89,9 +88,53 @@ public class CreateCommandTests : IDisposable
         Assert.Equal(0, exitCode);
         var filePath = Path.Combine(_rulesDir, "test-create-002.yml");
         Assert.True(File.Exists(filePath));
-        var yaml = File.ReadAllText(filePath);
+        var yaml = await File.ReadAllTextAsync(filePath);
         Assert.Contains("severity: error", yaml);
         Assert.Contains($"Created rule 'TEST-CREATE-002' at {filePath}", output);
+    }
+
+    [Fact]
+    public async Task Run_MalformedConfig_PrintsFriendlyErrorAndExitsOne()
+    {
+        var repoDir = Directory.CreateTempSubdirectory("codeguard-createrule-malformed-repo-").FullName;
+        try
+        {
+            var configDir = Directory.CreateDirectory(Path.Combine(repoDir, ".codeguard"));
+            var configPath = Path.Combine(configDir.FullName, "config.yml");
+            await File.WriteAllTextAsync(configPath, "repository: [this, is, not, a, map]");
+
+            var (exitCode, _, error) = await RunCreateRaw(["--path", repoDir]);
+
+            Assert.Equal(1, exitCode);
+            Assert.Contains("codeguard:", error);
+            Assert.Contains(configPath, error);
+            Assert.DoesNotContain("Unhandled exception", error);
+            Assert.DoesNotContain(" at ", error);
+        }
+        finally
+        {
+            Directory.Delete(repoDir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task Run_NoRulesConfigured_ExitsOneAndPrintsHint()
+    {
+        using var globalSettings = new IsolatedGlobalSettingsScope();
+        var repoDir = Directory.CreateTempSubdirectory("codeguard-createrule-norules-repo-").FullName;
+        try
+        {
+            var (exitCode, _, error) = await RunCreateRaw(["--path", repoDir]);
+
+            Assert.Equal(1, exitCode);
+            Assert.Contains("No rules directory is configured.", error);
+            Assert.Contains("codeguard setup", error);
+            Assert.Contains("--rules-source", error);
+        }
+        finally
+        {
+            Directory.Delete(repoDir, recursive: true);
+        }
     }
 
     private async Task<(int ExitCode, string Output)> RunCreate(string input, IReadOnlyList<string>? extraArgs = null)
@@ -119,6 +162,26 @@ public class CreateCommandTests : IDisposable
         }
     }
 
+    private static async Task<(int ExitCode, string Output, string Error)> RunCreateRaw(IReadOnlyList<string> args)
+    {
+        var originalOut = Console.Out;
+        var originalError = Console.Error;
+        var outWriter = new StringWriter();
+        var errorWriter = new StringWriter();
+        Console.SetOut(outWriter);
+        Console.SetError(errorWriter);
+        try
+        {
+            var exitCode = await CreateCommand.Build().Parse(args.ToArray()).InvokeAsync();
+            return (exitCode, outWriter.ToString(), errorWriter.ToString());
+        }
+        finally
+        {
+            Console.SetOut(originalOut);
+            Console.SetError(originalError);
+        }
+    }
+
     private static string Lines(params string[] lines) => string.Join('\n', lines) + "\n";
 
     private static string RuleYaml(string id) => $"""
@@ -135,5 +198,8 @@ public class CreateCommandTests : IDisposable
     private void WriteRuleFile(string relativePath, string yaml) =>
         File.WriteAllText(Path.Combine(_rulesDir, relativePath), yaml);
 
-    public void Dispose() => Directory.Delete(_rulesDir, recursive: true);
+    public void Dispose()
+    {
+        Directory.Delete(_rulesDir, recursive: true);
+    }
 }

@@ -3,7 +3,7 @@ using CodeGuard.Configuration.Testing;
 
 namespace CodeGuard.Cli.Tests;
 
-public class RuleTestReportWriterTests
+public sealed class RuleTestReportWriterTests
 {
     [Fact]
     public void WriteConsole_AllCasesPassed_CollapsesToSingleLineWithoutPerCaseLines()

@@ -9,7 +9,7 @@ namespace CodeGuard.Cli.Tests;
 /// and docs/SETUP_COMMAND_PLAN.md. Every test passes an explicit, temp-directory `globalSettingsRoot`
 /// so tier 4 (a prior `setup` run) never reads or writes the machine's real app-data directory.
 /// </summary>
-public class CliRepositoryContextTests : IDisposable
+public sealed class CliRepositoryContextTests : IDisposable
 {
     private readonly string _repoRoot = Directory.CreateTempSubdirectory("codeguard-clictx-repo-").FullName;
     private readonly string _globalSettingsRoot = Directory.CreateTempSubdirectory("codeguard-clictx-global-").FullName;
@@ -76,7 +76,7 @@ public class CliRepositoryContextTests : IDisposable
         Assert.Equal([globalConfiguredRules], context.Layout.RulesPaths);
         Assert.Equal(RulesSourceProvenance.GlobalSettings, context.RulesProvenance);
         Assert.NotNull(context.GlobalSettings);
-        Assert.Equal(globalConfiguredRules, context.GlobalSettings!.Location);
+        Assert.Equal(globalConfiguredRules, context.GlobalSettings.Location);
     }
 
     [Fact]
@@ -100,6 +100,48 @@ public class CliRepositoryContextTests : IDisposable
 
         Assert.Empty(context.Layout.RulesPaths);
         Assert.Equal(RulesSourceProvenance.Default, context.RulesProvenance);
+    }
+
+    [Fact]
+    public void TryResolve_ReturnsFalseWithFriendlyMessage_WhenRepoConfigIsMalformedYaml()
+    {
+        var configDir = Directory.CreateDirectory(Path.Combine(_repoRoot, ".codeguard"));
+        var configPath = Path.Combine(configDir.FullName, "config.yml");
+        File.WriteAllText(configPath, "repository: [this, is, not, a, map]");
+
+        var succeeded = CliRepositoryContext.TryResolve(
+            _repoRoot, configPath: null, out var context, out var errorMessage, globalSettingsRoot: _globalSettingsRoot);
+
+        Assert.False(succeeded);
+        Assert.Null(context);
+        Assert.NotNull(errorMessage);
+        Assert.Contains(configPath, errorMessage);
+    }
+
+    [Fact]
+    public void TryResolve_ReturnsFalseWithFriendlyMessage_WhenExplicitConfigPathDoesNotExist()
+    {
+        var missingConfigPath = Path.Combine(_repoRoot, "does-not-exist.yml");
+
+        var succeeded = CliRepositoryContext.TryResolve(
+            _repoRoot, missingConfigPath, out var context, out var errorMessage, globalSettingsRoot: _globalSettingsRoot);
+
+        Assert.False(succeeded);
+        Assert.Null(context);
+        Assert.Contains(missingConfigPath, errorMessage);
+    }
+
+    [Fact]
+    public void TryResolve_ReturnsTrue_WhenConfigIsValid()
+    {
+        WriteRepoConfig(CreateRulesDir("repo-configured"));
+
+        var succeeded = CliRepositoryContext.TryResolve(
+            _repoRoot, configPath: null, out var context, out var errorMessage, globalSettingsRoot: _globalSettingsRoot);
+
+        Assert.True(succeeded);
+        Assert.NotNull(context);
+        Assert.Null(errorMessage);
     }
 
     [Fact]

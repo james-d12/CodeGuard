@@ -36,17 +36,6 @@ public static class RuleValidationReportWriter
         }
     }
 
-    public static void WriteJson(RuleSetValidationReport report, TextWriter writer)
-    {
-        var summary = new RuleValidationSummary(
-            report.Rules.Count + report.Issues.Count,
-            report.Rules.Count,
-            report.IsValid,
-            report.Issues.OrderBy(i => i.SourceFile, StringComparer.Ordinal).ToList());
-
-        writer.WriteLine(JsonSerializer.Serialize(summary, JsonOptions));
-    }
-
     /// <summary>
     /// `rules validate` only - prints everything <see cref="WriteConsole(RuleSetValidationReport,TextWriter)"/>
     /// does, plus a "Source checks" section for any `metadata.source.file` drift found by
@@ -70,6 +59,17 @@ public static class RuleValidationReportWriter
         {
             WriteSourceIssue(writer, issue);
         }
+    }
+
+    public static void WriteJson(RuleSetValidationReport report, TextWriter writer)
+    {
+        var summary = new RuleValidationSummary(
+            report.Rules.Count + report.Issues.Count,
+            report.Rules.Count,
+            report.IsValid,
+            report.Issues.OrderBy(i => i.SourceFile, StringComparer.Ordinal).ToList());
+
+        writer.WriteLine(JsonSerializer.Serialize(summary, JsonOptions));
     }
 
     /// <summary>`rules validate` only - see the console overload's remarks.</summary>

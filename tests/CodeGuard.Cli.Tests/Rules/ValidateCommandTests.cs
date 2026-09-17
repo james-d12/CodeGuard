@@ -1,5 +1,4 @@
 using CodeGuard.Cli.Commands.Rules;
-using CodeGuard.Cli.Tests;
 using CodeGuard.Configuration.Sources;
 
 namespace CodeGuard.Cli.Tests.Rules;
@@ -7,10 +6,10 @@ namespace CodeGuard.Cli.Tests.Rules;
 /// <summary>Covers the `rules validate` command end-to-end via its System.CommandLine `Command`, and the
 /// pre-flight gate `validate` shares with it (docs/done/RULE_VALIDATION_PLAN.md).</summary>
 [Collection(ConsoleOutputCollection.Name)]
-public class ValidateCommandTests : IDisposable
+public sealed class ValidateCommandTests : IDisposable
 {
-    private readonly string _rulesDir = Directory.CreateTempSubdirectory("rulesengine-rulesvalidate-").FullName;
-    private readonly string _repoRoot = Directory.CreateTempSubdirectory("rulesengine-rulesvalidate-repo-").FullName;
+    private readonly string _rulesDir = Directory.CreateTempSubdirectory("codeguard-rulesvalidate-").FullName;
+    private readonly string _repoRoot = Directory.CreateTempSubdirectory("codeguard-rulesvalidate-repo-").FullName;
 
     [Fact]
     public async Task Run_AllRulesValid_ExitsZeroAndReportsAllPassed()
@@ -96,11 +95,35 @@ public class ValidateCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task Run_MalformedConfig_PrintsFriendlyErrorAndExitsOne()
+    {
+        var repoDir = Directory.CreateTempSubdirectory("codeguard-rulesvalidate-malformed-repo-").FullName;
+        try
+        {
+            var configDir = Directory.CreateDirectory(Path.Combine(repoDir, ".codeguard"));
+            var configPath = Path.Combine(configDir.FullName, "config.yml");
+            await File.WriteAllTextAsync(configPath, "repository: [this, is, not, a, map]");
+
+            var (exitCode, _, error) = await RunValidateRulesRaw(["--path", repoDir]);
+
+            Assert.Equal(1, exitCode);
+            Assert.Contains("codeguard:", error);
+            Assert.Contains(configPath, error);
+            Assert.DoesNotContain("Unhandled exception", error);
+            Assert.DoesNotContain(" at ", error);
+        }
+        finally
+        {
+            Directory.Delete(repoDir, recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task Run_SourceFileWithMatchingFingerprint_NoWarningAndExitsZero()
     {
         WriteMarkdown("docs/architecture.md", "## Domain Layer\n\nContent.\n");
         var resolution = MarkdownSourceResolver.Resolve(
-            File.ReadAllText(Path.Combine(_repoRoot, "docs/architecture.md")), "Domain Layer");
+            await File.ReadAllTextAsync(Path.Combine(_repoRoot, "docs/architecture.md")), "Domain Layer");
         WriteRuleFile("a.yml", RuleYamlWithSource("DDD-ENTITY-001", resolution.Fingerprint));
 
         var (exitCode, output) = await RunValidateRules(["--path", _repoRoot]);
@@ -169,11 +192,11 @@ public class ValidateCommandTests : IDisposable
         Assert.Contains("Updated fingerprint: DDD-ENTITY-001", output);
         Assert.DoesNotContain("DDD-ENTITY-002", output.Split("Source checks:")[0]);
 
-        var drifted = File.ReadAllText(Path.Combine(_rulesDir, "drifted.yml"));
+        var drifted = await File.ReadAllTextAsync(Path.Combine(_rulesDir, "drifted.yml"));
         Assert.DoesNotContain("sha256:" + new string('0', 64), drifted);
         Assert.Contains("Contoso.Domain.Entities", drifted); // sanity: still the same file, not clobbered
 
-        var broken = File.ReadAllText(Path.Combine(_rulesDir, "broken.yml"));
+        var broken = await File.ReadAllTextAsync(Path.Combine(_rulesDir, "broken.yml"));
         Assert.Contains("docs/missing.md", broken);
         Assert.DoesNotContain("fingerprint", broken);
     }

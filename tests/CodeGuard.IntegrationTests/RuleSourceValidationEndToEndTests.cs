@@ -105,14 +105,14 @@ public class RuleSourceValidationEndToEndTests
             Assert.Contains("Updated fingerprint: SRC-DRIFTED-001", output);
             Assert.DoesNotContain("Updated fingerprint: SRC-BROKEN-001", output); // nothing to fingerprint
 
-            var updatedDrifted = File.ReadAllText(Path.Combine(tempRoot, "rules", "drifted.yml"));
+            var updatedDrifted = await File.ReadAllTextAsync(Path.Combine(tempRoot, "rules", "drifted.yml"));
             Assert.Contains(
                 "fingerprint: sha256:790a2de809da2018ffd6337a4d1764a4eb3c33e32231133658b1fe014c83b614",
                 updatedDrifted);
             Assert.Contains("Domain must not reference Infrastructure (drifted fixture copy)", updatedDrifted); // rest of file preserved
 
             // The committed fixture that --update-fingerprints ran against a *copy* of must be untouched.
-            var committedDrifted = File.ReadAllText(Path.Combine(fixtureRoot, "rules", "drifted.yml"));
+            var committedDrifted = await File.ReadAllTextAsync(Path.Combine(fixtureRoot, "rules", "drifted.yml"));
             Assert.Contains("sha256:0000000000000000000000000000000000000000000000000000000000000000", committedDrifted);
         }
         finally

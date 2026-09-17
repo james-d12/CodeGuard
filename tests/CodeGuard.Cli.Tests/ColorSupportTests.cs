@@ -2,7 +2,7 @@ using CodeGuard.Cli.Support;
 
 namespace CodeGuard.Cli.Tests;
 
-public class ColorSupportTests
+public sealed class ColorSupportTests
 {
     [Fact]
     public void NoColorOption_WinsOverColorOption()

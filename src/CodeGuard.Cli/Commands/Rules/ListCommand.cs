@@ -56,12 +56,18 @@ public static class ListCommand
             using var loggerFactory = CliLoggerFactory.Create(CliLoggerFactory.ParseVerbosity(parseResult.GetValue(verbosityOption)!));
             var logger = loggerFactory.CreateLogger(typeof(ListCommand));
 
-            var context = CliRepositoryContext.Resolve(
-                parseResult.GetValue(pathOption),
-                parseResult.GetValue(configOption),
-                parseResult.GetValue(rulesSourceOption),
-                parseResult.GetValue(branchOption),
-                loggerFactory: loggerFactory);
+            if (!CliRepositoryContext.TryResolve(
+                    parseResult.GetValue(pathOption),
+                    parseResult.GetValue(configOption),
+                    out var context,
+                    out var resolveError,
+                    parseResult.GetValue(rulesSourceOption),
+                    parseResult.GetValue(branchOption),
+                    loggerFactory: loggerFactory))
+            {
+                Console.Error.WriteLine($"codeguard: {resolveError}");
+                return Task.FromResult(1);
+            }
 
             if (!context.TryRequireRulesConfigured(Console.Error))
             {
