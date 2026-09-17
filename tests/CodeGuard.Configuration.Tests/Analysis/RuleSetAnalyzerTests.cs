@@ -4,9 +4,9 @@ using CodeGuard.Configuration.Loading;
 
 namespace CodeGuard.Configuration.Tests.Analysis;
 
-public class RuleSetAnalyzerTests : IDisposable
+public sealed class RuleSetAnalyzerTests : IDisposable
 {
-    private readonly string _directory = Directory.CreateTempSubdirectory("rulesengine-analyze-tests-").FullName;
+    private readonly string _directory = Directory.CreateTempSubdirectory("codeguard-analyze-tests-").FullName;
     private readonly CapabilityCatalog _catalog = CapabilityCatalog.Create();
 
     [Fact]

@@ -6,7 +6,7 @@ namespace CodeGuard.Cli.Tests;
 /// separate collections run in parallel by default, which races on the shared static Console state.
 /// </summary>
 [CollectionDefinition(Name)]
-public class ConsoleOutputCollection
+public static class ConsoleOutputCollection
 {
     public const string Name = "Console output";
 }

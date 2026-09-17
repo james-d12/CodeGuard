@@ -1,10 +1,11 @@
 using CodeGuard.Configuration.GlobalConfig;
+using YamlDotNet.Core;
 
 namespace CodeGuard.Configuration.Tests.GlobalConfig;
 
-public class GlobalSettingsStoreTests : IDisposable
+public sealed class GlobalSettingsStoreTests : IDisposable
 {
-    private readonly string _root = Directory.CreateTempSubdirectory("rulesengine-globalsettings-").FullName;
+    private readonly string _root = Directory.CreateTempSubdirectory("codeguard-globalsettings-").FullName;
 
     [Fact]
     public void Load_ReturnsNull_WhenNoSettingsFileExists()
@@ -47,6 +48,19 @@ public class GlobalSettingsStoreTests : IDisposable
         Assert.Equal(RuleSourceKind.Directory, loaded.Kind);
         Assert.Equal("/home/jamie/rules-checkout", loaded.Location);
         Assert.Null(loaded.Branch);
+    }
+
+    [Fact]
+    public void Load_ThrowsInvalidOperationException_WhenSettingsFileIsMalformedYaml()
+    {
+        var settingsFilePath = Path.Combine(_root, "settings.yml");
+        File.WriteAllText(settingsFilePath, "[this, is, not, a, map]");
+
+        var ex = Assert.Throws<InvalidOperationException>(() => GlobalSettingsStore.Load(settingsFilePath));
+
+        Assert.Contains(settingsFilePath, ex.Message);
+        Assert.Contains("codeguard setup", ex.Message);
+        Assert.IsType<YamlException>(ex.InnerException);
     }
 
     [Fact]

@@ -110,12 +110,18 @@ public static class ValidateCommand
             using var loggerFactory = CliLoggerFactory.Create(CliLoggerFactory.ParseVerbosity(parseResult.GetValue(verbosityOption)!));
             var logger = loggerFactory.CreateLogger(typeof(ValidateCommand));
 
-            var context = CliRepositoryContext.Resolve(
-                parseResult.GetValue(pathOption),
-                parseResult.GetValue(configOption),
-                parseResult.GetValue(rulesSourceOption),
-                parseResult.GetValue(branchOption),
-                loggerFactory: loggerFactory);
+            if (!CliRepositoryContext.TryResolve(
+                    parseResult.GetValue(pathOption),
+                    parseResult.GetValue(configOption),
+                    out var context,
+                    out var resolveError,
+                    parseResult.GetValue(rulesSourceOption),
+                    parseResult.GetValue(branchOption),
+                    loggerFactory: loggerFactory))
+            {
+                await Console.Error.WriteLineAsync($"codeguard: {resolveError}");
+                return 1;
+            }
 
             if (!context.TryRequireRulesConfigured(Console.Error))
             {

@@ -2,7 +2,7 @@ using CodeGuard.Cli.Support;
 
 namespace CodeGuard.Cli.Tests;
 
-public class ReportOutputPathResolverTests
+public sealed class ReportOutputPathResolverTests
 {
     [Fact]
     public void NullOutput_ResolvesToNull()

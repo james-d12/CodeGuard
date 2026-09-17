@@ -5,7 +5,7 @@ namespace CodeGuard.Evaluation.Tests.Analyzers;
 
 public sealed class ProjectConventionAnalyzerTests : IDisposable
 {
-    private readonly string _projectPath = Path.Combine(Path.GetTempPath(), $"rulesengine-projectconvention-{Guid.NewGuid():N}.csproj");
+    private readonly string _projectPath = Path.Combine(Path.GetTempPath(), $"codeguard-projectconvention-{Guid.NewGuid():N}.csproj");
 
     private ProjectModel WriteProject(string name, string csprojXml)
     {

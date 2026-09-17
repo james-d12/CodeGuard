@@ -2,7 +2,7 @@ using CodeGuard.Cli.Support;
 
 namespace CodeGuard.Cli.Tests;
 
-public class SolutionFileLocatorTests : IDisposable
+public sealed class SolutionFileLocatorTests : IDisposable
 {
     private readonly string _repoDir = Directory.CreateTempSubdirectory("codeguard-solutionlocator-").FullName;
 

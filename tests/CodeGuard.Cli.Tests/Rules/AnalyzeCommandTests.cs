@@ -4,9 +4,9 @@ namespace CodeGuard.Cli.Tests.Rules;
 
 /// <summary>Covers the `rules analyze` command end-to-end via its System.CommandLine `Command`.</summary>
 [Collection(ConsoleOutputCollection.Name)]
-public class AnalyzeCommandTests : IDisposable
+public sealed class AnalyzeCommandTests : IDisposable
 {
-    private readonly string _rulesDir = Directory.CreateTempSubdirectory("rulesengine-rulesanalyze-").FullName;
+    private readonly string _rulesDir = Directory.CreateTempSubdirectory("codeguard-rulesanalyze-").FullName;
 
     [Fact]
     public async Task Run_CleanRuleSet_ExitsZero()
@@ -55,6 +55,30 @@ public class AnalyzeCommandTests : IDisposable
 
             Assert.Equal(1, exitCode);
             Assert.Contains("No rules directory is configured.", error);
+        }
+        finally
+        {
+            Directory.Delete(repoDir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task Run_MalformedConfig_PrintsFriendlyErrorAndExitsOne()
+    {
+        var repoDir = Directory.CreateTempSubdirectory("codeguard-rulesanalyze-malformed-repo-").FullName;
+        try
+        {
+            var configDir = Directory.CreateDirectory(Path.Combine(repoDir, ".codeguard"));
+            var configPath = Path.Combine(configDir.FullName, "config.yml");
+            await File.WriteAllTextAsync(configPath, "repository: [this, is, not, a, map]");
+
+            var (exitCode, _, error) = await RunAnalyzeRaw(["--path", repoDir]);
+
+            Assert.Equal(1, exitCode);
+            Assert.Contains("codeguard:", error);
+            Assert.Contains(configPath, error);
+            Assert.DoesNotContain("Unhandled exception", error);
+            Assert.DoesNotContain(" at ", error);
         }
         finally
         {

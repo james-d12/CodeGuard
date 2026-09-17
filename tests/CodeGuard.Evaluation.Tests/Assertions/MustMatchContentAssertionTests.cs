@@ -6,7 +6,7 @@ namespace CodeGuard.Evaluation.Tests.Assertions;
 public sealed class MustMatchContentAssertionTests : IDisposable
 {
     private static readonly RepositoryModel EmptyModel = new(".", [], [], [], [], [], [], [], [], []);
-    private readonly string _path = Path.Combine(Path.GetTempPath(), $"rulesengine-content-{Guid.NewGuid():N}.txt");
+    private readonly string _path = Path.Combine(Path.GetTempPath(), $"codeguard-content-{Guid.NewGuid():N}.txt");
 
     private FileModel WriteFile(string content)
     {

@@ -2,9 +2,9 @@ using CodeGuard.Configuration.Discovery;
 
 namespace CodeGuard.Configuration.Tests;
 
-public class RepositoryDiscoveryTests : IDisposable
+public sealed class RepositoryDiscoveryTests : IDisposable
 {
-    private readonly string _repoRoot = Directory.CreateTempSubdirectory("rulesengine-discovery-").FullName;
+    private readonly string _repoRoot = Directory.CreateTempSubdirectory("codeguard-discovery-").FullName;
 
     [Fact]
     public void Resolve_ReturnsOnlyPathsThatExist()
