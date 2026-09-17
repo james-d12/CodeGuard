@@ -93,6 +93,50 @@ public sealed class CreateCommandTests : IDisposable
         Assert.Contains($"Created rule 'TEST-CREATE-002' at {filePath}", output);
     }
 
+    [Fact]
+    public async Task Run_MalformedConfig_PrintsFriendlyErrorAndExitsOne()
+    {
+        var repoDir = Directory.CreateTempSubdirectory("codeguard-createrule-malformed-repo-").FullName;
+        try
+        {
+            var configDir = Directory.CreateDirectory(Path.Combine(repoDir, ".codeguard"));
+            var configPath = Path.Combine(configDir.FullName, "config.yml");
+            await File.WriteAllTextAsync(configPath, "repository: [this, is, not, a, map]");
+
+            var (exitCode, _, error) = await RunCreateRaw(["--path", repoDir]);
+
+            Assert.Equal(1, exitCode);
+            Assert.Contains("codeguard:", error);
+            Assert.Contains(configPath, error);
+            Assert.DoesNotContain("Unhandled exception", error);
+            Assert.DoesNotContain(" at ", error);
+        }
+        finally
+        {
+            Directory.Delete(repoDir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task Run_NoRulesConfigured_ExitsOneAndPrintsHint()
+    {
+        using var globalSettings = new IsolatedGlobalSettingsScope();
+        var repoDir = Directory.CreateTempSubdirectory("codeguard-createrule-norules-repo-").FullName;
+        try
+        {
+            var (exitCode, _, error) = await RunCreateRaw(["--path", repoDir]);
+
+            Assert.Equal(1, exitCode);
+            Assert.Contains("No rules directory is configured.", error);
+            Assert.Contains("codeguard setup", error);
+            Assert.Contains("--rules-source", error);
+        }
+        finally
+        {
+            Directory.Delete(repoDir, recursive: true);
+        }
+    }
+
     private async Task<(int ExitCode, string Output)> RunCreate(string input, IReadOnlyList<string>? extraArgs = null)
     {
         var args = new List<string> { "--rules-source", _rulesDir };
@@ -115,6 +159,26 @@ public sealed class CreateCommandTests : IDisposable
         {
             Console.SetOut(originalOut);
             Console.SetIn(originalIn);
+        }
+    }
+
+    private static async Task<(int ExitCode, string Output, string Error)> RunCreateRaw(IReadOnlyList<string> args)
+    {
+        var originalOut = Console.Out;
+        var originalError = Console.Error;
+        var outWriter = new StringWriter();
+        var errorWriter = new StringWriter();
+        Console.SetOut(outWriter);
+        Console.SetError(errorWriter);
+        try
+        {
+            var exitCode = await CreateCommand.Build().Parse(args.ToArray()).InvokeAsync();
+            return (exitCode, outWriter.ToString(), errorWriter.ToString());
+        }
+        finally
+        {
+            Console.SetOut(originalOut);
+            Console.SetError(originalError);
         }
     }
 

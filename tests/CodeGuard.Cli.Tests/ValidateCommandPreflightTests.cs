@@ -85,6 +85,46 @@ public sealed class ValidateCommandPreflightTests : IDisposable
     }
 
     [Fact]
+    public async Task Validate_MalformedConfig_PrintsFriendlyErrorAndExitsOne_WithoutRawStackTrace()
+    {
+        var repoDirWithMalformedConfig = Directory.CreateTempSubdirectory("codeguard-validate-malformed-repo-").FullName;
+        try
+        {
+            var configDir = Directory.CreateDirectory(Path.Combine(repoDirWithMalformedConfig, ".codeguard"));
+            var configPath = Path.Combine(configDir.FullName, "config.yml");
+            await File.WriteAllTextAsync(configPath, "repository: [this, is, not, a, map]");
+
+            var originalOut = Console.Out;
+            var originalError = Console.Error;
+            var outWriter = new StringWriter();
+            var errorWriter = new StringWriter();
+            Console.SetOut(outWriter);
+            Console.SetError(errorWriter);
+            int exitCode;
+            try
+            {
+                exitCode = await ValidateCommand.Build().Parse(["--path", repoDirWithMalformedConfig]).InvokeAsync();
+            }
+            finally
+            {
+                Console.SetOut(originalOut);
+                Console.SetError(originalError);
+            }
+
+            var errorOutput = errorWriter.ToString();
+            Assert.Equal(1, exitCode);
+            Assert.Contains("codeguard:", errorOutput);
+            Assert.Contains(configPath, errorOutput);
+            Assert.DoesNotContain("Unhandled exception", errorOutput);
+            Assert.DoesNotContain(" at ", errorOutput);
+        }
+        finally
+        {
+            Directory.Delete(repoDirWithMalformedConfig, recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task Validate_WithMissingSolutionFile_PrintsCleanErrorAndExitsOne_WithoutRawStackTrace()
     {
         var originalOut = Console.Out;

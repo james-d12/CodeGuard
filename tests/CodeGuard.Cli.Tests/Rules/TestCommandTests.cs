@@ -206,6 +206,50 @@ public sealed class TestCommandTests : IDisposable
         Assert.DoesNotContain("Vacuous test", output);
     }
 
+    [Fact]
+    public async Task Run_MalformedConfig_PrintsFriendlyErrorAndExitsOne()
+    {
+        var repoDir = Directory.CreateTempSubdirectory("codeguard-rulestest-malformed-repo-").FullName;
+        try
+        {
+            var configDir = Directory.CreateDirectory(Path.Combine(repoDir, ".codeguard"));
+            var configPath = Path.Combine(configDir.FullName, "config.yml");
+            await File.WriteAllTextAsync(configPath, "repository: [this, is, not, a, map]");
+
+            var (exitCode, _, error) = await RunRulesTestRaw(["--path", repoDir]);
+
+            Assert.Equal(1, exitCode);
+            Assert.Contains("codeguard:", error);
+            Assert.Contains(configPath, error);
+            Assert.DoesNotContain("Unhandled exception", error);
+            Assert.DoesNotContain(" at ", error);
+        }
+        finally
+        {
+            Directory.Delete(repoDir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task Run_NoRulesConfigured_ExitsOneAndPrintsHint()
+    {
+        using var globalSettings = new IsolatedGlobalSettingsScope();
+        var repoDir = Directory.CreateTempSubdirectory("codeguard-rulestest-norules-repo-").FullName;
+        try
+        {
+            var (exitCode, _, error) = await RunRulesTestRaw(["--path", repoDir]);
+
+            Assert.Equal(1, exitCode);
+            Assert.Contains("No rules directory is configured.", error);
+            Assert.Contains("codeguard setup", error);
+            Assert.Contains("--rules-source", error);
+        }
+        finally
+        {
+            Directory.Delete(repoDir, recursive: true);
+        }
+    }
+
     private static string PassingRuleYaml(string id) => $$"""
         id: {{id}}
         name: Some rule
@@ -244,6 +288,26 @@ public sealed class TestCommandTests : IDisposable
         finally
         {
             Console.SetOut(originalOut);
+        }
+    }
+
+    private static async Task<(int ExitCode, string Output, string Error)> RunRulesTestRaw(IReadOnlyList<string> args)
+    {
+        var originalOut = Console.Out;
+        var originalError = Console.Error;
+        var outWriter = new StringWriter();
+        var errorWriter = new StringWriter();
+        Console.SetOut(outWriter);
+        Console.SetError(errorWriter);
+        try
+        {
+            var exitCode = await TestCommand.Build().Parse(args.ToArray()).InvokeAsync();
+            return (exitCode, outWriter.ToString(), errorWriter.ToString());
+        }
+        finally
+        {
+            Console.SetOut(originalOut);
+            Console.SetError(originalError);
         }
     }
 

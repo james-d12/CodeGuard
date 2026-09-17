@@ -95,6 +95,30 @@ public sealed class ValidateCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task Run_MalformedConfig_PrintsFriendlyErrorAndExitsOne()
+    {
+        var repoDir = Directory.CreateTempSubdirectory("codeguard-rulesvalidate-malformed-repo-").FullName;
+        try
+        {
+            var configDir = Directory.CreateDirectory(Path.Combine(repoDir, ".codeguard"));
+            var configPath = Path.Combine(configDir.FullName, "config.yml");
+            await File.WriteAllTextAsync(configPath, "repository: [this, is, not, a, map]");
+
+            var (exitCode, _, error) = await RunValidateRulesRaw(["--path", repoDir]);
+
+            Assert.Equal(1, exitCode);
+            Assert.Contains("codeguard:", error);
+            Assert.Contains(configPath, error);
+            Assert.DoesNotContain("Unhandled exception", error);
+            Assert.DoesNotContain(" at ", error);
+        }
+        finally
+        {
+            Directory.Delete(repoDir, recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task Run_SourceFileWithMatchingFingerprint_NoWarningAndExitsZero()
     {
         WriteMarkdown("docs/architecture.md", "## Domain Layer\n\nContent.\n");
