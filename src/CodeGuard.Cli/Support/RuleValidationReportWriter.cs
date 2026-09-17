@@ -35,7 +35,7 @@ public static class RuleValidationReportWriter
             }
         }
     }
-    
+
     /// <summary>
     /// `rules validate` only - prints everything <see cref="WriteConsole(RuleSetValidationReport,TextWriter)"/>
     /// does, plus a "Source checks" section for any `metadata.source.file` drift found by
@@ -60,7 +60,7 @@ public static class RuleValidationReportWriter
             WriteSourceIssue(writer, issue);
         }
     }
-    
+
     public static void WriteJson(RuleSetValidationReport report, TextWriter writer)
     {
         var summary = new RuleValidationSummary(
@@ -71,7 +71,7 @@ public static class RuleValidationReportWriter
 
         writer.WriteLine(JsonSerializer.Serialize(summary, JsonOptions));
     }
-    
+
     /// <summary>`rules validate` only - see the console overload's remarks.</summary>
     public static void WriteJson(RuleSetValidationReport report, RuleSourceCheckReport sourceReport, TextWriter writer)
     {
