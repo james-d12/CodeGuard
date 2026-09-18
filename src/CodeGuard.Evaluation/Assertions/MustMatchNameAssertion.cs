@@ -19,6 +19,7 @@ public sealed class MustMatchNameAssertion(string regex) : IAssertion
             ConstructorModel => null,
             FieldModel field => field.Name,
             FileModel file => file.RelativePath,
+            DirectoryModel directory => directory.Name,
             _ => null
         };
 

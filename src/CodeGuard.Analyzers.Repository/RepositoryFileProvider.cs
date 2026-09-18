@@ -58,16 +58,17 @@ public sealed class RepositoryFileProvider(ILogger<RepositoryFileProvider>? logg
         }
     }
 
-    private static IEnumerable<string> EnumerateDirectories(string rootPath, string directoryPath)
+    private static IEnumerable<DirectoryModel> EnumerateDirectories(string rootPath, string directoryPath)
     {
         foreach (var subdirectory in Directory.EnumerateDirectories(directoryPath))
         {
-            if (ExcludedDirectoryNames.Contains(Path.GetFileName(subdirectory)))
+            var name = Path.GetFileName(subdirectory);
+            if (ExcludedDirectoryNames.Contains(name))
             {
                 continue;
             }
 
-            yield return Path.GetRelativePath(rootPath, subdirectory);
+            yield return new DirectoryModel(subdirectory, Path.GetRelativePath(rootPath, subdirectory), name);
 
             foreach (var nested in EnumerateDirectories(rootPath, subdirectory))
             {

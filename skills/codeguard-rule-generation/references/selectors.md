@@ -19,10 +19,10 @@ almost always used as the **nested** selector inside `must_exist` / `must_not_ex
 | `class` | `namespace` (glob, required) | Classes in a matching namespace. |
 | `constructor` | `declaring_type` (glob, optional, default `*`), `parameter_types` (string[], optional) | Constructors matching the given filters. |
 | `diagnostic` | `id` (glob, optional, default `*`), `project` (glob, optional, default `*`) | Raw Roslyn compiler diagnostics by ID. Requires a real compilation, so unavailable in rule tests unless supplied directly. |
-| `directory` | `path` (glob, optional, default `*`) | Repository directories by path. |
+| `directory` | `path` (glob, optional, default `**`) | Repository directories by path. |
 | `enum` | `namespace` (glob, optional, default `*`) | Enum types in a matching namespace. |
 | `field` | `declaring_type` (glob, optional, default `*`), `is_readonly` (bool, optional), `is_static` (bool, optional) | Fields matching the given filters. |
-| `file` | `path` (glob, optional, default `*`), `extension` (string, optional) | Repository files by path and/or extension. |
+| `file` | `path` (glob, optional, default `**`), `extension` (string, optional), `name` (glob, optional, default `(none)`) | Repository files by path, extension, and/or basename. |
 | `implements` | `interface` (glob, required) | Types implementing a matching interface. |
 | `inherits_from` | `type` (glob, required) | Types deriving from a matching base type. |
 | `method` | `namespace` (glob, optional, default `*`), `project` (glob, optional, default `*`), `declaring_type` (glob, optional, default `*`), `name` (glob, optional, default `*`), `accessibility` (public \| private \| protected \| internal \| protected_internal \| private_protected, optional), `is_async` (bool, optional), `is_static` (bool, optional) | Methods matching the given filters. |

@@ -11,11 +11,11 @@ public sealed class MustMatchNameAssertionParser : IAssertionParser
 
     public CapabilityDescriptor Descriptor => new(
         "must_match_name",
-        "Candidate's name must match a regex. Files match on relative path; constructors have no name and always fail.",
+        "Candidate's name must match a regex. Files match on relative path, directories on their own basename; constructors have no name and always fail.",
         [
             new ParameterDescriptor("regex", ParameterType.Regex, true, "Regex matched against the candidate's name.")
         ])
-    { AppliesTo = [CandidateKind.Type, CandidateKind.Project, CandidateKind.Method, CandidateKind.Property, CandidateKind.Field, CandidateKind.File] };
+    { AppliesTo = [CandidateKind.Type, CandidateKind.Project, CandidateKind.Method, CandidateKind.Property, CandidateKind.Field, CandidateKind.File, CandidateKind.Directory] };
 
     public IAssertion Parse(JsonObject parameters) =>
         new MustMatchNameAssertion(parameters.GetRequiredString("regex"));

@@ -79,4 +79,21 @@ public class MustMatchNameAssertionTests
         var outcome = new MustMatchNameAssertion("^_name$").Evaluate(field, EmptyModel);
         Assert.True(outcome.Passed);
     }
+
+    [Fact]
+    public void Evaluate_MatchesAgainstDirectoryBasename_NotFullPath()
+    {
+        var directory = new DirectoryModel("src/Features/Orders", "src/Features/Orders", "Orders");
+        var outcome = new MustMatchNameAssertion("^[A-Z][A-Za-z0-9]*$").Evaluate(directory, EmptyModel);
+        Assert.True(outcome.Passed);
+    }
+
+    [Fact]
+    public void Evaluate_Fails_WhenDirectoryNameDoesNotMatchRegex()
+    {
+        var directory = new DirectoryModel("src/Features/orders", "src/Features/orders", "orders");
+        var outcome = new MustMatchNameAssertion("^[A-Z][A-Za-z0-9]*$").Evaluate(directory, EmptyModel);
+        Assert.False(outcome.Passed);
+        Assert.Equal("'orders' must match name pattern '^[A-Z][A-Za-z0-9]*$'.", outcome.Message);
+    }
 }

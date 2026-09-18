@@ -1,8 +1,16 @@
 # File/folder/filename rule-checking expansion — plan
 
-**Status:** in progress. Single-initiative plan per the `docs/` lifecycle in
-`CLAUDE.md` — move to `docs/done/` once every section below has shipped and been
-verified against the running code, not before.
+**Status:** implemented and verified (build, full test suite, `rules
+validate`/`test`/`analyze` against `examples/rules`, `dotnet format
+--verify-no-changes`, and `scripts/sync-skill-references.sh` all pass). One
+correction made beyond the original plan: `FileSelector`/`DirectorySelector`'s
+default `path` had to change from `"*"` to `"**"` — under the old `*`-crosses-`/`
+semantics the default already meant "match anywhere," and leaving it at `"*"`
+under the new segment-aware semantics would have silently narrowed it to
+"root-level only," breaking every rule that omits `path` (e.g. filtering by
+`extension` alone). Caught by the pre-existing `FileSelectorTests` failing after
+the `GlobMatcher` change. Single-initiative plan per the `docs/` lifecycle in
+`CLAUDE.md` — move to `docs/done/` once this has been reviewed/merged.
 
 ## Context
 

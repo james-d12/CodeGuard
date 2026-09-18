@@ -13,13 +13,13 @@ public sealed class AnalysisModelBuilderContext(string rootPath)
     private readonly List<TryBlockModel> _tryBlocks = [];
     private readonly List<MethodBodyShapeModel> _methodBodyShapes = [];
     private readonly List<DiagnosticModel> _diagnostics = [];
-    private readonly List<string> _directories = [];
+    private readonly List<DirectoryModel> _directories = [];
 
     public string RootPath { get; } = rootPath;
 
     public void AddSolution(SolutionModel solution) => _solutions.Add(solution);
 
-    public void AddDirectories(IEnumerable<string> directories) => _directories.AddRange(directories);
+    public void AddDirectories(IEnumerable<DirectoryModel> directories) => _directories.AddRange(directories);
 
     public void AddFile(FileModel file) => _files.Add(file);
 

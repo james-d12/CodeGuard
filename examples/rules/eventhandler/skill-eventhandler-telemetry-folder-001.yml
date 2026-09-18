@@ -19,11 +19,11 @@ target:
 
 assertions:
   - must_have_file:
-      path: "*/Telemetry/MetricNames.cs"
+      path: "**/Telemetry/MetricNames.cs"
   - must_have_file:
-      path: "*/Telemetry/TagNames.cs"
+      path: "**/Telemetry/TagNames.cs"
   - must_have_file:
-      path: "*/Telemetry/MetricExtensions.cs"
+      path: "**/Telemetry/MetricExtensions.cs"
 
 tests:
   - name: Shared Telemetry folder has all required files

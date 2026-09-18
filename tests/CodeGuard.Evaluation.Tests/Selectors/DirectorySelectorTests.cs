@@ -1,23 +1,42 @@
+using CodeGuard.Analysis.AnalysisModel;
 using CodeGuard.Evaluation.Selectors;
 
 namespace CodeGuard.Evaluation.Tests.Selectors;
 
 public class DirectorySelectorTests
 {
+    private static DirectoryModel Dir(string relativePath) => new(relativePath, relativePath, System.IO.Path.GetFileName(relativePath));
+
     [Fact]
-    public void SelectCandidates_FiltersByPathPattern()
+    public void SelectCandidates_FiltersByPathPattern_UnderDirectoryAtAnyDepth()
     {
-        var model = TestModels.Repository() with { Directories = ["src", "src/Domain", "tests"] };
+        var model = TestModels.Repository() with
+        {
+            Directories = [Dir("src"), Dir("src/Domain"), Dir("src/Domain/Sub"), Dir("tests")]
+        };
 
-        var candidates = new DirectorySelector(pathPattern: "src*").SelectCandidates(model).Cast<string>().ToList();
+        var candidates = new DirectorySelector(pathPattern: "src/**").SelectCandidates(model).Cast<DirectoryModel>().ToList();
 
-        Assert.Equal(["src", "src/Domain"], candidates);
+        Assert.Equal(["src/Domain", "src/Domain/Sub"], candidates.Select(d => d.RelativePath));
+    }
+
+    [Fact]
+    public void SelectCandidates_FiltersByPathPattern_DirectChildrenOnly()
+    {
+        var model = TestModels.Repository() with
+        {
+            Directories = [Dir("src"), Dir("src/Domain"), Dir("src/Domain/Sub"), Dir("tests")]
+        };
+
+        var candidates = new DirectorySelector(pathPattern: "src/*").SelectCandidates(model).Cast<DirectoryModel>().ToList();
+
+        Assert.Equal(["src/Domain"], candidates.Select(d => d.RelativePath));
     }
 
     [Fact]
     public void SelectCandidates_MatchesAllDirectories_WhenPatternIsBareWildcard()
     {
-        var model = TestModels.Repository() with { Directories = ["src", "tests"] };
+        var model = TestModels.Repository() with { Directories = [Dir("src"), Dir("tests")] };
 
         var candidates = new DirectorySelector().SelectCandidates(model).ToList();
 

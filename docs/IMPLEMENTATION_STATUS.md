@@ -151,9 +151,13 @@ both together** — a new assertion isn't usable from YAML until its parser is r
 | `must_not_reference_project` | `MustNotReferenceProjectAssertion` | `name` |
 | `must_not_depend_on` | `MustNotDependOnAssertion` | `type` (scans base type/interfaces/method signatures) |
 
-All pattern matching uses `CodeGuard.Evaluation.GlobMatcher` (only `*` wildcard supported, via
-`Regex.Escape` + `.*` substitution). **Important:** patterns are matched with `GlobMatcher`, not
-exact string equality — this matters for generic base types (see Gotcha #1 below).
+All pattern matching uses `CodeGuard.Evaluation.GlobMatcher`. **Important:** patterns are matched
+with `GlobMatcher`, not exact string equality — this matters for generic base types (see Gotcha #1
+below). `GlobMatcher` is segment-aware: `*` matches within one path segment only (never crosses
+`/`), `**` used as a whole segment matches zero or more full path segments, and `?` matches exactly
+one character. This only changes matching behavior for file/directory `path` values, which are the
+only `/`-delimited strings passed through it — namespace/base-type/project/package patterns never
+contain `/`, so `*` there behaves exactly as before (unbounded match).
 
 `AndCondition`/`OrCondition`/`NotCondition` exist in `CodeGuard.RuleModel.Conditions` and are
 unit-tested, but **there is no YAML parsing for `when`/`and`/`or`/`not` yet** — no starter rule

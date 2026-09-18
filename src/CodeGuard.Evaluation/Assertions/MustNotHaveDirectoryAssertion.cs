@@ -3,9 +3,9 @@ using CodeGuard.RuleModel.Assertions;
 
 namespace CodeGuard.Evaluation.Assertions;
 
-public sealed class MustHaveDirectoryAssertion(string path) : IAssertion
+public sealed class MustNotHaveDirectoryAssertion(string path) : IAssertion
 {
-    public string Kind => "must_have_directory";
+    public string Kind => "must_not_have_directory";
 
     public AssertionOutcome Evaluate(object candidate, RepositoryModel model)
     {
@@ -14,8 +14,9 @@ public sealed class MustHaveDirectoryAssertion(string path) : IAssertion
             return AssertionOutcome.Failure($"'{Kind}' can only be evaluated against the repository.");
         }
 
-        return repository.Directories.Any(d => GlobMatcher.IsMatch(d.RelativePath, path))
+        var match = repository.Directories.FirstOrDefault(d => GlobMatcher.IsMatch(d.RelativePath, path));
+        return match is null
             ? AssertionOutcome.Success()
-            : AssertionOutcome.Failure($"Repository must have a directory at '{path}'.");
+            : AssertionOutcome.Failure($"Repository must not have a directory matching '{path}' (found '{match.RelativePath}').");
     }
 }
