@@ -107,7 +107,6 @@ this repo, use `dotnet run --project src/CodeGuard.Cli -- <command>` instead.
 | `rules test` | Run rules' embedded `tests:` cases against a virtual analysis model (no repository, no disk I/O) |
 | `rules analyze` | Check a rule set for problems beyond structural validity: missing/one-sided tests, unreachable assertions, exact-duplicate rules |
 | `rules discover` | List every selector, assertion, and analyzer kind the engine supports, with their parameters — reads no rule files |
-| `rules create` | Interactively scaffold a new rule YAML file |
 | `setup` | Configure the rules source (a directory or git repo) used across all repos |
 | `info` | Show where rules are configured from and how many were discovered |
 
@@ -138,7 +137,6 @@ Examples (installed tool):
 ```bash
 codeguard rules list
 codeguard rules explain DDD-ENTITY-001
-codeguard rules create
 codeguard validate --format json --output report.json
 ```
 
@@ -232,11 +230,11 @@ matching code, then checks each `assertion` against every match. A failing asser
 violation reported at the rule's `severity`, with its `remediation` text attached, in whichever
 `--format` you asked for.
 
-Run `codeguard rules explain <ruleId>` to see a rule's full metadata and source YAML,
-`codeguard rules discover` to see every selector/assertion/analyzer kind available before writing
-one, or `codeguard rules create` to scaffold a new one interactively. The JSON Schema every rule is
-validated against lives at `src/CodeGuard.Configuration/Validation/Schemas/rule.schema.json`
-(embedded as a resource in the published tool).
+Run `codeguard rules explain <ruleId>` to see a rule's full metadata and source YAML, or
+`codeguard rules discover` to see every selector/assertion/analyzer kind available before hand-
+authoring one. The JSON Schema every rule is validated against lives at
+`src/CodeGuard.Configuration/Validation/Schemas/rule.schema.json` (embedded as a resource in the
+published tool).
 
 More sample rules, including a larger set of realistic, non-illustrative ones, live under
 `examples/rules/`. Browse there for a fuller picture of what a rule set looks like before writing

@@ -23,12 +23,7 @@ public static class ExplainCommand
             Description = "The rule ID to explain, e.g. DDD-ENTITY-001."
         };
 
-        var formatOption = new Option<string>("--format")
-        {
-            Description = "Output format: console or json.",
-            DefaultValueFactory = _ => "console"
-        };
-        formatOption.AcceptOnlyFromAmong("console", "json");
+        var formatOption = CommonOptions.CreateFormatOption("Output format: console or json.", "console", "console", "json");
 
         var command = new Command("explain", "Print full metadata and source YAML for a single rule");
         command.Add(pathOption);

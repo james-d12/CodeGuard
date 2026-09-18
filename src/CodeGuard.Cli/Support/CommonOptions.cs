@@ -21,10 +21,42 @@ public static class CommonOptions
                       "bypassing any .codeguard/config.yml or `codeguard setup` configuration. Not persisted."
     };
 
-    public static Option<string?> CreateBranchOption() => new("--branch")
+    public static Option<string?> CreateBranchOption(
+        string description = "Git branch to use with --rules-source (default: the repo's default branch). Ignored for a local directory source.")
+        => new("--branch") { Description = description };
+
+    /// <summary>Shared `--format` construction: description, allowed values and default are supplied
+    /// per-command since they genuinely differ (e.g. `validate` allows sarif/html, `discover` allows
+    /// markdown), but the Option/AcceptOnlyFromAmong/DefaultValueFactory boilerplate doesn't.</summary>
+    public static Option<string> CreateFormatOption(string description, string defaultValue, params string[] allowedValues)
     {
-        Description = "Git branch to use with --rules-source (default: the repo's default branch). Ignored for a local directory source."
-    };
+        var option = new Option<string>("--format")
+        {
+            Description = description,
+            DefaultValueFactory = _ => defaultValue
+        };
+        option.AcceptOnlyFromAmong(allowedValues);
+        return option;
+    }
+
+    /// <summary>Shared `--color`/`--no-color` pair. <paramref name="colorExtraNote"/> appends a
+    /// command-specific caveat to `--color`'s description (e.g. `validate`'s "Ignored when --output
+    /// is set.", which doesn't apply to commands that never write to a file).</summary>
+    public static (Option<bool> Color, Option<bool> NoColor) CreateColorOptions(string? colorExtraNote = null)
+    {
+        var colorDescription = "Force ANSI color in console output, even when redirected.";
+        if (colorExtraNote is not null)
+        {
+            colorDescription += " " + colorExtraNote;
+        }
+
+        var color = new Option<bool>("--color") { Description = colorDescription };
+        var noColor = new Option<bool>("--no-color")
+        {
+            Description = "Disable ANSI color in console output, even in an interactive terminal."
+        };
+        return (color, noColor);
+    }
 
     public static Option<string> CreateVerbosityOption()
     {
