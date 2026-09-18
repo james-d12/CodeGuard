@@ -92,12 +92,34 @@ public sealed class RuleEvaluator(ILogger<RuleEvaluator>? logger = null) : IRule
             ? ValidationStatus.PartiallyEvaluated
             : violations.Count == 0 ? ValidationStatus.Passed : ValidationStatus.Failed;
 
+        // Not a rule result - a signal about the AnalysisModel itself (e.g. a project MSBuildWorkspace
+        // couldn't fully load, recorded on RepositoryModel.Diagnostics by the provider that built
+        // `model`). Surfaced here, rather than left as log-only, so every ValidationResult consumer
+        // (CLI, reporters, a library caller) can see that some rule results may be based on incomplete
+        // data for the affected project(s).
+        var analysisWarnings = model.Diagnostics
+            .Where(d => d.Id == "MSBUILD-WORKSPACE")
+            .Select(d => new AnalysisWarning(
+                d.Id,
+                d.Message,
+                string.IsNullOrEmpty(d.ProjectName) ? null : d.ProjectName,
+                string.IsNullOrEmpty(d.FilePath) ? null : d.FilePath))
+            .ToList();
+
+        if (analysisWarnings.Count > 0)
+        {
+            _logger.LogWarning(
+                "{Count} project(s) had incomplete MSBuild analysis; affected rule results may be incomplete",
+                analysisWarnings.Count);
+        }
+
         _logger.LogInformation(
             "Evaluation complete: {RulesEvaluated} evaluated, {Passed} passed, {Failed} failed, {Errored} errored, {ViolationCount} violation(s)",
             rulesEvaluated, rulesPassed, rulesFailed, rulesErrored, violations.Count);
 
         return new ValidationResult(
-            status, rulesEvaluated, rulesPassed, rulesFailed, rulesErrored, violations, evaluationErrors, DateTimeOffset.UtcNow);
+            status, rulesEvaluated, rulesPassed, rulesFailed, rulesErrored, violations, evaluationErrors,
+            DateTimeOffset.UtcNow, analysisWarnings);
     }
 
     private readonly record struct RuleOutcome(IReadOnlyList<Violation>? Violations, RuleEvaluationError? Error)

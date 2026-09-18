@@ -107,4 +107,27 @@ public class SarifViolationReporterTests
         Assert.Contains("System.InvalidOperationException", notification.GetProperty("message").GetProperty("text").GetString());
         Assert.Contains("boom", notification.GetProperty("message").GetProperty("text").GetString());
     }
+
+    [Fact]
+    public async Task WriteAsync_MapsAnalysisWarningsToToolExecutionNotifications()
+    {
+        var result = new ValidationResult(
+            ValidationStatus.Failed, RulesEvaluated: 1, RulesPassed: 0, RulesFailed: 1, RulesErrored: 0,
+            Violations: [],
+            EvaluationErrors: [],
+            EvaluatedAtUtc: DateTimeOffset.UtcNow,
+            AnalysisWarnings: [new AnalysisWarning(
+                "MSBUILD-WORKSPACE", "Unable to find fallback package folder 'X'.", "Contoso.Domain",
+                "/repo/src/Contoso.Domain/Contoso.Domain.csproj")]);
+
+        var writer = new StringWriter();
+        await new SarifViolationReporter().WriteAsync(result, writer);
+
+        using var document = JsonDocument.Parse(writer.ToString());
+        var invocation = document.RootElement.GetProperty("runs")[0].GetProperty("invocations")[0];
+
+        var notification = invocation.GetProperty("toolExecutionNotifications")[0];
+        Assert.Equal("MSBUILD-WORKSPACE", notification.GetProperty("descriptor").GetProperty("id").GetString());
+        Assert.Equal("Unable to find fallback package folder 'X'.", notification.GetProperty("message").GetProperty("text").GetString());
+    }
 }

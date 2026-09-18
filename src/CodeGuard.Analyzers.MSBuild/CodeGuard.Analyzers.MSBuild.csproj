@@ -21,4 +21,8 @@
     <ProjectReference Include="..\CodeGuard.Analyzers.Roslyn\CodeGuard.Analyzers.Roslyn.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="CodeGuard.IntegrationTests" />
+  </ItemGroup>
+
 </Project>

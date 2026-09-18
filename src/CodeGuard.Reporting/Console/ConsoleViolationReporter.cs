@@ -44,5 +44,17 @@ public sealed class ConsoleViolationReporter(bool useColor = false) : IViolation
                 await writer.WriteLineAsync($"  {error.RuleId}: {error.ExceptionType}: {error.Message}");
             }
         }
+
+        if (result.AnalysisWarnings.Count > 0)
+        {
+            await writer.WriteLineAsync();
+            await writer.WriteLineAsync(
+                "Analysis warnings (some rule results below may be incomplete for these projects):");
+            foreach (var warning in result.AnalysisWarnings.OrderBy(w => w.Project, StringComparer.Ordinal))
+            {
+                var location = warning.Project ?? warning.FilePath ?? "<unknown>";
+                await writer.WriteLineAsync($"  {location}: {warning.Message}");
+            }
+        }
     }
 }

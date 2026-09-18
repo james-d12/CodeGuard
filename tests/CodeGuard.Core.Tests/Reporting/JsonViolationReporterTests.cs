@@ -89,4 +89,45 @@ public class JsonViolationReporterTests
         Assert.Equal("boom", error.GetProperty("message").GetString());
         Assert.Equal("at Foo.Bar()", error.GetProperty("stackTrace").GetString());
     }
+
+    [Fact]
+    public async Task WriteAsync_IncludesAnalysisWarnings()
+    {
+        var result = new ValidationResult(
+            ValidationStatus.Failed, RulesEvaluated: 1, RulesPassed: 0, RulesFailed: 1, RulesErrored: 0,
+            Violations: [],
+            EvaluationErrors: [],
+            EvaluatedAtUtc: DateTimeOffset.UtcNow,
+            AnalysisWarnings: [new AnalysisWarning(
+                "MSBUILD-WORKSPACE",
+                "Unable to find fallback package folder 'X'.",
+                "Contoso.Domain",
+                "/repo/src/Contoso.Domain/Contoso.Domain.csproj")]);
+
+        var writer = new StringWriter();
+        await new JsonViolationReporter().WriteAsync(result, writer);
+        var output = writer.ToString();
+
+        using var document = JsonDocument.Parse(output);
+        var warning = document.RootElement.GetProperty("analysisWarnings")[0];
+        Assert.Equal("MSBUILD-WORKSPACE", warning.GetProperty("code").GetString());
+        Assert.Equal("Unable to find fallback package folder 'X'.", warning.GetProperty("message").GetString());
+        Assert.Equal("Contoso.Domain", warning.GetProperty("project").GetString());
+        Assert.Equal("/repo/src/Contoso.Domain/Contoso.Domain.csproj", warning.GetProperty("filePath").GetString());
+    }
+
+    [Fact]
+    public async Task WriteAsync_AnalysisWarningsEmpty_WhenNoneProvided()
+    {
+        var result = new ValidationResult(
+            ValidationStatus.Passed, RulesEvaluated: 1, RulesPassed: 1, RulesFailed: 0, RulesErrored: 0,
+            Violations: [], EvaluationErrors: [], EvaluatedAtUtc: DateTimeOffset.UtcNow);
+
+        var writer = new StringWriter();
+        await new JsonViolationReporter().WriteAsync(result, writer);
+        var output = writer.ToString();
+
+        using var document = JsonDocument.Parse(output);
+        Assert.Empty(document.RootElement.GetProperty("analysisWarnings").EnumerateArray());
+    }
 }

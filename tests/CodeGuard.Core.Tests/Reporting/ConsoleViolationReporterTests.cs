@@ -100,6 +100,28 @@ public class ConsoleViolationReporterTests
         Assert.Contains("BROKEN-001: System.InvalidOperationException: boom", output);
     }
 
+    [Fact]
+    public async Task WriteAsync_PrintsAnalysisWarnings()
+    {
+        var result = new ValidationResult(
+            ValidationStatus.Failed, RulesEvaluated: 1, RulesPassed: 0, RulesFailed: 1, RulesErrored: 0,
+            Violations: [],
+            EvaluationErrors: [],
+            EvaluatedAtUtc: DateTimeOffset.UtcNow,
+            AnalysisWarnings: [new AnalysisWarning(
+                "MSBUILD-WORKSPACE",
+                "Unable to find fallback package folder 'C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages'.",
+                "Contoso.Domain",
+                "/repo/src/Contoso.Domain/Contoso.Domain.csproj")]);
+
+        var writer = new StringWriter();
+        await new ConsoleViolationReporter().WriteAsync(result, writer);
+        var output = writer.ToString();
+
+        Assert.Contains("Analysis warnings (some rule results below may be incomplete for these projects):", output);
+        Assert.Contains("Contoso.Domain: Unable to find fallback package folder", output);
+    }
+
     private static ValidationResult SingleErrorResult() => new(
         Status: ValidationStatus.Failed,
         RulesEvaluated: 1,

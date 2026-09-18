@@ -181,6 +181,41 @@ public class HtmlViolationReporterTests
         Assert.Contains("Rules evaluated: 1, passed: 0, failed: 0, errored: 1", output);
     }
 
+    [Fact]
+    public async Task WriteAsync_IncludesAnalysisWarningsSection()
+    {
+        var result = new ValidationResult(
+            ValidationStatus.Failed, RulesEvaluated: 1, RulesPassed: 0, RulesFailed: 1, RulesErrored: 0,
+            Violations: [],
+            EvaluationErrors: [],
+            EvaluatedAtUtc: DateTimeOffset.UtcNow,
+            AnalysisWarnings: [new AnalysisWarning(
+                "MSBUILD-WORKSPACE", "Unable to find fallback package folder 'X'.", "Contoso.Domain",
+                "/repo/src/Contoso.Domain/Contoso.Domain.csproj")]);
+
+        var writer = new StringWriter();
+        await new HtmlViolationReporter().WriteAsync(result, writer);
+        var output = writer.ToString();
+
+        Assert.Contains("Analysis warnings", output);
+        Assert.Contains("Contoso.Domain", output);
+        Assert.Contains("Unable to find fallback package folder", output);
+    }
+
+    [Fact]
+    public async Task WriteAsync_OmitsAnalysisWarningsSection_WhenEmpty()
+    {
+        var result = new ValidationResult(
+            ValidationStatus.Passed, RulesEvaluated: 1, RulesPassed: 1, RulesFailed: 0, RulesErrored: 0,
+            Violations: [], EvaluationErrors: [], EvaluatedAtUtc: DateTimeOffset.UtcNow);
+
+        var writer = new StringWriter();
+        await new HtmlViolationReporter().WriteAsync(result, writer);
+        var output = writer.ToString();
+
+        Assert.DoesNotContain("Analysis warnings", output);
+    }
+
     private static int CountOccurrences(string haystack, string needle)
     {
         var count = 0;

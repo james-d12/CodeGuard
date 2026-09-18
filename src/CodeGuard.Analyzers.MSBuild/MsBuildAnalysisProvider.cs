@@ -31,13 +31,19 @@ public sealed class MsBuildAnalysisProvider(
         using var workspace = MSBuildWorkspace.Create();
         workspace.RegisterWorkspaceFailedHandler(e =>
         {
-            _logger.LogWarning("MSBuild workspace diagnostic: {Message}", e.Diagnostic.Message);
+            var (projectPath, message) = WorkspaceDiagnosticParser.Parse(e.Diagnostic.Message);
+            var projectName = projectPath is null ? string.Empty : Path.GetFileNameWithoutExtension(projectPath);
+
+            _logger.LogWarning(
+                "MSBuild workspace diagnostic{Project}: {Message}",
+                projectName.Length > 0 ? $" ({projectName})" : string.Empty, message);
+
             context.AddDiagnostics([
                 new DiagnosticModel(
                     Id: "MSBUILD-WORKSPACE",
-                    Message: e.Diagnostic.Message,
-                    ProjectName: string.Empty,
-                    FilePath: string.Empty,
+                    Message: message,
+                    ProjectName: projectName,
+                    FilePath: projectPath ?? string.Empty,
                     Line: 0,
                     Column: 0)
             ]);
