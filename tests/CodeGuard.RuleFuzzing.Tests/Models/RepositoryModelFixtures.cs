@@ -16,7 +16,7 @@ internal static class RepositoryModelFixtures
     public static IReadOnlyList<(string Name, RepositoryModel Model)> All { get; } =
         RawSetups.Select(entry => (entry.Name, TestSetupBuilder.Build((JsonObject)entry.Setup.DeepClone()))).ToList();
 
-    private static IReadOnlyList<(string, JsonObject)> BuildRawSetups()
+    private static List<(string, JsonObject)> BuildRawSetups()
     {
         var perKind = new (string Name, JsonObject Setup)[]
         {
