@@ -631,6 +631,21 @@ plan's own listed items are all independently confirmed shipped). Implements the
   recomputes and writes `versionFingerprint` for both drift kinds; it deliberately does **not**
   auto-increment `version` itself - that remains a human decision the CLI only prompts for (in its
   help text and in the "Version checks" console/JSON output section), never makes.
+- The first pass of `RuleVersionFingerprintWriter` copy-pasted `RuleSourceFingerprintWriter`'s whole
+  splice algorithm nearly verbatim, just swapping which mapping/key it targeted - real duplication
+  (SonarCloud's duplicated-lines gate on this file), not two independently-arrived-at implementations
+  that happen to look similar. Extracted the mechanics (locate a nested mapping by path, replace an
+  existing leaf key in place or insert one - block or flow style, any line ending, no trailing
+  newline) into `YamlMappingSplicer.SpliceScalar` (`CodeGuard.Configuration/Yaml/`), parameterized by
+  mapping path and leaf key; both writers are now a couple of lines each that only supply those two
+  parameters, and `RuleSourceFingerprintWriter` was updated too so the duplication is actually
+  eliminated rather than just relocated to the new file. Direct unit tests
+  (`tests/CodeGuard.Configuration.Tests/Yaml/YamlMappingSplicerTests.cs`) cover branches neither
+  writer's own tests happened to exercise (a flow mapping with no whitespace around the value being
+  replaced, no trailing newline after the last entry, an invalid mapping path) - one defensive branch
+  (a successfully-parsed flow mapping somehow missing its own closing brace) is left untested because
+  it appears to be genuinely unreachable: YamlDotNet fails at parse time on any input that would
+  trigger it, before this code ever runs.
 - **Known limitation, stated up front rather than half-solved**: this detects "the enforceable body
   changed since the fingerprint was last captured," not "and `version` was bumped accordingly." Those
   are different questions - the fingerprint has no memory of what `version` was when it was captured,

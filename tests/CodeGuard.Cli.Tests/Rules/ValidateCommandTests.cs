@@ -1,4 +1,6 @@
 using CodeGuard.Cli.Commands.Rules;
+using CodeGuard.Configuration.Analysis;
+using CodeGuard.Configuration.Loading;
 using CodeGuard.Configuration.Sources;
 
 namespace CodeGuard.Cli.Tests.Rules;
@@ -199,6 +201,116 @@ public sealed class ValidateCommandTests : IDisposable
         var broken = await File.ReadAllTextAsync(Path.Combine(_rulesDir, "broken.yml"));
         Assert.Contains("docs/missing.md", broken);
         Assert.DoesNotContain("fingerprint", broken);
+    }
+
+    [Fact]
+    public async Task Run_TrackedVersionMatchingFingerprint_NoVersionChecksSectionAndExitsZero()
+    {
+        var path = Path.Combine(_rulesDir, "a.yml");
+        WriteRuleFile("a.yml", RuleYamlWithVersionTracking("DDD-ENTITY-001", versionFingerprint: null));
+        var fingerprint = RuleBodyCanonicalizer.ComputeFingerprint(RuleFileLoader.ReadDocument(path).AsObject());
+        WriteRuleFile("a.yml", RuleYamlWithVersionTracking("DDD-ENTITY-001", fingerprint));
+
+        var (exitCode, output) = await RunValidateRules();
+
+        Assert.Equal(0, exitCode);
+        Assert.DoesNotContain("Version checks:", output);
+    }
+
+    [Fact]
+    public async Task Run_TrackedVersionDrifted_FailsWithVersionChecksSectionAndExitsOne()
+    {
+        WriteRuleFile("a.yml", RuleYamlWithVersionTracking("DDD-ENTITY-001", "sha256:" + new string('0', 64)));
+
+        var (exitCode, output) = await RunValidateRules();
+
+        Assert.Equal(1, exitCode);
+        Assert.Contains("Version checks:", output);
+        Assert.Contains("enforceable body changed since its recorded versionFingerprint", output);
+    }
+
+    [Fact]
+    public async Task Run_TrackedVersionFingerprintNeverCaptured_FailsWithVersionChecksSectionAndExitsOne()
+    {
+        WriteRuleFile("a.yml", RuleYamlWithVersionTracking("DDD-ENTITY-001", versionFingerprint: null));
+
+        var (exitCode, output) = await RunValidateRules();
+
+        Assert.Equal(1, exitCode);
+        Assert.Contains("Version checks:", output);
+        Assert.Contains("tracked but no versionFingerprint captured yet", output);
+    }
+
+    [Fact]
+    public async Task Run_JsonFormat_VersionDrift_ReportsIsValidFalseWithVersionChecksEntry()
+    {
+        WriteRuleFile("a.yml", RuleYamlWithVersionTracking("DDD-ENTITY-001", "sha256:" + new string('0', 64)));
+
+        var (exitCode, output) = await RunValidateRules(["--format", "json"]);
+
+        Assert.Equal(1, exitCode);
+        Assert.Contains("\"isValid\": false", output);
+        Assert.Contains("\"versionChecks\"", output);
+        Assert.Contains("\"contentChanged\"", output);
+    }
+
+    [Fact]
+    public async Task Run_UpdateFingerprints_RewritesVersionFingerprint_ForBothMissingAndDrifted()
+    {
+        WriteRuleFile("missing.yml", RuleYamlWithVersionTracking("DDD-ENTITY-001", versionFingerprint: null));
+        WriteRuleFile("drifted.yml", RuleYamlWithVersionTracking("DDD-ENTITY-002", "sha256:" + new string('0', 64)));
+
+        var (exitCode, output) = await RunValidateRules(["--update-fingerprints"]);
+
+        Assert.Equal(0, exitCode);
+        Assert.Contains("Updated version fingerprint: DDD-ENTITY-001 (was missing, now sha256:", output);
+        Assert.Contains($"Updated version fingerprint: DDD-ENTITY-002 (was sha256:{new string('0', 64)}, now sha256:", output);
+        Assert.DoesNotContain("Version checks:", output);
+
+        var missing = await File.ReadAllTextAsync(Path.Combine(_rulesDir, "missing.yml"));
+        Assert.Contains("versionFingerprint: sha256:", missing);
+
+        var drifted = await File.ReadAllTextAsync(Path.Combine(_rulesDir, "drifted.yml"));
+        Assert.DoesNotContain("sha256:" + new string('0', 64), drifted);
+    }
+
+    [Fact]
+    public async Task Run_SourceFingerprintNeverCaptured_UpdateFingerprints_RewritesWithWasMissingMessage()
+    {
+        WriteMarkdown("docs/architecture.md", "## Domain Layer\n\nContent.\n");
+        WriteRuleFile("a.yml", RuleYamlWithSource("DDD-ENTITY-001", fingerprint: null));
+
+        var (exitCode, output) = await RunValidateRules(["--path", _repoRoot, "--update-fingerprints"]);
+
+        Assert.Equal(0, exitCode);
+        Assert.Contains("Updated source fingerprint: DDD-ENTITY-001 (was missing, now sha256:", output);
+    }
+
+    private static string RuleYamlWithVersionTracking(string id, string? versionFingerprint)
+    {
+        var lines = new List<string>
+        {
+            $"id: {id}",
+            "name: Some rule",
+            "metadata:",
+            "  trackVersion: true"
+        };
+
+        if (versionFingerprint is not null)
+        {
+            lines.Add($"  versionFingerprint: \"{versionFingerprint}\"");
+        }
+
+        lines.AddRange([
+            "target:",
+            "  kind: class",
+            "  namespace: \"Contoso.Domain.Entities\"",
+            "assertions:",
+            "  - must_inherit_from:",
+            "      type: \"Contoso.Domain.Entity<TId>\""
+        ]);
+
+        return string.Join('\n', lines);
     }
 
     private void WriteMarkdown(string relativePath, string content)

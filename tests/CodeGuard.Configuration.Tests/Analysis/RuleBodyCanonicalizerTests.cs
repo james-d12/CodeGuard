@@ -25,6 +25,29 @@ public sealed class RuleBodyCanonicalizerTests
     }
 
     [Fact]
+    public void ExtractEnforceableBody_AnalyzerKeyPresentButExplicitNull_FallsBackToTargetAndAssertions()
+    {
+        // "analyzer" being present-but-null (as opposed to absent) must not short-circuit into the
+        // analyzer branch - JsonObject.TryGetPropertyValue returns true either way, so the null check
+        // is load-bearing, not redundant.
+        var document = JsonNode.Parse("""
+            {
+                "id": "DDD-ENTITY-001",
+                "name": "Some rule",
+                "analyzer": null,
+                "target": { "kind": "class" },
+                "assertions": [ { "must_inherit_from": { "type": "Entity<*>" } } ]
+            }
+            """)!.AsObject();
+
+        var body = RuleBodyCanonicalizer.ExtractEnforceableBody(document);
+
+        Assert.False(body.ContainsKey("analyzer"));
+        Assert.True(body.ContainsKey("target"));
+        Assert.True(body.ContainsKey("assertions"));
+    }
+
+    [Fact]
     public void ComputeFingerprint_DiffersWhenWhenBlockDiffers()
     {
         var withWhen = JsonNode.Parse("""
