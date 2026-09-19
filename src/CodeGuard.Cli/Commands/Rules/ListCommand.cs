@@ -24,12 +24,7 @@ public static class ListCommand
         var branchOption = CommonOptions.CreateBranchOption();
         var verbosityOption = CommonOptions.CreateVerbosityOption();
 
-        var formatOption = new Option<string>("--format")
-        {
-            Description = "Output format: table or json.",
-            DefaultValueFactory = _ => "table"
-        };
-        formatOption.AcceptOnlyFromAmong("table", "json");
+        var formatOption = CommonOptions.CreateFormatOption("Output format: table or json.", "table", "table", "json");
 
         var tagOption = new Option<string[]>("--tag")
         {

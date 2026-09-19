@@ -13,12 +13,8 @@ public static class DiscoverCommand
 {
     public static Command Build()
     {
-        var formatOption = new Option<string>("--format")
-        {
-            Description = "Output format: console, json, or markdown.",
-            DefaultValueFactory = _ => "console"
-        };
-        formatOption.AcceptOnlyFromAmong("console", "json", "markdown");
+        var formatOption = CommonOptions.CreateFormatOption(
+            "Output format: console, json, or markdown.", "console", "console", "json", "markdown");
 
         var sectionOption = new Option<string>("--section")
         {

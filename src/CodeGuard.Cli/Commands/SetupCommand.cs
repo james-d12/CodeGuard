@@ -21,7 +21,7 @@ namespace CodeGuard.Cli.Commands;
 ///   - First run (no `settings.yml` yet): offers a 3-way menu - point at an existing local
 ///     directory, point at a git repo to clone, or "start fresh" and let CodeGuard create and
 ///     manage an empty rules folder under the app-data root (so a brand-new user isn't blocked on
-///     already having a rules repo before `codeguard rules create` will work).
+///     already having a rules repo before they can hand-author their first rule YAML file).
 ///   - Re-run (already configured): prints the current Kind/Location/Branch/resolved path and
 ///     rule count, then asks whether to update. Answering no (the default) just refreshes in place
 ///     (git sync, or a fresh rule-file count for a directory source) without re-prompting for a
@@ -41,10 +41,8 @@ public static class SetupCommand
             Description = "Rules location: a local directory path or a git repository URL. Prompted for interactively if omitted."
         };
 
-        var branchOption = new Option<string?>("--branch")
-        {
-            Description = "Git branch to track (default: the repo's default branch). Only meaningful for a git source."
-        };
+        var branchOption = CommonOptions.CreateBranchOption(
+            "Git branch to track (default: the repo's default branch). Only meaningful for a git source.");
 
         var typeOption = new Option<string?>("--type")
         {
@@ -297,11 +295,6 @@ public static class SetupCommand
         var ruleCount = RuleFileLoader.CreateDefault().LoadFromDirectories([resolvedPath]).Count;
         Console.WriteLine($"Configured rules source: {source}{(branch is null ? "" : $" (branch {branch})")}");
         Console.WriteLine($"Found {ruleCount} rule file(s) at {resolvedPath}.");
-
-        if (createDirectoryIfMissing)
-        {
-            Console.WriteLine("Run 'codeguard rules create' to scaffold your first rule.");
-        }
 
         return 0;
     }

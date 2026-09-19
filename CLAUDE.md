@@ -32,7 +32,6 @@ dotnet run --project src/CodeGuard.Cli -- rules validate --rules-source examples
 dotnet run --project src/CodeGuard.Cli -- rules test     --rules-source examples/rules  # embedded tests:, no repo/disk
 dotnet run --project src/CodeGuard.Cli -- rules analyze  --rules-source examples/rules  # rule-set-level problems (missing tests, unreachable assertions, exact duplicates), no repo/disk
 dotnet run --project src/CodeGuard.Cli -- rules discover --format json                  # engine's full selector/assertion/analyzer vocabulary, reads no rule files
-dotnet run --project src/CodeGuard.Cli -- rules create   # interactive scaffolder, descriptor-driven (see rules discover)
 dotnet run --project src/CodeGuard.Cli -- info
 dotnet run --project src/CodeGuard.Cli -- validate       # self-validation completes end-to-end, see "Known limitation" below
 ```

@@ -355,7 +355,6 @@ codeguard rules test      # run rules' embedded tests: cases (--format console|j
 codeguard rules list      # (--format table|json)
 codeguard rules explain   # --format console|json; see §13
 codeguard rules discover  # --format console|json|markdown; see §12
-codeguard rules create    # interactive rule scaffolder, descriptor-driven; see §12
 codeguard rules analyze   # --format console|json; Tier 1 + opportunistic Tier 2 only, see §14
 codeguard setup           # configure the rule source
 codeguard info            # show the resolved rule source and counts

@@ -15,27 +15,14 @@ public static class TestCommand
         var branchOption = CommonOptions.CreateBranchOption();
         var verbosityOption = CommonOptions.CreateVerbosityOption();
 
-        var formatOption = new Option<string>("--format")
-        {
-            Description = "Output format: console or json.",
-            DefaultValueFactory = _ => "console"
-        };
-        formatOption.AcceptOnlyFromAmong("console", "json");
+        var formatOption = CommonOptions.CreateFormatOption("Output format: console or json.", "console", "console", "json");
 
         var ruleOption = new Option<string[]>("--rule")
         {
             Description = "Restrict test execution to these rule IDs (repeatable). Default: every rule with embedded tests."
         };
 
-        var colorOption = new Option<bool>("--color")
-        {
-            Description = "Force ANSI color in console output, even when redirected."
-        };
-
-        var noColorOption = new Option<bool>("--no-color")
-        {
-            Description = "Disable ANSI color in console output, even in an interactive terminal."
-        };
+        var (colorOption, noColorOption) = CommonOptions.CreateColorOptions();
 
         var command = new Command(
             "test",

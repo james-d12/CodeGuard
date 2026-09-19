@@ -24,12 +24,7 @@ public static class AnalyzeCommand
         var branchOption = CommonOptions.CreateBranchOption();
         var verbosityOption = CommonOptions.CreateVerbosityOption();
 
-        var formatOption = new Option<string>("--format")
-        {
-            Description = "Output format: console or json.",
-            DefaultValueFactory = _ => "console"
-        };
-        formatOption.AcceptOnlyFromAmong("console", "json");
+        var formatOption = CommonOptions.CreateFormatOption("Output format: console or json.", "console", "console", "json");
 
         var command = new Command(
             "analyze",
