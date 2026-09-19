@@ -121,23 +121,7 @@ public static class ExplainCommand
             ["documentation"] = new JsonArray(rule.Documentation.Select(d => (JsonNode)d).ToArray()),
             ["enabled"] = rule.Enabled,
             ["illustrative"] = rule.Illustrative,
-            ["metadata"] = rule.Metadata is { } metadata && (metadata.Source is not null || metadata.TrackVersion)
-                ? new JsonObject
-                {
-                    ["source"] = metadata.Source is { } source
-                        ? new JsonObject
-                        {
-                            ["document"] = source.Document,
-                            ["section"] = source.Section,
-                            ["statement"] = source.Statement,
-                            ["file"] = source.File,
-                            ["fingerprint"] = source.Fingerprint
-                        }
-                        : null,
-                    ["trackVersion"] = metadata.TrackVersion,
-                    ["versionFingerprint"] = metadata.VersionFingerprint
-                }
-                : null,
+            ["metadata"] = BuildMetadataJson(rule.Metadata),
             // "declarative" is the target+assertions form. Spelled without a '+' so the value doesn't
             // come back unicode-escaped by the default JSON encoder.
             ["shape"] = rule.Analyzer is not null ? "analyzer" : "declarative",
@@ -147,6 +131,44 @@ public static class ExplainCommand
         };
 
         Console.WriteLine(JsonSerializer.Serialize(payload, JsonOptions));
+    }
+
+    /// <summary>
+    /// Null when the rule has no metadata worth reporting (no provenance, not opted into version
+    /// tracking) - same "explicit null rather than omitted" convention <see cref="PrintJson"/> uses
+    /// throughout, since <see cref="JsonOptions"/> only drops nulls it never had a chance to see, not
+    /// ones assigned to <see cref="JsonObject"/> keys directly.
+    /// </summary>
+    private static JsonObject? BuildMetadataJson(RuleMetadata? metadata)
+    {
+        if (metadata is not { } m || (m.Source is null && !m.TrackVersion))
+        {
+            return null;
+        }
+
+        return new JsonObject
+        {
+            ["source"] = BuildSourceJson(m.Source),
+            ["trackVersion"] = m.TrackVersion,
+            ["versionFingerprint"] = m.VersionFingerprint
+        };
+    }
+
+    private static JsonObject? BuildSourceJson(RuleSource? source)
+    {
+        if (source is null)
+        {
+            return null;
+        }
+
+        return new JsonObject
+        {
+            ["document"] = source.Document,
+            ["section"] = source.Section,
+            ["statement"] = source.Statement,
+            ["file"] = source.File,
+            ["fingerprint"] = source.Fingerprint
+        };
     }
 
     private static string ToSnakeCase(string value) =>
@@ -166,28 +188,9 @@ public static class ExplainCommand
         Console.WriteLine($"Tags:          {(rule.Tags.Count == 0 ? "-" : string.Join(", ", rule.Tags))}");
         Console.WriteLine($"Enabled:       {rule.Enabled}");
         Console.WriteLine($"Illustrative:  {rule.Illustrative}");
-        if (rule.Metadata?.Source is { } source)
-        {
-            Console.WriteLine($"Source:        {source.Document}{(source.Section is null ? "" : $" - {source.Section}")}");
-            if (source.File is not null)
-            {
-                Console.WriteLine($"Source file:   {source.File}{(source.Fingerprint is null ? " (no fingerprint captured)" : "")}");
-            }
-        }
-        if (rule.Metadata?.TrackVersion is true)
-        {
-            var fingerprintStatus = rule.Metadata.VersionFingerprint is null ? "no fingerprint captured" : rule.Metadata.VersionFingerprint;
-            Console.WriteLine($"Version track: {fingerprintStatus}");
-        }
-        if (rule.Analyzer is not null)
-        {
-            Console.WriteLine($"Analyzer:      {rule.Analyzer.Name}");
-        }
-        else
-        {
-            Console.WriteLine($"Target kind:   {rule.Target!.Kind}");
-            Console.WriteLine($"Assertions:    {string.Join(", ", rule.Assertions!.Select(a => a.Kind))}");
-        }
+        PrintSourceSummary(rule.Metadata?.Source);
+        PrintVersionTrackSummary(rule.Metadata);
+        PrintShapeSummary(rule);
         if (rule.Remediation is not null)
         {
             Console.WriteLine($"Remediation:   {rule.Remediation.Trim()}");
@@ -196,5 +199,42 @@ public static class ExplainCommand
         {
             Console.WriteLine($"Documentation: {string.Join(", ", rule.Documentation)}");
         }
+    }
+
+    private static void PrintSourceSummary(RuleSource? source)
+    {
+        if (source is null)
+        {
+            return;
+        }
+
+        Console.WriteLine($"Source:        {source.Document}{(source.Section is null ? "" : $" - {source.Section}")}");
+        if (source.File is not null)
+        {
+            Console.WriteLine($"Source file:   {source.File}{(source.Fingerprint is null ? " (no fingerprint captured)" : "")}");
+        }
+    }
+
+    private static void PrintVersionTrackSummary(RuleMetadata? metadata)
+    {
+        if (metadata?.TrackVersion is not true)
+        {
+            return;
+        }
+
+        var fingerprintStatus = metadata.VersionFingerprint is null ? "no fingerprint captured" : metadata.VersionFingerprint;
+        Console.WriteLine($"Version track: {fingerprintStatus}");
+    }
+
+    private static void PrintShapeSummary(RuleDefinition rule)
+    {
+        if (rule.Analyzer is not null)
+        {
+            Console.WriteLine($"Analyzer:      {rule.Analyzer.Name}");
+            return;
+        }
+
+        Console.WriteLine($"Target kind:   {rule.Target!.Kind}");
+        Console.WriteLine($"Assertions:    {string.Join(", ", rule.Assertions!.Select(a => a.Kind))}");
     }
 }
