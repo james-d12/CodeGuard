@@ -74,7 +74,7 @@ latest release, verifies its checksum, extracts it, and adds it to your `PATH`:
 Linux/macOS:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/james-d12/CodeGuard/main/scripts/install.sh | bash
+curl --proto '=https' -fsSL https://raw.githubusercontent.com/james-d12/CodeGuard/main/scripts/install.sh | bash
 ```
 
 Windows (PowerShell):

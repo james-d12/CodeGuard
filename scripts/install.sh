@@ -4,8 +4,8 @@
 # `codeguard` itself (though `validate` still needs one on PATH at runtime - see README.md).
 #
 # Usage:
-#   curl -fsSL https://raw.githubusercontent.com/james-d12/CodeGuard/main/scripts/install.sh | bash
-#   curl -fsSL .../install.sh | bash -s -- --version 1.2.3 --install-dir "$HOME/tools/codeguard"
+#   curl --proto '=https' -fsSL https://raw.githubusercontent.com/james-d12/CodeGuard/main/scripts/install.sh | bash
+#   curl --proto '=https' -fsSL .../install.sh | bash -s -- --version 1.2.3 --install-dir "$HOME/tools/codeguard"
 #
 # Env var overrides (equivalent to the flags above, useful when piping into `bash` with no args):
 #   CODEGUARD_VERSION, CODEGUARD_INSTALL_DIR
@@ -39,7 +39,7 @@ done
 
 if [[ -z "$version" ]]; then
   echo "Resolving latest CodeGuard release..."
-  latest_json="$(curl -fsSL "https://api.github.com/repos/${repo}/releases/latest")"
+  latest_json="$(curl --proto "=https" -fsSL "https://api.github.com/repos/${repo}/releases/latest")"
   version="$(printf '%s' "$latest_json" | grep -m1 '"tag_name"' | sed -E 's/.*"tag_name": *"v?([^"]+)".*/\1/')"
   if [[ -z "$version" ]]; then
     echo "install.sh: could not resolve the latest release version from the GitHub API" >&2
@@ -76,10 +76,10 @@ work_dir="$(mktemp -d)"
 trap 'rm -rf "$work_dir"' EXIT
 
 echo "Downloading ${asset}..."
-curl -fsSL "${base_url}/${asset}" -o "${work_dir}/${asset}"
+curl --proto "=https" -fsSL "${base_url}/${asset}" -o "${work_dir}/${asset}"
 
 echo "Fetching checksums.txt..."
-if curl -fsSL "${base_url}/checksums.txt" -o "${work_dir}/checksums.txt" 2>/dev/null; then
+if curl --proto "=https" -fsSL "${base_url}/checksums.txt" -o "${work_dir}/checksums.txt" 2>/dev/null; then
   expected_line="$(grep "  ${asset}\$" "${work_dir}/checksums.txt" || true)"
   if [[ -z "$expected_line" ]]; then
     echo "install.sh: warning: ${asset} not listed in checksums.txt, skipping verification" >&2
