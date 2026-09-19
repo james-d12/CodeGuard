@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using CodeGuard.Analysis.AnalysisModel;
 using CodeGuard.RuleModel.Assertions;
@@ -15,7 +16,18 @@ public sealed class MustNotHaveJsonFieldAssertion(string path, string? equals) :
             return AssertionOutcome.Failure($"'{Kind}' can only be evaluated against files.");
         }
 
-        var root = JsonNode.Parse(file.Content ?? File.ReadAllText(file.Path));
+        // See MustHaveJsonFieldAssertion's matching comment - unparseable content is treated as
+        // "field not found" rather than letting JsonException escape and crash evaluation.
+        JsonNode? root;
+        try
+        {
+            root = JsonNode.Parse(file.Content ?? File.ReadAllText(file.Path));
+        }
+        catch (JsonException)
+        {
+            return AssertionOutcome.Success();
+        }
+
         var fieldValue = JsonFieldPath.Resolve(root, path);
 
         if (fieldValue is null)

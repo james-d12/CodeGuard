@@ -1,6 +1,7 @@
 using System.Text.Json.Nodes;
 using CodeGuard.Analysis.AnalysisModel;
 using CodeGuard.Configuration.Parsing;
+using CodeGuard.Configuration.Validation;
 
 namespace CodeGuard.Configuration.Testing;
 
@@ -30,7 +31,29 @@ public static class TestSetupBuilder
         "tryBlocks", "methodBodyShapes", "diagnostics", "directories"
     };
 
+    /// <summary>
+    /// Builds the virtual model, or throws <see cref="RuleParsingException"/> if <paramref name="setup"/>
+    /// is malformed. Field readers throughout this class (<c>.AsArray()</c>/<c>.AsObject()</c>/
+    /// <c>GetValue&lt;T&gt;()</c>) each assume a specific JSON value kind for their key and throw a raw
+    /// BCL exception when handed the wrong one (e.g. a string where an array was expected) - rather than
+    /// have every one of those call sites defensively type-check, this boundary converts any such
+    /// exception into the same clean, catchable <see cref="RuleParsingException"/> a rule author already
+    /// gets for a missing required field, so a malformed embedded <c>tests:</c> setup block can never
+    /// crash <c>codeguard rules test</c> outright.
+    /// </summary>
     public static RepositoryModel Build(JsonObject setup)
+    {
+        try
+        {
+            return BuildCore(setup);
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or FormatException or System.Text.Json.JsonException)
+        {
+            throw new RuleParsingException($"Rule test setup is malformed: {ex.Message}", RuleErrorCodes.InvalidParameter);
+        }
+    }
+
+    private static RepositoryModel BuildCore(JsonObject setup)
     {
         var unknownKeys = setup
             .Select(pair => pair.Key)

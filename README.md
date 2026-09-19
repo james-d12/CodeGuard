@@ -66,6 +66,33 @@ be merged into a single-file bundle.
 | macOS arm64 (Apple Silicon) | `codeguard-<version>-osx-arm64.tar.gz` |
 | Windows x64 | `codeguard-<version>-win-x64.zip` |
 
+Each release also publishes a `checksums.txt` (SHA256) alongside the archives above.
+
+The quickest way to install is the one-liner install script for your platform, which resolves the
+latest release, verifies its checksum, extracts it, and adds it to your `PATH`:
+
+Linux/macOS:
+
+```bash
+curl --proto '=https' -fsSL https://raw.githubusercontent.com/james-d12/CodeGuard/main/scripts/install.sh | bash
+```
+
+Windows (PowerShell):
+
+```powershell
+irm https://raw.githubusercontent.com/james-d12/CodeGuard/main/scripts/install.ps1 | iex
+```
+
+Both scripts accept a pinned version and a custom install directory (`--version`/`--install-dir`
+on the bash script, `-Version`/`-InstallDir` on the PowerShell one, or the `CODEGUARD_VERSION`/
+`CODEGUARD_INSTALL_DIR` environment variables for either, since piping into `bash`/`iex` doesn't
+let you pass arguments directly). Review
+[`scripts/install.sh`](scripts/install.sh)/[`scripts/install.ps1`](scripts/install.ps1) first if
+you'd rather not pipe a script straight into a shell.
+
+<details>
+<summary>Manual install (no script)</summary>
+
 Linux/macOS:
 
 ```bash
@@ -82,6 +109,8 @@ Expand-Archive codeguard.zip -DestinationPath codeguard
 cd codeguard
 .\codeguard.exe --help
 ```
+
+</details>
 
 Two things to know about the standalone binaries:
 

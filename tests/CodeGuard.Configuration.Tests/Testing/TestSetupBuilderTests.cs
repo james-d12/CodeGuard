@@ -1,6 +1,7 @@
 using System.Text.Json.Nodes;
 using CodeGuard.Configuration.Parsing;
 using CodeGuard.Configuration.Testing;
+using CodeGuard.Configuration.Validation;
 
 namespace CodeGuard.Configuration.Tests.Testing;
 
@@ -201,6 +202,19 @@ public sealed class TestSetupBuilderTests
             """)));
 
         Assert.Contains("fyles, typez", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Build_RejectsWrongJsonKindForAKnownKey()
+    {
+        // "projects" expects an array; field readers throughout Build (.AsArray()/.AsObject()/
+        // GetValue<T>()) each throw a raw System.Text.Json exception on the wrong JSON value kind -
+        // Build converts that into a clean RuleParsingException at its boundary instead.
+        var exception = Assert.Throws<RuleParsingException>(() => TestSetupBuilder.Build(Setup("""
+            { "projects": 12345 }
+            """)));
+
+        Assert.Equal(RuleErrorCodes.InvalidParameter, exception.Code);
     }
 
     [Fact]
