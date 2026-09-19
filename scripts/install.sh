@@ -15,7 +15,7 @@ repo="james-d12/CodeGuard"
 version="${CODEGUARD_VERSION:-}"
 install_dir="${CODEGUARD_INSTALL_DIR:-$HOME/.codeguard}"
 
-while [ $# -gt 0 ]; do
+while [[ $# -gt 0 ]]; do
   case "$1" in
     --version)
       version="$2"
@@ -37,11 +37,11 @@ while [ $# -gt 0 ]; do
   esac
 done
 
-if [ -z "$version" ]; then
+if [[ -z "$version" ]]; then
   echo "Resolving latest CodeGuard release..."
   latest_json="$(curl -fsSL "https://api.github.com/repos/${repo}/releases/latest")"
   version="$(printf '%s' "$latest_json" | grep -m1 '"tag_name"' | sed -E 's/.*"tag_name": *"v?([^"]+)".*/\1/')"
-  if [ -z "$version" ]; then
+  if [[ -z "$version" ]]; then
     echo "install.sh: could not resolve the latest release version from the GitHub API" >&2
     exit 1
   fi
@@ -81,7 +81,7 @@ curl -fsSL "${base_url}/${asset}" -o "${work_dir}/${asset}"
 echo "Fetching checksums.txt..."
 if curl -fsSL "${base_url}/checksums.txt" -o "${work_dir}/checksums.txt" 2>/dev/null; then
   expected_line="$(grep "  ${asset}\$" "${work_dir}/checksums.txt" || true)"
-  if [ -z "$expected_line" ]; then
+  if [[ -z "$expected_line" ]]; then
     echo "install.sh: warning: ${asset} not listed in checksums.txt, skipping verification" >&2
   else
     if command -v sha256sum >/dev/null 2>&1; then
@@ -90,7 +90,7 @@ if curl -fsSL "${base_url}/checksums.txt" -o "${work_dir}/checksums.txt" 2>/dev/
       actual_hash="$(shasum -a 256 "${work_dir}/${asset}" | awk '{print $1}')"
     fi
     expected_hash="$(printf '%s' "$expected_line" | awk '{print $1}')"
-    if [ "$actual_hash" != "$expected_hash" ]; then
+    if [[ "$actual_hash" != "$expected_hash" ]]; then
       echo "install.sh: checksum mismatch for ${asset}" >&2
       echo "install.sh: expected ${expected_hash}, got ${actual_hash}" >&2
       exit 1
@@ -105,7 +105,7 @@ echo "Installing to ${install_dir}..."
 mkdir -p "$install_dir"
 tar -xzf "${work_dir}/${asset}" -C "$install_dir"
 
-if [ "$os" = "Darwin" ] && command -v xattr >/dev/null 2>&1; then
+if [[ "$os" = "Darwin" ]] && command -v xattr >/dev/null 2>&1; then
   xattr -dr com.apple.quarantine "$install_dir" 2>/dev/null || true
 fi
 
@@ -122,7 +122,7 @@ case ":${PATH}:" in
     esac
     marker_begin="# >>> codeguard install >>>"
     marker_end="# <<< codeguard install <<<"
-    if [ -f "$profile_file" ] && grep -qF "$marker_begin" "$profile_file"; then
+    if [[ -f "$profile_file" ]] && grep -qF "$marker_begin" "$profile_file"; then
       echo "PATH entry already present in ${profile_file}."
     else
       {
