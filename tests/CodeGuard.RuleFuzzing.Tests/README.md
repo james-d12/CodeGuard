@@ -12,23 +12,29 @@ maintenance step.
 ## Running
 
 ```bash
-dotnet test tests/CodeGuard.RuleFuzzing.Tests                    # default iteration counts (CI-fast)
+dotnet test tests/CodeGuard.RuleFuzzing.Tests
 dotnet test tests/CodeGuard.Evaluation.Tests --filter GlobMatcherFuzzTests
 ```
 
-## Deeper local soaks
+No flags needed: every fuzz `[Fact]` already runs the full soak by default (8,000 iterations for the
+primary crash oracle, 2,000–5,000 for the others - see `Generation/RuleFuzzOptions.cs`), including a
+plain local run. There's no separate "CI-fast" tier to opt out of - the whole suite is in-process
+against virtual models (no disk/Roslyn/MSBuild), so even at these depths it adds well under 30 seconds
+to `dotnet test`.
 
-Every fuzz `[Fact]` reads its iteration count from an environment variable (default is low, for the
-normal `dotnet test` run). Raise it locally for a deeper soak:
+## Pushing even deeper for a one-off soak
+
+Each fuzz `[Fact]` also reads its iteration count from an environment variable, which overrides the
+default when set to a positive integer:
 
 ```bash
-RULEFUZZ_ITERATIONS=20000 \
-RULEFUZZ_ITERATIONS_ANALYZER=10000 \
-RULEFUZZ_ITERATIONS_UNREACHABLE=5000 \
-RULEFUZZ_ITERATIONS_NESTED_UNREACHABLE=5000 \
-RULEFUZZ_ITERATIONS_SETUP=20000 \
-RULEFUZZ_ITERATIONS_SCHEMA=5000 \
-RULEFUZZ_ITERATIONS_EMBEDDED_TEST=5000 \
+RULEFUZZ_ITERATIONS=50000 \
+RULEFUZZ_ITERATIONS_ANALYZER=20000 \
+RULEFUZZ_ITERATIONS_UNREACHABLE=20000 \
+RULEFUZZ_ITERATIONS_NESTED_UNREACHABLE=20000 \
+RULEFUZZ_ITERATIONS_SETUP=50000 \
+RULEFUZZ_ITERATIONS_SCHEMA=20000 \
+RULEFUZZ_ITERATIONS_EMBEDDED_TEST=20000 \
   dotnet test tests/CodeGuard.RuleFuzzing.Tests
 ```
 

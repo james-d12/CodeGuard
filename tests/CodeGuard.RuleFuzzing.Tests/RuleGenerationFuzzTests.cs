@@ -20,7 +20,7 @@ public sealed class RuleGenerationFuzzTests(ITestOutputHelper output)
     public void CompatibleRules_ValidateSchema_ParseCleanly_AndNeverCrashEvaluation()
     {
         var gen = RuleDocumentGenerator.CompatibleRule(Harness.Catalog);
-        var iterations = RuleFuzzOptions.Iterations("RULEFUZZ_ITERATIONS", 300);
+        var iterations = RuleFuzzOptions.Iterations("RULEFUZZ_ITERATIONS", 8000);
 
         gen.Sample(document =>
         {
@@ -67,7 +67,7 @@ public sealed class RuleGenerationFuzzTests(ITestOutputHelper output)
     public void AnalyzerRules_ValidateSchema_ParseCleanly_AndNeverCrashEvaluation()
     {
         var gen = RuleDocumentGenerator.AnalyzerRule(Harness.Catalog);
-        var iterations = RuleFuzzOptions.Iterations("RULEFUZZ_ITERATIONS_ANALYZER", 150);
+        var iterations = RuleFuzzOptions.Iterations("RULEFUZZ_ITERATIONS_ANALYZER", 3000);
 
         gen.Sample(document =>
         {

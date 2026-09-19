@@ -46,6 +46,6 @@ public sealed class GlobMatcherFuzzTests(ITestOutputHelper output)
             {
                 // Documented, deliberate outcome of the 100ms match timeout on a pathological pattern.
             }
-        }, writeLine: output.WriteLine, iter: 2000, threads: 1);
+        }, writeLine: output.WriteLine, iter: 5000, threads: 1);
     }
 }

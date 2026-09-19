@@ -19,9 +19,12 @@ This is greenfield: no property-based testing library, no random-generation
 infrastructure, and no fuzzing of any kind exists in the repo today (confirmed by
 repo-wide grep). Decisions made up front: **CsCheck** as the generation library, **full
 scope in v1** (structural fuzzing + adversarial glob/regex values + `TestSetupBuilder`
-setup-JSON fuzzing + embedded-`tests:` consistency, all together, not phased), and
-**small iteration count in the existing CI job, with a larger nightly/manual soak**
-layered on top later.
+setup-JSON fuzzing + embedded-`tests:` consistency, all together, not phased). Iteration
+counts were originally going to default low with a larger nightly/manual soak layered
+on top, but measured wall-clock cost (the whole suite in-process, well under 30 seconds
+even at several thousand iterations per oracle) made that split unnecessary — **the
+full soak now runs by default on every `dotnet test`**, local or CI, with an env-var
+override per oracle for pushing a one-off soak deeper still.
 
 The payoff: because the generator walks `CapabilityCatalog.Create()` rather than a
 hardcoded list, it self-updates whenever a new selector/assertion/analyzer is
@@ -189,13 +192,15 @@ style) without re-running the fuzzer.
 
 ### CI integration
 
-Default `dotnet test` (already in `ci.yml`): low iteration count (e.g. 200–500
-generated documents per oracle test), which given this is all in-process with virtual
-models should add low single-digit seconds — no separate CI step needed, it rides
-along with the existing solution-wide `dotnet test` run. Layer a
-`workflow_dispatch`/scheduled job on top later that raises iteration count via an env
-var (e.g. `RULEFUZZ_ITERATIONS`) read by `RuleFuzzOptions`, reusing the same test
-methods — no separate test code.
+Updated after measuring actual wall-clock cost: since this is all in-process against
+virtual models (no disk/Roslyn/MSBuild), even a deep soak (8,000 iterations for the
+primary crash oracle, 2,000–5,000 for the others) completes in well under 30 seconds.
+There is no meaningful cost to gate behind an opt-in tier, so the full soak is simply
+the default — it runs unconditionally on every `dotnet test`, local or CI, with no
+extra `ci.yml` step needed; it rides along with the existing solution-wide run.
+`RuleFuzzOptions.Iterations` still reads an env var override per oracle (e.g.
+`RULEFUZZ_ITERATIONS`) for anyone who wants to push a one-off local soak even deeper
+than the default — see `tests/CodeGuard.RuleFuzzing.Tests/README.md`.
 
 ## Critical files
 
@@ -212,20 +217,19 @@ methods — no separate test code.
   `CodeGuard.Evaluation.Tests` instead of the new project.
 - `tests/CodeGuard.Configuration.Tests/RuleFileLoaderTests.cs` — wiring pattern to
   replicate in `PipelineHarness`.
-- `.github/workflows/ci.yml` — where the new project rides along, and where a later
-  nightly/manual soak job would be added.
+- `.github/workflows/ci.yml` — where the new project rides along unchanged, since the
+  full soak now runs by default rather than needing a separate nightly job.
 
 ## Verification
 
 - `dotnet build` — 0 errors/warnings, including the new project.
 - `dotnet test tests/CodeGuard.RuleFuzzing.Tests` and
-  `dotnet test tests/CodeGuard.Evaluation.Tests --filter GlobMatcherFuzzTests` pass
-  locally at the default (low) iteration count.
-- Manually bump `RuleFuzzOptions`' iteration count (or the env var once wired) to a much
-  higher value (e.g. 20,000+) for a local deep soak before considering v1 done —
-  this is the actual point of the exercise, and default CI-time counts are too low to
-  trust as the only signal that the generator/oracles work.
-- Any failure found during the deep soak: confirm it reproduces via the captured seed,
+  `dotnet test tests/CodeGuard.Evaluation.Tests --filter GlobMatcherFuzzTests` pass at
+  the default iteration counts, which are already a full soak (see "CI integration"
+  above) — no separate low/high tier to reconcile.
+- Push further via the `RULEFUZZ_ITERATIONS*` env vars for an even deeper one-off local
+  soak before considering a change to the generator/oracles done.
+- Any failure found during a soak: confirm it reproduces via the captured seed,
   then either fix the underlying engine bug (and add the shrunk case as a permanent
   regression test in the relevant existing test project) or add a narrowly-scoped entry
   to `KnownParameterConstraints`/`AdversarialCorpus` if the "failure" is actually

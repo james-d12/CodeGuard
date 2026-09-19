@@ -25,7 +25,7 @@ public sealed class UnreachableRuleCrossCheckFuzzTests(ITestOutputHelper output)
     public void TopLevelMismatch_IsFlaggedByAnalyzer_AndAlwaysViolatesDynamically()
     {
         var gen = RuleDocumentGenerator.IncompatibleRule(Harness.Catalog);
-        var iterations = RuleFuzzOptions.Iterations("RULEFUZZ_ITERATIONS_UNREACHABLE", 200);
+        var iterations = RuleFuzzOptions.Iterations("RULEFUZZ_ITERATIONS_UNREACHABLE", 3000);
 
         gen.Sample(document =>
         {
@@ -72,7 +72,7 @@ public sealed class UnreachableRuleCrossCheckFuzzTests(ITestOutputHelper output)
     public void NestedMismatch_IsNotFlaggedByAnalyzer_AndNeverCrashesEvaluation()
     {
         var gen = RuleDocumentGenerator.NestedIncompatibleRule(Harness.Catalog);
-        var iterations = RuleFuzzOptions.Iterations("RULEFUZZ_ITERATIONS_NESTED_UNREACHABLE", 200);
+        var iterations = RuleFuzzOptions.Iterations("RULEFUZZ_ITERATIONS_NESTED_UNREACHABLE", 3000);
 
         gen.Sample(document =>
         {

@@ -19,7 +19,7 @@ public sealed class SchemaViolationFuzzTests(ITestOutputHelper output)
     public void MalformedDocuments_AreRejectedByRuleSchemaValidator()
     {
         var gen = SchemaViolationGenerator.AnyViolation(Harness.Catalog);
-        var iterations = RuleFuzzOptions.Iterations("RULEFUZZ_ITERATIONS_SCHEMA", 300);
+        var iterations = RuleFuzzOptions.Iterations("RULEFUZZ_ITERATIONS_SCHEMA", 2000);
 
         gen.Sample(document =>
         {

@@ -53,7 +53,7 @@ public sealed class TestSetupBuilderFuzzTests(ITestOutputHelper output)
     [Fact]
     public void Build_OnAdversarialSetup_EitherSucceedsOrFailsCleanly()
     {
-        var iterations = RuleFuzzOptions.Iterations("RULEFUZZ_ITERATIONS_SETUP", 500);
+        var iterations = RuleFuzzOptions.Iterations("RULEFUZZ_ITERATIONS_SETUP", 5000);
 
         AdversarialSetup.Sample(setup =>
         {

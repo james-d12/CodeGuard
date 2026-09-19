@@ -29,7 +29,7 @@ public sealed class EmbeddedTestConsistencyFuzzTests(ITestOutputHelper output)
     {
         var gen = RuleDocumentGenerator.CompatibleRule(Harness.Catalog)
             .Select(Gen.OneOfConst(RepositoryModelFixtures.RawSetups.ToArray()), (rule, setup) => (Rule: rule, Setup: setup));
-        var iterations = RuleFuzzOptions.Iterations("RULEFUZZ_ITERATIONS_EMBEDDED_TEST", 200);
+        var iterations = RuleFuzzOptions.Iterations("RULEFUZZ_ITERATIONS_EMBEDDED_TEST", 3000);
 
         gen.Sample(input =>
         {
