@@ -102,8 +102,8 @@ public class RuleSourceValidationEndToEndTests
             var (exitCode, output) = await RunValidate(tempRoot, "--update-fingerprints");
 
             Assert.Equal(0, exitCode);
-            Assert.Contains("Updated fingerprint: SRC-DRIFTED-001", output);
-            Assert.DoesNotContain("Updated fingerprint: SRC-BROKEN-001", output); // nothing to fingerprint
+            Assert.Contains("Updated source fingerprint: SRC-DRIFTED-001", output);
+            Assert.DoesNotContain("Updated source fingerprint: SRC-BROKEN-001", output); // nothing to fingerprint
 
             var updatedDrifted = await File.ReadAllTextAsync(Path.Combine(tempRoot, "rules", "drifted.yml"));
             Assert.Contains(

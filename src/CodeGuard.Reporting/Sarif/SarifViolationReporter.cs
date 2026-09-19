@@ -12,10 +12,19 @@ public sealed class SarifViolationReporter : IViolationReporter
     {
         var rules = result.Violations
             .GroupBy(v => v.RuleId)
-            .Select(g => new ReportingDescriptor
+            .Select(g =>
             {
-                Id = g.Key,
-                ShortDescription = new MultiformatMessageString(g.First().Message, null, null)
+                var descriptor = new ReportingDescriptor
+                {
+                    Id = g.Key,
+                    ShortDescription = new MultiformatMessageString(g.First().Message, null, null)
+                };
+
+                // ReportingDescriptor has no native `version` property in this SDK (unlike
+                // ToolComponent, which does) - the properties bag is SARIF's own sanctioned
+                // extensibility point for exactly this kind of tool-specific metadata.
+                descriptor.SetProperty("version", g.First().RuleVersion);
+                return descriptor;
             })
             .ToList();
 

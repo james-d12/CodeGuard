@@ -157,6 +157,17 @@ metadata:
 * Omit `metadata` entirely when you don't know the source document (e.g. a rule you're asked to
   generate without a cited document) — don't invent a plausible-sounding one.
 
+## `version` and `metadata.trackVersion` (rarely needed)
+
+New rules don't need either — `version` defaults to `1`, and `metadata.trackVersion`/
+`versionFingerprint` are an opt-in, CLI-managed mechanism for detecting when an *existing* rule's
+enforceable body (`target`/`assertions`/`when`/`analyzer`) changes without a version bump, not
+something to hand-author. Never fabricate a `versionFingerprint` value — it's a sha256 hash computed
+by `rules validate --update-fingerprints`, and a guessed one will simply fail validation as a
+mismatch. If you're asked to modify an existing rule that already has `metadata.trackVersion: true`,
+bump `version` yourself, but tell the human to re-run `rules validate --update-fingerprints` to
+capture the new fingerprint — don't attempt to compute or edit it directly.
+
 ## Verify before you hand anything over
 
 Don't present generated rules as finished until the engine has checked them. All three commands are

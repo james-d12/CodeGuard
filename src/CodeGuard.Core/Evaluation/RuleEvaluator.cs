@@ -156,6 +156,7 @@ public sealed class RuleEvaluator(ILogger<RuleEvaluator>? logger = null) : IRule
         {
             violations.Add(new Violation(
                 rule.Id,
+                rule.Version,
                 rule.Severity,
                 analyzerViolation.Message,
                 analyzerViolation.FilePath,
@@ -203,6 +204,7 @@ public sealed class RuleEvaluator(ILogger<RuleEvaluator>? logger = null) : IRule
 
         return new Violation(
             rule.Id,
+            rule.Version,
             rule.Severity,
             outcome.Message ?? $"Rule '{rule.Id}' failed.",
             file,

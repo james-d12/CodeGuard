@@ -110,6 +110,7 @@ public static class ExplainCommand
             ["id"] = rule.Id,
             ["name"] = rule.Name,
             ["description"] = rule.Description?.Trim(),
+            ["version"] = rule.Version,
             ["severity"] = rule.Severity.ToString().ToLowerInvariant(),
             ["enforcement"] = new JsonObject
             {
@@ -120,17 +121,21 @@ public static class ExplainCommand
             ["documentation"] = new JsonArray(rule.Documentation.Select(d => (JsonNode)d).ToArray()),
             ["enabled"] = rule.Enabled,
             ["illustrative"] = rule.Illustrative,
-            ["metadata"] = rule.Metadata?.Source is { } source
+            ["metadata"] = rule.Metadata is { } metadata && (metadata.Source is not null || metadata.TrackVersion)
                 ? new JsonObject
                 {
-                    ["source"] = new JsonObject
-                    {
-                        ["document"] = source.Document,
-                        ["section"] = source.Section,
-                        ["statement"] = source.Statement,
-                        ["file"] = source.File,
-                        ["fingerprint"] = source.Fingerprint
-                    }
+                    ["source"] = metadata.Source is { } source
+                        ? new JsonObject
+                        {
+                            ["document"] = source.Document,
+                            ["section"] = source.Section,
+                            ["statement"] = source.Statement,
+                            ["file"] = source.File,
+                            ["fingerprint"] = source.Fingerprint
+                        }
+                        : null,
+                    ["trackVersion"] = metadata.TrackVersion,
+                    ["versionFingerprint"] = metadata.VersionFingerprint
                 }
                 : null,
             // "declarative" is the target+assertions form. Spelled without a '+' so the value doesn't
@@ -155,6 +160,7 @@ public static class ExplainCommand
         {
             Console.WriteLine($"Description:   {rule.Description.Trim()}");
         }
+        Console.WriteLine($"Version:       {rule.Version}");
         Console.WriteLine($"Severity:      {rule.Severity}");
         Console.WriteLine($"Enforcement:   {rule.Enforcement.Classification}");
         Console.WriteLine($"Tags:          {(rule.Tags.Count == 0 ? "-" : string.Join(", ", rule.Tags))}");
@@ -167,6 +173,11 @@ public static class ExplainCommand
             {
                 Console.WriteLine($"Source file:   {source.File}{(source.Fingerprint is null ? " (no fingerprint captured)" : "")}");
             }
+        }
+        if (rule.Metadata?.TrackVersion is true)
+        {
+            var fingerprintStatus = rule.Metadata.VersionFingerprint is null ? "no fingerprint captured" : rule.Metadata.VersionFingerprint;
+            Console.WriteLine($"Version track: {fingerprintStatus}");
         }
         if (rule.Analyzer is not null)
         {

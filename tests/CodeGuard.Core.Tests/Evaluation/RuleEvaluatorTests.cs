@@ -47,6 +47,25 @@ public class RuleEvaluatorTests
     }
 
     [Fact]
+    public void Evaluate_ProducesViolation_WithRuleVersionStamped()
+    {
+        var model = BuildModel(CreateEntityType("LegacyThing", baseType: null));
+        var rule = new RuleDefinition
+        {
+            Id = "DDD-ENTITY-001",
+            Name = "Domain entities must inherit from Entity",
+            Version = 4,
+            Target = new ClassInNamespaceSelector("Contoso.Domain.Entities"),
+            Assertions = [new MustInheritFromAssertion(EntityBaseType)]
+        };
+
+        var result = new RuleEvaluator().Evaluate([rule], model);
+
+        var violation = Assert.Single(result.Violations);
+        Assert.Equal(4, violation.RuleVersion);
+    }
+
+    [Fact]
     public void Evaluate_SkipsDisabledRules()
     {
         var model = BuildModel(CreateEntityType("LegacyThing", baseType: null));
@@ -209,7 +228,7 @@ public class RuleEvaluatorTests
     {
         var model = new RepositoryModel(".", [], [], [], [], [], [], [], [], []);
         var analyzer = new StubAnalyzer("stub-analyzer", new AnalyzerViolation("bad shape", "Foo.cs", 3, 1));
-        var rule = new RuleDefinition { Id = "ANALYZER-001", Name = "Analyzer rule", Analyzer = analyzer };
+        var rule = new RuleDefinition { Id = "ANALYZER-001", Name = "Analyzer rule", Version = 2, Analyzer = analyzer };
 
         var result = new RuleEvaluator().Evaluate([rule], model);
 
@@ -217,6 +236,7 @@ public class RuleEvaluatorTests
         var violation = Assert.Single(result.Violations);
         Assert.Equal("Foo.cs", violation.File);
         Assert.Equal(3, violation.Line);
+        Assert.Equal(2, violation.RuleVersion);
     }
 
     [Fact]

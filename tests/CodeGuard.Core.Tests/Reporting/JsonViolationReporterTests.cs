@@ -20,6 +20,7 @@ public class JsonViolationReporterTests
             [
                 new Violation(
                     RuleId: "DDD-ENTITY-001",
+                    RuleVersion: 1,
                     Severity: Severity.Error,
                     Message: "'Contoso.Domain.Entities.LegacyThing' must inherit from 'Contoso.Domain.Entity<TId>'.",
                     File: "LegacyThing.cs",
@@ -45,6 +46,7 @@ public class JsonViolationReporterTests
 
         var violation = root.GetProperty("violations")[0];
         Assert.Equal("DDD-ENTITY-001", violation.GetProperty("ruleId").GetString());
+        Assert.Equal(1, violation.GetProperty("ruleVersion").GetInt32());
         Assert.Equal("error", violation.GetProperty("severity").GetString());
         Assert.Equal("LegacyThing.cs", violation.GetProperty("file").GetString());
         Assert.Equal(5, violation.GetProperty("line").GetInt32());

@@ -3,11 +3,15 @@ name: Scaffolded csproj required properties
 description: >
   Generated .csproj files must set Nullable=enable, ImplicitUsings=enable,
   and TreatWarningsAsErrors=true.
+version: 1
 severity: warning
 enforcement:
   classification: deterministic
 tags:
   - scaffolding
+metadata:
+  trackVersion: true
+  versionFingerprint: sha256:a086ec87a8ab1aa2e1041b7d3d75fb444ff9ea455be1a58f6f33a2807b708070
 remediation: >
   Add the missing MSBuild property (Nullable/ImplicitUsings/TreatWarningsAsErrors)
   to the generated .csproj.

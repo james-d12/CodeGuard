@@ -19,6 +19,7 @@ public class HtmlViolationReporterTests
             [
                 new Violation(
                     RuleId: "DDD-ENTITY-001",
+                    RuleVersion: 1,
                     Severity: Severity.Error,
                     Message: "<script>alert('xss')</script> & \"quoted\"",
                     File: "LegacyThing.cs",
@@ -55,6 +56,7 @@ public class HtmlViolationReporterTests
             [
                 new Violation(
                     RuleId: "DDD-ENTITY-001",
+                    RuleVersion: 1,
                     Severity: Severity.Error,
                     Message: "must inherit from Entity<TId>.",
                     File: "LegacyThing.cs",
@@ -93,6 +95,7 @@ public class HtmlViolationReporterTests
             [
                 new Violation(
                     RuleId: "DDD-ENTITY-001",
+                    RuleVersion: 1,
                     Severity: Severity.Error,
                     Message: "must inherit from Entity<TId>.",
                     File: "LegacyThing.cs",

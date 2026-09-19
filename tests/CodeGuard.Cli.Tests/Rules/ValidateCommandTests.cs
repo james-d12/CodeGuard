@@ -189,7 +189,7 @@ public sealed class ValidateCommandTests : IDisposable
         var (exitCode, output) = await RunValidateRules(["--path", _repoRoot, "--update-fingerprints"]);
 
         Assert.Equal(0, exitCode);
-        Assert.Contains("Updated fingerprint: DDD-ENTITY-001", output);
+        Assert.Contains("Updated source fingerprint: DDD-ENTITY-001", output);
         Assert.DoesNotContain("DDD-ENTITY-002", output.Split("Source checks:")[0]);
 
         var drifted = await File.ReadAllTextAsync(Path.Combine(_rulesDir, "drifted.yml"));

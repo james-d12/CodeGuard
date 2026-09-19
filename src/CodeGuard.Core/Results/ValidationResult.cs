@@ -25,6 +25,7 @@ public enum ValidationStatus
 
 public sealed record Violation(
     string RuleId,
+    int RuleVersion,
     Severity Severity,
     string Message,
     string? File,

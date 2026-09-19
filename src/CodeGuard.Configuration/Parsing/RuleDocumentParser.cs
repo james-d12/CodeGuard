@@ -54,6 +54,7 @@ public static class RuleDocumentParser
             Id = document.GetRequiredString("id"),
             Name = document.GetRequiredString("name"),
             Description = document.GetOptionalString("description"),
+            Version = document.GetOptionalInt("version") ?? 1,
             Severity = ParseSeverity(document),
             Enforcement = new EnforcementMetadata { Classification = ParseClassification(document) },
             Tags = document.GetStringArray("tags"),
@@ -112,6 +113,11 @@ public static class RuleDocumentParser
                 sourceNode.GetOptionalString("file"),
                 sourceNode.GetOptionalString("fingerprint"));
 
-        return new RuleMetadata { Source = source };
+        return new RuleMetadata
+        {
+            Source = source,
+            TrackVersion = metadataNode.GetOptionalBool("trackVersion", false),
+            VersionFingerprint = metadataNode.GetOptionalString("versionFingerprint")
+        };
     }
 }
