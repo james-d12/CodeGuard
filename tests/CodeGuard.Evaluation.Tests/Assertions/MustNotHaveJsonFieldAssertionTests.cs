@@ -59,6 +59,14 @@ public sealed class MustNotHaveJsonFieldAssertionTests : IDisposable
     }
 
     [Fact]
+    public void Evaluate_Passes_WhenContentIsNotValidJson()
+    {
+        var file = new FileModel("virtual/Program.cs", "Program.cs", ".cs", "class A {}");
+        var outcome = new MustNotHaveJsonFieldAssertion("profiles.http.applicationUrl", null).Evaluate(file, EmptyModel);
+        Assert.True(outcome.Passed);
+    }
+
+    [Fact]
     public void Evaluate_Passes_UsingVirtualContent_WithNoBackingDiskFile()
     {
         var file = new FileModel("virtual/appsettings.json", "appsettings.json", ".json", """{ "profiles": {} }""");
