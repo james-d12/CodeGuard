@@ -159,7 +159,7 @@ jobs:
         run: |
           set -euo pipefail
           cd release-assets
-          cat *.sha256 > checksums.txt
+          cat ./*.sha256 > checksums.txt
           rm ./*.sha256
 
       - name: Create GitHub Release
