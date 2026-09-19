@@ -477,6 +477,27 @@ without needing Phase 2's rule `metadata` first.
   unreachable assertions, or exact duplicates) - disabled/illustrative counts don't affect the exit
   code, per above.
 
+### Post-v1 addition: `rules analyze` folded into `rules validate`
+
+The standalone `codeguard rules analyze` command described just above was later removed. Its
+checks - `RuleSetAnalyzer.Analyze`/`RuleAnalysisReport`, unchanged - are now invoked directly from
+`ValidateCommand.cs` (`CodeGuard.Cli/Commands/Rules/ValidateCommand.cs`) and rendered by
+`RuleValidationReportWriter` as an additional "Rule analysis:" console/JSON section, alongside the
+"Source checks:"/"Version checks:" sections already produced there. `RuleAnalysisReportWriter.cs`
+and `AnalyzeCommand.cs` were deleted; their console-rendering logic moved into
+`RuleValidationReportWriter` as a private helper.
+
+Motivation was the same precedent `RuleSourceChecker`'s doc-drift checking set for folding a
+non-fatal supplementary check into `rules validate` instead of shipping it as its own command (see
+`docs/done/RULE_SOURCE_AND_LINKED_DOCUMENTATION.md`) - `rules analyze` was never wired into CI (only
+`rules validate`/`rules test` were), reused `rules validate`'s own structural pass as a
+prerequisite, and its exit-code semantics were a separate, narrower concern layered on top of the
+same underlying data. Exit-code semantics are unchanged by the merge: `rules validate`'s exit code
+is still governed only by schema/structural validity and (now) version-fingerprint drift - every
+analyze-derived finding (missing/one-sided tests, disabled/illustrative rules, unreachable
+assertions, exact-duplicate rules, missing provenance) stays purely informational, exactly as it
+was under the standalone command.
+
 ### Post-v1 addition: `metadata.source` (rule provenance)
 
 Design doc: `docs/HIGH_LEVEL_AI_ASSISTING.md` §6/§19 (the provenance slice of Phase 2 of §27) - see

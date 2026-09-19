@@ -350,12 +350,13 @@ Existing commands should remain compatible.
 
 ```bash
 codeguard validate        # evaluate a repository (--format console|json|sarif|html)
-codeguard rules validate  # structural validation of a rule set (--format console|json)
+codeguard rules validate  # structural validation of a rule set, plus a non-fatal "Rule analysis:"
+                          # section (--format console|json; Tier 1 + opportunistic Tier 2 findings,
+                          # see §14 - this used to be a separate `rules analyze` command)
 codeguard rules test      # run rules' embedded tests: cases (--format console|json)
 codeguard rules list      # (--format table|json)
 codeguard rules explain   # --format console|json; see §13
 codeguard rules discover  # --format console|json|markdown; see §12
-codeguard rules analyze   # --format console|json; Tier 1 + opportunistic Tier 2 only, see §14
 codeguard setup           # configure the rule source
 codeguard info            # show the resolved rule source and counts
 ```
@@ -591,9 +592,18 @@ This is useful both for developers and AI agents.
 **Implemented — Tier 1 and Tier 2, exactly as scoped below.** Tier 3 remains explicitly out of
 scope, per this section's own original guidance.
 
+**Note:** the standalone `rules analyze` command described in this section was later folded into
+`rules validate` as an additional, always-non-fatal "Rule analysis:" report section — see §9/§10
+and `docs/IMPLEMENTATION_STATUS.md`'s corresponding entry for why (the same "fold non-fatal
+supplementary checks into `validate`" precedent `RuleSourceChecker` set — see
+`docs/done/RULE_SOURCE_AND_LINKED_DOCUMENTATION.md`). The Tier 1/2/3 design below is otherwise
+still accurate; it now describes a report section rather than a separate command, and the
+underlying `RuleSetAnalyzer`/`RuleAnalysisReport` types are unchanged.
+
 This capability analyses a rule collection for mechanically detectable problems, beyond what `rules
-validate` checks (structural correctness) — a rule set can be 100% valid and still have these
-findings, so a non-empty report isn't the same signal as a failing `rules validate`.
+validate`'s own structural checks cover — a rule set can be 100% structurally valid and still have
+these findings, so a non-empty "Rule analysis:" section isn't the same signal as `rules validate`
+failing its exit code.
 
 These checks are **not** of comparable cost, and listing them as one bullet list would have led to
 them being treated as one piece of work. They split into three tiers:
@@ -841,8 +851,9 @@ metadata:
 
 `document`/`section` are free text — never resolved against a real file, never used by the engine
 for grouping or lookup (see §6 for why). `codeguard rules explain --format json` surfaces it under
-`metadata.source`, and `codeguard rules analyze` counts rules missing it (informational only — see
-§14; a rule set legitimately having none, like this repo's own `examples/rules/`, isn't a problem).
+`metadata.source`, and `codeguard rules validate`'s "Rule analysis:" section counts rules missing
+it (informational only — see §14; a rule set legitimately having none, like this repo's own
+`examples/rules/`, isn't a problem).
 
 This provides an answer to:
 
@@ -1172,6 +1183,10 @@ codeguard rules analyze
 Tier 1 and Tier 2 from §14 both implemented, ahead of Phase 2 as anticipated — only the "missing
 provenance" line item still needs it, and remains skipped. Tier 3 is explicitly out of scope.
 
+**Later folded into `rules validate`** as a "Rule analysis:" report section — see §14's note and
+`docs/IMPLEMENTATION_STATUS.md`. The `codeguard rules analyze` command shown above no longer
+exists; the checks themselves are unchanged.
+
 ### Phase 4 — MCP
 
 Seven of the eight tools below (everything except `validate_repository`) need no MSBuild and no
@@ -1193,6 +1208,10 @@ explain_rule
 analyze_rules
 validate_repository
 ```
+
+(`analyze_rules` would now be exposed as part of `validate_rule`'s output rather than a separate
+tool, per the `rules analyze` → `rules validate` merge described in §14's note — naming here is
+still provisional, per the note below.)
 
 (This previously listed only six of the eight tools named in §15 while still saying "the eight
 tools below" — `list_rules`/`get_rule` were missing. Both are as cheap as the other non-

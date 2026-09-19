@@ -243,12 +243,14 @@ diff, since CI enforces this.
    `CodeGuard.Analyzers.Repository.Tests` (RepositoryFileProvider).
 3. `dotnet run --project src/CodeGuard.Cli -- rules validate --rules-source examples/rules`
    and `rules test --rules-source examples/rules` — confirms the migrated rules
-   (step 2) still pass and nothing else in the 125-rule set silently broke.
+   (step 2) still pass and nothing else in the 125-rule set silently broke. (At the
+   time this was verified, the rule-set-level sanity check below was a separate
+   `rules analyze` command; it has since been folded into `rules validate`'s own
+   output as a "Rule analysis:" section, so this single step now also covers it.)
 4. `dotnet run --project src/CodeGuard.Cli -- rules discover --format markdown` and
    `scripts/sync-skill-references.sh` — confirm no diff against `skills/codeguard-rule-generation/references/`.
-5. `dotnet run --project src/CodeGuard.Cli -- rules analyze --rules-source examples/rules`
-   — sanity check the widened `must_match_name` `AppliesTo` didn't flip any rule's
-   reachability analysis.
+5. Sanity check the widened `must_match_name` `AppliesTo` didn't flip any rule's
+   reachability analysis — covered by step 3's `rules validate` run above.
 6. Optionally, hand-author one new example rule exercising the new capability
    (folder-scoped filename suffix convention via `must_all_match` + `file`
    selector's `name` param) to confirm the end-to-end authoring experience works,

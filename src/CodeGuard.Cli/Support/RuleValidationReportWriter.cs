@@ -1,4 +1,5 @@
 using System.Text.Json;
+using CodeGuard.Configuration.Analysis;
 using CodeGuard.Configuration.Sources;
 using CodeGuard.Configuration.Validation;
 using CodeGuard.Configuration.Versioning;
@@ -41,13 +42,18 @@ public static class RuleValidationReportWriter
     /// `rules validate` only - prints everything <see cref="WriteConsole(RuleSetValidationReport,TextWriter)"/>
     /// does, plus a "Source checks" section for any `metadata.source.file` drift found by
     /// <see cref="RuleSourceChecker"/> (always warnings, never reflected in <paramref name="report"/>'s
-    /// own pass/fail counts or exit code - see docs/done/RULE_SOURCE_AND_LINKED_DOCUMENTATION.md), and
-    /// a "Version checks" section for any drift found by <see cref="RuleVersionChecker"/>, checked
+    /// own pass/fail counts or exit code - see docs/done/RULE_SOURCE_AND_LINKED_DOCUMENTATION.md), a
+    /// "Version checks" section for any drift found by <see cref="RuleVersionChecker"/>, checked
     /// unconditionally for every rule with no opt-in (these ARE failures - see
-    /// docs/RULE_VERSIONING_PLAN.md). Each section is omitted entirely when there's nothing to report.
+    /// docs/RULE_VERSIONING_PLAN.md), and a "Rule analysis" section (rule-set-level findings from
+    /// <see cref="RuleSetAnalyzer"/> - this used to be a separate `rules analyze` command; folded in
+    /// here for the same reason source checks were: see docs/done/RULE_SOURCE_AND_LINKED_DOCUMENTATION.md).
+    /// The source/version sections are omitted entirely when there's nothing to report; the analysis
+    /// section is a dashboard shown whenever at least one rule parsed, always non-fatal.
     /// </summary>
     public static void WriteConsole(
-        RuleSetValidationReport report, RuleSourceCheckReport sourceReport, RuleVersionCheckReport versionReport, TextWriter writer)
+        RuleSetValidationReport report, RuleSourceCheckReport sourceReport, RuleVersionCheckReport versionReport,
+        RuleAnalysisReport analysisReport, TextWriter writer)
     {
         WriteConsole(report, writer);
 
@@ -70,6 +76,11 @@ public static class RuleValidationReportWriter
                 WriteVersionIssue(writer, issue);
             }
         }
+
+        if (report.Rules.Count > 0)
+        {
+            WriteAnalysisSection(writer, analysisReport);
+        }
     }
 
     public static void WriteJson(RuleSetValidationReport report, TextWriter writer)
@@ -85,7 +96,8 @@ public static class RuleValidationReportWriter
 
     /// <summary>`rules validate` only - see the console overload's remarks.</summary>
     public static void WriteJson(
-        RuleSetValidationReport report, RuleSourceCheckReport sourceReport, RuleVersionCheckReport versionReport, TextWriter writer)
+        RuleSetValidationReport report, RuleSourceCheckReport sourceReport, RuleVersionCheckReport versionReport,
+        RuleAnalysisReport analysisReport, TextWriter writer)
     {
         var summary = new RuleValidationSummaryWithSources(
             report.Rules.Count + report.Issues.Count,
@@ -99,7 +111,8 @@ public static class RuleValidationReportWriter
             versionReport.Issues
                 .OrderBy(i => i.RuleId, StringComparer.Ordinal)
                 .Select(ToVersionCheckEntry)
-                .ToList());
+                .ToList(),
+            ToAnalysisSummary(analysisReport));
 
         writer.WriteLine(JsonSerializer.Serialize(summary, JsonOptions));
     }
@@ -154,6 +167,67 @@ public static class RuleValidationReportWriter
         }
     }
 
+    /// <summary>
+    /// Unlike "Source checks:"/"Version checks:" (omitted when clean), this prints unconditionally
+    /// whenever there's at least one parsed rule - it's a dashboard of counts every rule set has, not
+    /// an opt-in or rare feature, matching what the standalone `rules analyze` command always printed.
+    /// </summary>
+    private static void WriteAnalysisSection(TextWriter writer, RuleAnalysisReport report)
+    {
+        writer.WriteLine();
+        writer.WriteLine("Rule analysis:");
+        writer.WriteLine($"  {"Rules:",-25}{report.RuleCount}");
+        writer.WriteLine($"  {"Rules without tests:",-25}{report.RulesWithoutTests.Count}");
+        writer.WriteLine($"  {"One-sided tests:",-25}{report.OneSidedTestRules.Count}");
+        writer.WriteLine($"  {"Disabled rules:",-25}{report.DisabledRules.Count}");
+        writer.WriteLine($"  {"Illustrative rules:",-25}{report.IllustrativeRules.Count}");
+        writer.WriteLine($"  {"Missing provenance:",-25}{report.RulesMissingProvenance.Count}");
+        writer.WriteLine($"  {"Unreachable assertions:",-25}{report.UnreachableRules.Count}");
+        writer.WriteLine($"  {"Exact-duplicate rules:",-25}{report.ExactDuplicateRules.Count}");
+
+        WriteAnalysisList(writer, "Rules without tests", report.RulesWithoutTests);
+        WriteAnalysisList(writer, "One-sided tests (missing a pass or fail case)", report.OneSidedTestRules);
+        WriteAnalysisList(writer, "Disabled rules", report.DisabledRules);
+        WriteAnalysisList(writer, "Illustrative rules", report.IllustrativeRules);
+        WriteAnalysisList(writer, "Missing provenance", report.RulesMissingProvenance);
+
+        if (report.UnreachableRules.Count > 0)
+        {
+            writer.WriteLine();
+            writer.WriteLine("  Unreachable assertions:");
+            foreach (var issue in report.UnreachableRules)
+            {
+                writer.WriteLine(
+                    $"    - {issue.RuleId}: '{issue.AssertionKind}' cannot apply to a '{issue.TargetKind}' target ({issue.SourceFile})");
+            }
+        }
+
+        if (report.ExactDuplicateRules.Count > 0)
+        {
+            writer.WriteLine();
+            writer.WriteLine("  Exact-duplicate rules:");
+            foreach (var group in report.ExactDuplicateRules)
+            {
+                writer.WriteLine($"    - {string.Join(", ", group.RuleIds)}");
+            }
+        }
+    }
+
+    private static void WriteAnalysisList(TextWriter writer, string title, IReadOnlyList<string> ruleIds)
+    {
+        if (ruleIds.Count == 0)
+        {
+            return;
+        }
+
+        writer.WriteLine();
+        writer.WriteLine($"  {title}:");
+        foreach (var ruleId in ruleIds)
+        {
+            writer.WriteLine($"    - {ruleId}");
+        }
+    }
+
     private static string Summarize(string? content)
     {
         if (string.IsNullOrEmpty(content))
@@ -181,6 +255,23 @@ public static class RuleValidationReportWriter
         issue.RecordedFingerprint,
         issue.ComputedFingerprint);
 
+    /// <summary>
+    /// Deliberately drops <see cref="RuleAnalysisReport.InvalidRules"/>/<see cref="RuleAnalysisReport.DuplicateIds"/>
+    /// - they're literally <c>report.Issues</c> split by <see cref="RuleErrorCodes.DuplicateRuleId"/>,
+    /// i.e. the same entries already at the JSON's top-level <c>issues</c>. A consumer wanting just
+    /// the duplicate-id ones can filter <c>issues</c> by that error code instead of seeing it twice.
+    /// </summary>
+    private static RuleAnalysisSummary ToAnalysisSummary(RuleAnalysisReport report) => new(
+        report.RuleCount,
+        report.RulesWithoutTests,
+        report.OneSidedTestRules,
+        report.DisabledRules,
+        report.IllustrativeRules,
+        report.RulesMissingProvenance,
+        report.UnreachableRules,
+        report.ExactDuplicateRules,
+        report.HasFindings);
+
     private sealed record RuleValidationSummary(
         int FilesChecked,
         int FilesPassed,
@@ -193,7 +284,8 @@ public static class RuleValidationReportWriter
         bool IsValid,
         IReadOnlyList<RuleFileIssue> Issues,
         IReadOnlyList<SourceCheckEntry> SourceChecks,
-        IReadOnlyList<VersionCheckEntry> VersionChecks);
+        IReadOnlyList<VersionCheckEntry> VersionChecks,
+        RuleAnalysisSummary Analysis);
 
     private sealed record SourceCheckEntry(
         string RuleId,
@@ -206,4 +298,20 @@ public static class RuleValidationReportWriter
         IReadOnlyList<int> AmbiguousHeadingLines);
 
     private sealed record VersionCheckEntry(string RuleId, string Kind, string? RecordedFingerprint, string ComputedFingerprint);
+
+    /// <summary>
+    /// `HasFindings` is purely informational here - see <see cref="RuleAnalysisReport.HasFindings"/>'s
+    /// own doc comment. `rules validate`'s exit code never reads it; only schema/structural validity
+    /// and version-fingerprint drift do (<see cref="ValidateCommand"/>).
+    /// </summary>
+    private sealed record RuleAnalysisSummary(
+        int RuleCount,
+        IReadOnlyList<string> RulesWithoutTests,
+        IReadOnlyList<string> OneSidedTestRules,
+        IReadOnlyList<string> DisabledRules,
+        IReadOnlyList<string> IllustrativeRules,
+        IReadOnlyList<string> RulesMissingProvenance,
+        IReadOnlyList<UnreachableAssertionIssue> UnreachableRules,
+        IReadOnlyList<ExactDuplicateGroup> ExactDuplicateRules,
+        bool HasFindings);
 }

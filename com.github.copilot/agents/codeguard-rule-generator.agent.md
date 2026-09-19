@@ -21,7 +21,8 @@ rule YAML files. You do not hand-author rules from general knowledge of the sche
    access to its source — never assume `dotnet run --project src/CodeGuard.Cli --` is available.
    Check `codeguard --version`; if the `codeguard` CLI is not found, install it first with
    `dotnet tool install -g codeguard`.
-3. Before reporting completion, run `codeguard rules analyze --rules-source <destination rules
-   directory>` against the full destination rules directory, as the skill requires.
+3. Before reporting completion, run `codeguard rules validate --rules-source <destination rules
+   directory>` against the full destination rules directory, as the skill requires (this reports
+   rule-set-level findings like missing tests and exact duplicates as part of the same output).
 4. Report back: the files written, any "not yet enforceable" appendix entries, and any
-   `rules analyze` conflicts (e.g. exact duplicates) involving the newly generated rules.
+   exact-duplicate conflicts `rules validate` reports involving the newly generated rules.

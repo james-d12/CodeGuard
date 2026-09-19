@@ -24,6 +24,105 @@ public sealed class ValidateCommandTests : IDisposable
 
         Assert.Equal(0, exitCode);
         Assert.Contains("Checked 2 rule files: 2 passed, 0 failed.", output);
+        Assert.Contains("Rule analysis:", output);
+        Assert.Contains("Rules without tests:", output);
+    }
+
+    // The following cover the rule-set-level checks folded in from the former standalone `rules
+    // analyze` command (docs/IMPLEMENTATION_STATUS.md) - always non-fatal, unlike structural/version
+    // checks above.
+
+    [Fact]
+    public async Task Run_RuleWithoutTests_ExitsZeroAndListsItInAnalysisSection()
+    {
+        WriteValidRuleFile("a.yml", RuleYaml("DDD-ENTITY-001"));
+
+        var (exitCode, output) = await RunValidateRules();
+
+        Assert.Equal(0, exitCode);
+        Assert.Contains("Rule analysis:", output);
+        Assert.Contains("Rules without tests:", output);
+        Assert.Contains("DDD-ENTITY-001", output);
+    }
+
+    [Fact]
+    public async Task Run_JsonFormat_ReportsAnalysisFindings()
+    {
+        WriteValidRuleFile("a.yml", RuleYaml("DDD-ENTITY-001"));
+
+        var (exitCode, output) = await RunValidateRules(["--format", "json"]);
+
+        Assert.Equal(0, exitCode);
+        Assert.Contains("\"rulesWithoutTests\"", output);
+        Assert.Contains("DDD-ENTITY-001", output);
+    }
+
+    [Fact]
+    public async Task Run_DisabledRule_ExitsZeroAndReportsCountWithNoStructuralOrSourceFailure()
+    {
+        var yaml = string.Join('\n', new[]
+        {
+            "id: DDD-ENTITY-001",
+            "name: Some rule",
+            "enabled: false",
+            "target:",
+            "  kind: class",
+            "  namespace: \"Contoso.Domain.Entities\"",
+            "assertions:",
+            "  - must_inherit_from:",
+            "      type: \"Contoso.Domain.Entity<TId>\""
+        });
+        WriteValidRuleFile("a.yml", yaml);
+
+        var (exitCode, output) = await RunValidateRules();
+
+        Assert.Equal(0, exitCode);
+        Assert.Contains("Rule analysis:", output);
+        Assert.Contains("DDD-ENTITY-001", output);
+        Assert.DoesNotContain("Source checks:", output);
+    }
+
+    [Fact]
+    public async Task Run_ExactDuplicateRules_ExitsZeroAndListsBothIdsInAnalysisSection()
+    {
+        WriteValidRuleFile("a.yml", RuleYaml("DDD-ENTITY-001"));
+        WriteValidRuleFile("b.yml", RuleYaml("DDD-ENTITY-002"));
+
+        var (exitCode, output) = await RunValidateRules();
+
+        Assert.Equal(0, exitCode);
+        Assert.Contains("Exact-duplicate rules:", output);
+        Assert.Contains("DDD-ENTITY-001, DDD-ENTITY-002", output);
+    }
+
+    /// <summary>
+    /// A rule can never be both structurally invalid AND trigger an analysis finding:
+    /// <c>RuleSetAnalyzer.Analyze</c> only ever iterates <c>validation.Rules</c> (successfully parsed
+    /// entries) - a structurally-invalid file never makes it into <c>Rules</c>, it's only ever in
+    /// <c>Issues</c>. So this test uses two separate rule files to prove the two kinds of findings
+    /// coexist correctly in one run rather than trying to force both onto a single rule.
+    /// </summary>
+    [Fact]
+    public async Task Run_AnalysisFindingAlongsideAStructuralError_StillExitsOneAndStillReportsTheFinding()
+    {
+        WriteRuleFile("bad.yml", """
+            id: DDD-ENTITY-001
+            name: Some rule
+            target:
+              kind: not_a_real_kind
+            assertions:
+              - must_inherit_from:
+                  type: "Contoso.Domain.Entity<TId>"
+            """);
+        WriteValidRuleFile("ok.yml", RuleYaml("DDD-ENTITY-002"));
+
+        var (exitCode, output) = await RunValidateRules();
+
+        Assert.Equal(1, exitCode);
+        Assert.Contains("not_a_real_kind", output);
+        Assert.Contains("Rule analysis:", output);
+        Assert.Contains("Rules without tests:", output);
+        Assert.Contains("DDD-ENTITY-002", output);
     }
 
     [Fact]

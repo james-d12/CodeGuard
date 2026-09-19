@@ -132,9 +132,8 @@ this repo, use `dotnet run --project src/CodeGuard.Cli -- <command>` instead.
 | `validate` | Validate a repository against configured rules |
 | `rules list` | List rules discovered from the configured rule directories |
 | `rules explain <ruleId>` | Print full metadata and source YAML for a single rule |
-| `rules validate` | Validate a set of rule YAML files for structural correctness (not run against a repository) |
+| `rules validate` | Validate a set of rule YAML files for structural correctness (not run against a repository); also reports rule-set-level findings — missing/one-sided tests, unreachable assertions, exact-duplicate rules — as a non-fatal "Rule analysis:" section |
 | `rules test` | Run rules' embedded `tests:` cases against a virtual analysis model (no repository, no disk I/O) |
-| `rules analyze` | Check a rule set for problems beyond structural validity: missing/one-sided tests, unreachable assertions, exact-duplicate rules |
 | `rules discover` | List every selector, assertion, and analyzer kind the engine supports, with their parameters — reads no rule files |
 | `setup` | Configure the rules source (a directory or git repo) used across all repos |
 | `info` | Show where rules are configured from and how many were discovered |
@@ -155,9 +154,8 @@ Command-specific options:
 | `validate` | `--format console\|json\|sarif\|html`, `--output <file>`, `--rule <id>` (repeatable), `--solution <file>` (repeatable), `--severity-threshold`, `--fail-on`, `--color` / `--no-color`, `--max-parallelism` |
 | `rules list` | `--format table\|json`, `--tag`, `--enabled-only` |
 | `rules explain` | `--format console\|json` |
-| `rules validate` | `--format console\|json` |
+| `rules validate` | `--format console\|json`, `--update-fingerprints` |
 | `rules test` | `--format console\|json`, `--rule <id>` (repeatable) |
-| `rules analyze` | `--format console\|json` |
 | `rules discover` | `--format console\|json\|markdown`, `--section selectors\|assertions\|analyzers` (with `markdown`) |
 | `setup` | `--source`, `--branch`, `--type directory\|git` (see below) |
 
@@ -288,7 +286,8 @@ validated against the JSON Schema described above (see `examples/rules/` for sam
 ## Further reading
 
 - `docs/PRIMITIVES.md`: original design rationale
-- `docs/HIGH_LEVEL_AI_ASSISTING.md`: AI-assisted rule authoring — `rules discover`/`rules analyze`,
-  rule provenance (`metadata.source`), and the `codeguard-rule-generation` skill under `skills/`
+- `docs/HIGH_LEVEL_AI_ASSISTING.md`: AI-assisted rule authoring — `rules discover`, `rules
+  validate`'s "Rule analysis:" section, rule provenance (`metadata.source`), and the
+  `codeguard-rule-generation` skill under `skills/`
 - `docs/done/SETUP_COMMAND_PLAN.md`: design of the `setup` command and rule-source resolution
 - `CLAUDE.md`: contributor/agent guidance, architecture detail, and known gotchas

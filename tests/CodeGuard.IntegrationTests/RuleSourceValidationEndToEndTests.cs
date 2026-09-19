@@ -121,8 +121,31 @@ public class RuleSourceValidationEndToEndTests
         }
     }
 
-    private static string SourceChecksSection(string output) =>
-        output.Contains("Source checks:") ? output[output.IndexOf("Source checks:", StringComparison.Ordinal)..] : "";
+    /// <summary>
+    /// Bounds the slice to the next section header ("Version checks:"/"Rule analysis:") rather than
+    /// running to the end of the output - `rules validate` prints further sections after "Source
+    /// checks:" now, so an unbounded slice would incidentally pick up rule ids mentioned there too.
+    /// </summary>
+    private static string SourceChecksSection(string output)
+    {
+        if (!output.Contains("Source checks:", StringComparison.Ordinal))
+        {
+            return "";
+        }
+
+        var start = output.IndexOf("Source checks:", StringComparison.Ordinal);
+        var end = output.Length;
+        foreach (var marker in new[] { "Version checks:", "Rule analysis:" })
+        {
+            var markerIndex = output.IndexOf(marker, start, StringComparison.Ordinal);
+            if (markerIndex >= 0 && markerIndex < end)
+            {
+                end = markerIndex;
+            }
+        }
+
+        return output[start..end];
+    }
 
     private static async Task<(int ExitCode, string Output)> RunValidate(string repoRoot, params string[] extraArgs)
     {

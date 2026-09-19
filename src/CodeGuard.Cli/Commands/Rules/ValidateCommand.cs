@@ -1,5 +1,7 @@
 using System.CommandLine;
 using CodeGuard.Cli.Support;
+using CodeGuard.Configuration.Analysis;
+using CodeGuard.Configuration.Capabilities;
 using CodeGuard.Configuration.Sources;
 using CodeGuard.Configuration.Versioning;
 using Microsoft.Extensions.Logging;
@@ -44,8 +46,11 @@ public static class ValidateCommand
             "recorded versionFingerprint, checked unconditionally for every rule with no opt-in (fails " +
             "the exit code - see docs/RULE_VERSIONING_PLAN.md). These are the only cases this command " +
             "reads files outside the configured rules directory (source) or re-derives content from " +
-            "rules already loaded (version). Use --rules-source to point directly at a folder; " +
-            "otherwise validates whatever this repo is configured to use.");
+            "rules already loaded (version). Also reports (never fails the exit code) rule-set-level " +
+            "findings - missing/one-sided tests, disabled/illustrative rules, unreachable assertions, " +
+            "and exact-duplicate rules - the same checks the former standalone `rules analyze` command " +
+            "used to report separately. Use --rules-source to point directly at a folder; otherwise " +
+            "validates whatever this repo is configured to use.");
         command.Add(pathOption);
         command.Add(configOption);
         command.Add(rulesSourceOption);
@@ -88,17 +93,25 @@ public static class ValidateCommand
                 versionReport = UpdateVersionFingerprints(versionReport, Console.Out);
             }
 
+            var analysisReport = RuleSetAnalyzer.Analyze(report, CapabilityCatalog.Create());
+            logger.LogInformation(
+                "Rule analysis: {MissingTestsCount} without tests, {OneSidedCount} one-sided, " +
+                "{UnreachableCount} unreachable assertion(s), {ExactDuplicateCount} exact-duplicate group(s)",
+                analysisReport.RulesWithoutTests.Count, analysisReport.OneSidedTestRules.Count,
+                analysisReport.UnreachableRules.Count, analysisReport.ExactDuplicateRules.Count);
+
             if (parseResult.GetValue(formatOption) == "json")
             {
-                RuleValidationReportWriter.WriteJson(report, sourceReport, versionReport, Console.Out);
+                RuleValidationReportWriter.WriteJson(report, sourceReport, versionReport, analysisReport, Console.Out);
             }
             else
             {
-                RuleValidationReportWriter.WriteConsole(report, sourceReport, versionReport, Console.Out);
+                RuleValidationReportWriter.WriteConsole(report, sourceReport, versionReport, analysisReport, Console.Out);
             }
 
             // Source-check findings never affect this - see docs/done/RULE_SOURCE_AND_LINKED_DOCUMENTATION.md
-            // ("No Automatic Decisions"). Version-check findings do - see docs/RULE_VERSIONING_PLAN.md.
+            // ("No Automatic Decisions"). Rule-analysis findings never affect this either, same reasoning.
+            // Version-check findings do - see docs/RULE_VERSIONING_PLAN.md.
             return Task.FromResult(report.IsValid && versionReport.IsValid ? 0 : 1);
         });
 

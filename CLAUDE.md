@@ -28,9 +28,8 @@ dotnet test --filter "FullyQualifiedName~MustInheritFromAssertionTests"  # run a
 # This repo's own rules live in examples/rules/, so most commands need --rules-source.
 dotnet run --project src/CodeGuard.Cli -- rules list     --rules-source examples/rules
 dotnet run --project src/CodeGuard.Cli -- rules explain  DDD-ENTITY-001 --rules-source examples/rules --format json
-dotnet run --project src/CodeGuard.Cli -- rules validate --rules-source examples/rules
+dotnet run --project src/CodeGuard.Cli -- rules validate --rules-source examples/rules  # also reports rule-set-level problems (missing tests, unreachable assertions, exact duplicates) as a non-fatal "Rule analysis:" section
 dotnet run --project src/CodeGuard.Cli -- rules test     --rules-source examples/rules  # embedded tests:, no repo/disk
-dotnet run --project src/CodeGuard.Cli -- rules analyze  --rules-source examples/rules  # rule-set-level problems (missing tests, unreachable assertions, exact duplicates), no repo/disk
 dotnet run --project src/CodeGuard.Cli -- rules discover --format json                  # engine's full selector/assertion/analyzer vocabulary, reads no rule files
 dotnet run --project src/CodeGuard.Cli -- info
 dotnet run --project src/CodeGuard.Cli -- validate       # self-validation completes end-to-end, see "Known limitation" below
@@ -150,9 +149,12 @@ assertions — the `CandidateKind` produced/accepted). `CapabilityCatalog.Create
 (`CapabilityCatalogTests`) fails the build if a parser and its descriptor drift apart. This
 backs `rules discover` (prints the engine's actual vocabulary; `--format markdown` is what
 `scripts/sync-skill-references.sh` consumes to regenerate the skill's reference tables above) and
-`rules analyze` (rule-set-level checks: missing/one-sided tests, unreachable assertions — an
-assertion whose `AppliesTo` doesn't include its target selector's `Produces` — and exact-duplicate
-rules). Adding a new selector/assertion/analyzer means adding its `Descriptor` too, or
+`rules validate`'s "Rule analysis:" section (rule-set-level checks: missing/one-sided tests,
+unreachable assertions — an assertion whose `AppliesTo` doesn't include its target selector's
+`Produces` — and exact-duplicate rules; this used to be a separate `rules analyze` command, folded
+into `rules validate` for the same reason source-drift checking was — see
+`docs/done/RULE_SOURCE_AND_LINKED_DOCUMENTATION.md`). Adding a new selector/assertion/analyzer means
+adding its `Descriptor` too, or
 `CapabilityCatalogTests` fails. See `docs/HIGH_LEVEL_AI_ASSISTING.md` for the design rationale and
 `docs/IMPLEMENTATION_STATUS.md` for full build detail on this and `metadata.source` (optional rule
 provenance — `document`/`section`/`statement`, surfaced by `rules explain --format json`).
