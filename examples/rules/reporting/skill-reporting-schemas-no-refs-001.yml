@@ -39,3 +39,4 @@ tests:
             - id: Newtonsoft.Json
               version: "13.0.3"
     expect: fail
+versionFingerprint: sha256:10e6e15a1914a2a0a33222decee5a624b03396d4427bc844fca22533893b35da

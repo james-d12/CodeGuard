@@ -40,3 +40,4 @@ tests:
         - invokedMember: "Result"
           containingType: Contoso.Domain.OrderService
     expect: fail
+versionFingerprint: sha256:13178e07153c1c42cc79cde539bb473a3b8075a9244029a5e6f3eebfb4e2636b

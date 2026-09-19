@@ -40,3 +40,4 @@ tests:
         - path: "src/Api/Properties/launchSettings.json"
           content: '{"profiles": {"http": {}}}'
     expect: fail
+versionFingerprint: sha256:ccb967f2c814e981cede82630ba12045bfc138a48f28f80e1397eb9fecb57cf4

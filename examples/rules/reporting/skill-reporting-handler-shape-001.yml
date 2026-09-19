@@ -47,3 +47,4 @@ tests:
           methods:
             - name: HandleAsync
     expect: fail
+versionFingerprint: sha256:901509afa74d08c767d9bdb1ac67ba94d5a5e1bc62e47ab0a1e96d471b95a7bd

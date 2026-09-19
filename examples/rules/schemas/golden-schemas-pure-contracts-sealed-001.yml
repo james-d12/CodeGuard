@@ -37,3 +37,4 @@ tests:
           kind: record
           namespace: Contoso.Schemas
     expect: fail
+versionFingerprint: sha256:3f4c88015c810f1b20a342a0e0d6c014041733d92a4b6ad0dc7c61410fe4e219

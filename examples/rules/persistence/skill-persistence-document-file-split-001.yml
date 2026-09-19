@@ -40,3 +40,4 @@ tests:
           namespace: Contoso.Persistence.Documents
           filePath: Documents.cs
     expect: fail
+versionFingerprint: sha256:a89658122c2bcd3bc6eedaab5aff3309f4d1b73e05ecd6271e5cd15bc1820115

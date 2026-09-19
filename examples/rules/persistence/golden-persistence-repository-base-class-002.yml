@@ -19,3 +19,4 @@ illustrative: true
 analyzer:
   kind: no-pure-delegation-override
   base_type_pattern: "*DomainEntityRepository*"
+versionFingerprint: sha256:3556041facd2ccc7982f75e55889144b3cfa0fe0a6805e374e2336cd2ee58fa5

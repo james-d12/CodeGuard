@@ -113,6 +113,7 @@ public static class ListCommand
         }
 
         const string idHeader = "ID";
+        const string versionHeader = "VERSION";
         const string severityHeader = "SEVERITY";
         const string enforcementHeader = "ENFORCEMENT";
         const string enabledHeader = "ENABLED";
@@ -122,6 +123,7 @@ public static class ListCommand
         var rows = rules
             .Select(rule => (
                 Id: rule.Id,
+                Version: rule.Version.ToString(),
                 Severity: rule.Severity.ToString(),
                 Enforcement: rule.Enforcement.Classification.ToString(),
                 Enabled: rule.Enabled.ToString(),
@@ -129,24 +131,26 @@ public static class ListCommand
             .ToList();
 
         var idWidth = Math.Max(idHeader.Length, rows.Max(r => r.Id.Length)) + columnGap;
+        var versionWidth = Math.Max(versionHeader.Length, rows.Max(r => r.Version.Length)) + columnGap;
         var severityWidth = Math.Max(severityHeader.Length, rows.Max(r => r.Severity.Length)) + columnGap;
         var enforcementWidth = Math.Max(enforcementHeader.Length, rows.Max(r => r.Enforcement.Length)) + columnGap;
         var enabledWidth = Math.Max(enabledHeader.Length, rows.Max(r => r.Enabled.Length)) + columnGap;
 
         Console.WriteLine(
-            $"{idHeader.PadRight(idWidth)}{severityHeader.PadRight(severityWidth)}{enforcementHeader.PadRight(enforcementWidth)}{enabledHeader.PadRight(enabledWidth)}{tagsHeader}");
-        Console.WriteLine(new string('-', idWidth + severityWidth + enforcementWidth + enabledWidth + tagsHeader.Length));
+            $"{idHeader.PadRight(idWidth)}{versionHeader.PadRight(versionWidth)}{severityHeader.PadRight(severityWidth)}{enforcementHeader.PadRight(enforcementWidth)}{enabledHeader.PadRight(enabledWidth)}{tagsHeader}");
+        Console.WriteLine(new string('-', idWidth + versionWidth + severityWidth + enforcementWidth + enabledWidth + tagsHeader.Length));
 
         foreach (var row in rows)
         {
             Console.WriteLine(
-                $"{row.Id.PadRight(idWidth)}{row.Severity.PadRight(severityWidth)}{row.Enforcement.PadRight(enforcementWidth)}{row.Enabled.PadRight(enabledWidth)}{row.Tags}");
+                $"{row.Id.PadRight(idWidth)}{row.Version.PadRight(versionWidth)}{row.Severity.PadRight(severityWidth)}{row.Enforcement.PadRight(enforcementWidth)}{row.Enabled.PadRight(enabledWidth)}{row.Tags}");
         }
     }
 
     private sealed record RuleSummary(
         string Id,
         string Name,
+        int Version,
         Severity Severity,
         EnforcementClassification Enforcement,
         IReadOnlyList<string> Tags,
@@ -154,7 +158,7 @@ public static class ListCommand
         bool Illustrative)
     {
         public static RuleSummary From(RuleDefinition rule) => new(
-            rule.Id, rule.Name, rule.Severity, rule.Enforcement.Classification,
+            rule.Id, rule.Name, rule.Version, rule.Severity, rule.Enforcement.Classification,
             rule.Tags, rule.Enabled, rule.Illustrative);
     }
 }

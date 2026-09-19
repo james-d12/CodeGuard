@@ -19,3 +19,4 @@ analyzer:
   namespace: "Contoso.Application.*"
   min_catches: 1
   max_catches: 1
+versionFingerprint: sha256:34508cdd901681a9c337de184d516284ef70efccc2c0139d76e1fbb20f0ddd9c

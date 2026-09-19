@@ -40,3 +40,4 @@ tests:
           containingType: Contoso.Domain.Order
           targetMemberName: FrozenSnapshot
     expect: fail
+versionFingerprint: sha256:19c2b0a90071c6e43a51aed8300cec699e5ed47548f2f5b6112ea868fdf714d7

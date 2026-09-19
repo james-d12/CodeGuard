@@ -43,3 +43,4 @@ tests:
           invokedMember: "OrderPersistenceProcessorInput"
           project: Contoso.Reporting.Handlers
     expect: fail
+versionFingerprint: sha256:84af4e6154c5acc28456239a594589b407e045a5494b759bddc7a9367181edf7

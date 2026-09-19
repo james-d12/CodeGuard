@@ -46,3 +46,4 @@ tests:
         - name: PlaceOrder
           namespace: Contoso.Application.Commands
     expect: fail
+versionFingerprint: sha256:9686bb368ab280c354d061bad2727ac1d1d6856ecf7d6fc0c20a3afdba207e7d

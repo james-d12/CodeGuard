@@ -43,3 +43,4 @@ tests:
         - name: OrderRepository
           namespace: Contoso.Domain.Entities
     expect: fail
+versionFingerprint: sha256:4613944376baa24fffbafea8c88fc86fb526d45c74e966542ff7cf3bb395aa1e

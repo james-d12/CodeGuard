@@ -40,3 +40,4 @@ tests:
           namespace: Contoso.Domain.Entities
           interfaces: [Contoso.Domain.IAggregateRoot]
     expect: fail
+versionFingerprint: sha256:7afd1cd894b95caab4274236b9e12b08cb0d636bf234a84244b20afacc44b7d9

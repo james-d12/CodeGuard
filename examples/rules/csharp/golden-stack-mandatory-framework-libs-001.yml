@@ -47,3 +47,4 @@ tests:
             - id: "Contoso.Framework.Instrumentation"
             - id: "Contoso.Framework.Http"
     expect: fail
+versionFingerprint: sha256:33435d0bc57bd86e01dfd9bc58ec0b416b63a9fb52e05b17af993bf94073571e

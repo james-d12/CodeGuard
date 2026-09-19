@@ -49,3 +49,4 @@ tests:
             {
             }
     expect: fail
+versionFingerprint: sha256:a1ec9fe9ef8efe99e31c07e59b9eb93213a3cb5582af074e786e959e1a6bb06c

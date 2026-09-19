@@ -1,5 +1,3 @@
-using System.Text.Json;
-using System.Text.Json.Nodes;
 using CodeGuard.Configuration.Capabilities;
 using CodeGuard.Configuration.Loading;
 using CodeGuard.Configuration.Validation;
@@ -156,11 +154,11 @@ public static class RuleSetAnalyzer
     }
 
     /// <summary>
-    /// Groups rules whose <c>target</c>+<c>assertions</c> (or <c>analyzer</c>) body is structurally
-    /// identical. Needs the raw source document, not the parsed model - `IAssertion`/`ITargetSelector`
-    /// expose only `Kind`, not the parameter values that would distinguish e.g. two `must_inherit_from`
-    /// rules checking different base types (the same reason `rules explain --format json` reads the
-    /// source document rather than introspecting the model).
+    /// Groups rules whose enforceable body (<see cref="RuleBodyCanonicalizer.ExtractEnforceableBody"/>)
+    /// is structurally identical. Needs the raw source document, not the parsed model -
+    /// `IAssertion`/`ITargetSelector` expose only `Kind`, not the parameter values that would
+    /// distinguish e.g. two `must_inherit_from` rules checking different base types (the same reason
+    /// `rules explain --format json` reads the source document rather than introspecting the model).
     /// </summary>
     private static IReadOnlyList<ExactDuplicateGroup> FindExactDuplicates(
         IReadOnlyList<(RuleDefinition Rule, string SourceFile)> rules)
@@ -169,15 +167,9 @@ public static class RuleSetAnalyzer
         foreach (var (rule, sourceFile) in rules)
         {
             var document = RuleFileLoader.ReadDocument(sourceFile).AsObject();
-            var shape = document.TryGetPropertyValue("analyzer", out var analyzer) && analyzer is not null
-                ? new JsonObject { ["analyzer"] = analyzer.DeepClone() }
-                : new JsonObject
-                {
-                    ["target"] = document["target"]?.DeepClone(),
-                    ["assertions"] = document["assertions"]?.DeepClone()
-                };
+            var body = RuleBodyCanonicalizer.ExtractEnforceableBody(document);
 
-            var key = Canonicalize(shape);
+            var key = RuleBodyCanonicalizer.Canonicalize(body);
             if (!groups.TryGetValue(key, out var group))
             {
                 groups[key] = group = [];
@@ -194,20 +186,4 @@ public static class RuleSetAnalyzer
             .OrderBy(group => group.RuleIds[0], StringComparer.Ordinal)
             .ToList();
     }
-
-    /// <summary>
-    /// Renders a node to JSON text with object keys sorted, so two documents that differ only in
-    /// param order compare equal. <see cref="JsonNode"/> has no order-independent equality/hash of
-    /// its own, so grouping needs a canonical string key rather than a dictionary keyed by the node.
-    /// </summary>
-    private static string Canonicalize(JsonNode? node) => node switch
-    {
-        null => "null",
-        JsonObject obj => "{" + string.Join(
-            ",",
-            obj.OrderBy(property => property.Key, StringComparer.Ordinal)
-                .Select(property => $"{JsonSerializer.Serialize(property.Key)}:{Canonicalize(property.Value)}")) + "}",
-        JsonArray array => "[" + string.Join(",", array.Select(Canonicalize)) + "]",
-        _ => node.ToJsonString()
-    };
 }

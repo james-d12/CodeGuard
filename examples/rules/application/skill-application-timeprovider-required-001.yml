@@ -40,3 +40,4 @@ tests:
           targetTypeName: DateTime
           project: Contoso.Application
     expect: fail
+versionFingerprint: sha256:693aa002db179c1cd0f55b3eac649d9cb6dafca8cbdc72222a4b8c3538fce4dc

@@ -51,3 +51,4 @@ tests:
               attributes:
                 - typeName: System.ComponentModel.DataAnnotations.StringLengthAttribute
     expect: fail
+versionFingerprint: sha256:8e08f18e13d640e363c63842fe4b206ddec72327b0c7954b13b7cb7ff9e6c30e

@@ -19,6 +19,7 @@ public class ConsoleViolationReporterTests
             [
                 new Violation(
                     RuleId: "DDD-ENTITY-001",
+                    RuleVersion: 1,
                     Severity: Severity.Error,
                     Message: "'Contoso.Domain.Entities.LegacyThing' must inherit from 'Contoso.Domain.Entity<TId>'.",
                     File: "LegacyThing.cs",
@@ -132,6 +133,7 @@ public class ConsoleViolationReporterTests
         [
             new Violation(
                 RuleId: "DDD-ENTITY-001",
+                RuleVersion: 1,
                 Severity: Severity.Error,
                 Message: "'Contoso.Domain.Entities.LegacyThing' must inherit from 'Contoso.Domain.Entity<TId>'.",
                 File: "LegacyThing.cs",

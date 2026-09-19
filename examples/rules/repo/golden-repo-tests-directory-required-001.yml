@@ -35,3 +35,4 @@ tests:
       directories:
         - src
     expect: fail
+versionFingerprint: sha256:d4e2b8f06ad0db544a59e7e651d17ad986b935fbaa03d4c0c54f49f0597be838

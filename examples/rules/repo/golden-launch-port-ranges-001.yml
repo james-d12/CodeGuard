@@ -34,3 +34,4 @@ tests:
         - path: "src/Api/Properties/launchSettings.json"
           content: '{"profiles": {"https": {"applicationUrl": "https://localhost:8080"}}}'
     expect: fail
+versionFingerprint: sha256:af9928c5ea3adb1cd20da8915a5e65312510075255eadfc6adac32434ea8d6de

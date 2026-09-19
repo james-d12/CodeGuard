@@ -43,3 +43,4 @@ tests:
             - name: Order
               namespace: Contoso.Domain
     expect: fail
+versionFingerprint: sha256:de65dc8631452224a77d1a680d4d9fe60053ee44924f23599d507c14b677fef8

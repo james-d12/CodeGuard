@@ -43,3 +43,4 @@ tests:
             - id: dbup-core
               version: "4.7.0"
     expect: fail
+versionFingerprint: sha256:9233f84d13340bd1cd2f926eff7cf6885739dc62092978e876927c4af311a996

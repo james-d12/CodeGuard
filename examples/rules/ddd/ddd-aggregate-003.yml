@@ -50,3 +50,4 @@ tests:
           namespace: Contoso.Domain.Entities
           baseType: "Contoso.Domain.Entity<Guid>"
     expect: fail
+versionFingerprint: sha256:181060fd45d78e4fffdfff06ecea187d591e59779ae0c0c1db2fcc0ffd21731c

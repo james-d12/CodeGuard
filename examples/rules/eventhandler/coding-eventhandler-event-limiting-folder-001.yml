@@ -33,3 +33,4 @@ tests:
       files:
         - path: "Contoso.Orders.EventHandler.Application/Startup.cs"
     expect: fail
+versionFingerprint: sha256:4ba7263bf95aedf34ac900b83c7cf489904e50258d2db5c2b481abcb08f88ffe

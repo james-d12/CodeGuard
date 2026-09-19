@@ -42,3 +42,4 @@ tests:
               namespace: Contoso.Domain
               baseType: "Contoso.Infrastructure.Persistence.EntityBase"
     expect: fail
+versionFingerprint: sha256:dab2b91a9cdcffd9f10bb2251ff802a44a9429111580d13cfbf01672652d35d5

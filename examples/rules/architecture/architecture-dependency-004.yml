@@ -60,3 +60,4 @@ tests:
               namespace: Contoso.Domain
               baseType: "Contoso.Infrastructure.EfEntity"
     expect: fail
+versionFingerprint: sha256:d5e4efa24a19424da10a0c499514760b93c3a3db69d2e698667db01bf35c1ace

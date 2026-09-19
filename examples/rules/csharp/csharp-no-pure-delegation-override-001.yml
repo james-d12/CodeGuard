@@ -42,3 +42,4 @@ tests:
           statementCount: 1
           isSingleBaseCallDelegation: true
     expect: fail
+versionFingerprint: sha256:c52f7ba71d0c12adde7e6b428af19f3f26569194c1e34dce6480b8f811c3d7ac

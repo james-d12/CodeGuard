@@ -9,7 +9,7 @@
 # Usage: scripts/verify-nupkg-contents.sh <path-to-nupkg-or-glob>
 set -euo pipefail
 
-if [ "$#" -lt 1 ]; then
+if [[ "$#" -lt 1 ]]; then
     echo "Usage: $0 <path-to-nupkg>" >&2
     exit 2
 fi
@@ -17,7 +17,7 @@ fi
 status=0
 
 for nupkg in "$@"; do
-    if [ ! -f "$nupkg" ]; then
+    if [[ ! -f "$nupkg" ]]; then
         echo "error: nupkg not found: $nupkg" >&2
         exit 2
     fi
@@ -40,7 +40,7 @@ for nupkg in "$@"; do
     fi
 done
 
-if [ "$status" -eq 0 ]; then
+if [[ "$status" -eq 0 ]]; then
     echo "OK: no rule-authoring content found in package(s)."
 fi
 

@@ -20,3 +20,4 @@ analyzer:
   kind: no-exceptions
   namespace: "Contoso.Domain.*"
   allow_guard_clause: true
+versionFingerprint: sha256:6e0beedf3362e1896d72857999f4f92c5a7ced35a693183f3d92c236020eb86d

@@ -39,3 +39,4 @@ tests:
           containingType: Contoso.Domain.Order
           exceptionTypeName: System.Exception
     expect: fail
+versionFingerprint: sha256:de780e3277dd2ec74841f9629e34209a6342a00a1ed64f429030839156e76dae

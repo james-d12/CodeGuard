@@ -38,3 +38,4 @@ tests:
         - kind: object_creation
           invokedMember: HttpClient
     expect: fail
+versionFingerprint: sha256:2ba60aadea650c1633aad37a6a83ec5bb7c10d2afb010995566a244354a86326

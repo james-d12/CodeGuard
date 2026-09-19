@@ -16,7 +16,7 @@ echo "Packing $cli_project -> $pack_dir"
 dotnet pack "$cli_project" -c Release -o "$pack_dir"
 
 nupkg=$(find "$pack_dir" -maxdepth 1 -name 'CodeGuard.*.nupkg' | head -n1)
-if [ -z "$nupkg" ]; then
+if [[ -z "$nupkg" ]]; then
     echo "error: no CodeGuard .nupkg produced in $pack_dir" >&2
     exit 1
 fi

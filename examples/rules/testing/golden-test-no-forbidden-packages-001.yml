@@ -43,3 +43,4 @@ tests:
             - id: FluentAssertions
               version: "6.12.0"
     expect: fail
+versionFingerprint: sha256:5630a2bd99d2c788f2aff4a79f65b2ad6043bda4bcea6d0e457e8ffa56925d93

@@ -49,3 +49,4 @@ tests:
           packageReferences:
             - id: "AutoMapper"
     expect: fail
+versionFingerprint: sha256:a6cd68c6f8cd426c20e1a930bc053013d8377ff0df1c06cd5bf601b57ca7d819

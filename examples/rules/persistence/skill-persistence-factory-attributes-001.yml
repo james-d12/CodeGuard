@@ -38,3 +38,4 @@ tests:
         - name: OrderFactory
           namespace: Contoso.Persistence.Factories
     expect: fail
+versionFingerprint: sha256:539cb88ecfbbcb660ec3105614c8f8e058a97210d611e2c70a18ec5992248a09

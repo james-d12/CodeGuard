@@ -46,3 +46,4 @@ tests:
               literalValue: "/orders"
               isLiteral: true
     expect: fail
+versionFingerprint: sha256:fb38cb7542e8522be1509d499375edef4c398c74b8ccd69e8f386fef01100615

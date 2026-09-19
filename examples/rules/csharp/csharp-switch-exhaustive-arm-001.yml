@@ -40,3 +40,4 @@ tests:
           containingType: Contoso.Domain.OrderStateMachine
           hasDefaultOrDiscardArm: false
     expect: fail
+versionFingerprint: sha256:7d272d8c95c7a2e3853224f54fca108909128a4638dae4f45a8265d198b5d902

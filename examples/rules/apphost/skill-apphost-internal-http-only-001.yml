@@ -37,3 +37,4 @@ tests:
           content: >
             builder.AddProject("api").WithReference(cache, "https://internal-service");
     expect: fail
+versionFingerprint: sha256:ee006f1b8d7c7c2480211cc2c41e8dab54fcd929a1af80c2f228546995eb7409

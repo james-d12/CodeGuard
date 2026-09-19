@@ -17,3 +17,4 @@ illustrative: true
 analyzer:
   kind: immutable-mutation
   namespace: "Contoso.Domain.*"
+versionFingerprint: sha256:6ab60ff17e90a821f9d310e66073befadbbe8011ea8f1b7999a0f62ba1ab3fe6

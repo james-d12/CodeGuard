@@ -46,3 +46,4 @@ tests:
         - invokedMember: CreateBuilder
           targetTypeName: ContosoWebApplication
     expect: fail
+versionFingerprint: sha256:ac28100e6f700f06b0bb4908be0b3958be26ede12c0de69b5da11806677d809f

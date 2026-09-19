@@ -41,3 +41,4 @@ tests:
         - invokedMember: GenerateDeterministicId
           project: Contoso.Application
     expect: fail
+versionFingerprint: sha256:d86b1381bdfab4caa98f23c2d2002e8e4c26383fc0358a9edc9e311524350744

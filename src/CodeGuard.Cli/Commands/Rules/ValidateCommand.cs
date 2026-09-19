@@ -1,6 +1,7 @@
 using System.CommandLine;
 using CodeGuard.Cli.Support;
 using CodeGuard.Configuration.Sources;
+using CodeGuard.Configuration.Versioning;
 using Microsoft.Extensions.Logging;
 
 namespace CodeGuard.Cli.Commands.Rules;
@@ -20,12 +21,15 @@ public static class ValidateCommand
         var updateFingerprintsOption = new Option<bool>("--update-fingerprints")
         {
             Description =
-                "Recompute and write metadata.source.fingerprint for rules whose linked documentation " +
-                "has drifted or was never fingerprinted. Off by default - this is the only `rules " +
-                "validate` mode that writes to rule files, and only edits the `fingerprint` value in " +
-                "place (comments/key order/formatting elsewhere are untouched). Rules with a broken " +
-                "link (missing file/section, or an ambiguous section) have nothing to fingerprint and " +
-                "are left for a human to fix regardless of this flag.",
+                "Recompute and write metadata.source.fingerprint (for rules whose linked documentation " +
+                "has drifted or was never fingerprinted) and versionFingerprint (for every rule whose " +
+                "enforceable body has drifted or was never fingerprinted) alike. Off by default - this " +
+                "is the only `rules validate` mode that writes to rule files, and only edits the " +
+                "relevant fingerprint value in place (comments/key order/formatting elsewhere are " +
+                "untouched). Rules with a broken source link (missing file/section, or an ambiguous " +
+                "section) have nothing to fingerprint and are left for a human to fix regardless of " +
+                "this flag; if you changed a rule's enforceable behavior, consider bumping `version` " +
+                "before running this, since it only updates the fingerprint, never `version`.",
             DefaultValueFactory = _ => false
         };
 
@@ -33,11 +37,15 @@ public static class ValidateCommand
             "validate",
             "Validate a set of rule YAML files for structural correctness (schema conformance, known " +
             "selector/assertion/analyzer kinds, no duplicate rule ids) without evaluating them against a repository " +
-            "(that's what the top-level `validate` command does). Also warns (never fails the exit code) when a " +
-            "rule's metadata.source.file link to its documentation has drifted, is broken, or hasn't been " +
-            "fingerprinted yet - the only place this command reads files outside the configured rules directory, " +
-            "and only for rules that opt in via metadata.source.file. Use --rules-source to point directly at a " +
-            "folder; otherwise validates whatever this repo is configured to use.");
+            "(that's what the top-level `validate` command does). Also checks two independent fingerprint " +
+            "mechanisms: a rule's optional metadata.source.file link to its documentation drifting, being " +
+            "broken, or never fingerprinted (metadata.source.* - warns only, never fails the exit code); " +
+            "and every rule's own enforceable body (target/assertions/when/analyzer) drifting from its " +
+            "recorded versionFingerprint, checked unconditionally for every rule with no opt-in (fails " +
+            "the exit code - see docs/RULE_VERSIONING_PLAN.md). These are the only cases this command " +
+            "reads files outside the configured rules directory (source) or re-derives content from " +
+            "rules already loaded (version). Use --rules-source to point directly at a folder; " +
+            "otherwise validates whatever this repo is configured to use.");
         command.Add(pathOption);
         command.Add(configOption);
         command.Add(rulesSourceOption);
@@ -73,23 +81,25 @@ public static class ValidateCommand
             logger.LogInformation("Rule set validation: {PassCount} passed, {FailCount} failed", report.Rules.Count, report.Issues.Count);
 
             var sourceReport = RuleSourceChecker.Check(report.Rules, context.RepoRoot);
+            var versionReport = RuleVersionChecker.Check(report.Rules);
             if (parseResult.GetValue(updateFingerprintsOption))
             {
-                sourceReport = UpdateFingerprints(sourceReport, Console.Out);
+                sourceReport = UpdateSourceFingerprints(sourceReport, Console.Out);
+                versionReport = UpdateVersionFingerprints(versionReport, Console.Out);
             }
 
             if (parseResult.GetValue(formatOption) == "json")
             {
-                RuleValidationReportWriter.WriteJson(report, sourceReport, Console.Out);
+                RuleValidationReportWriter.WriteJson(report, sourceReport, versionReport, Console.Out);
             }
             else
             {
-                RuleValidationReportWriter.WriteConsole(report, sourceReport, Console.Out);
+                RuleValidationReportWriter.WriteConsole(report, sourceReport, versionReport, Console.Out);
             }
 
             // Source-check findings never affect this - see docs/done/RULE_SOURCE_AND_LINKED_DOCUMENTATION.md
-            // ("No Automatic Decisions"). Only the pre-existing schema/structural checks do.
-            return Task.FromResult(report.IsValid ? 0 : 1);
+            // ("No Automatic Decisions"). Version-check findings do - see docs/RULE_VERSIONING_PLAN.md.
+            return Task.FromResult(report.IsValid && versionReport.IsValid ? 0 : 1);
         });
 
         return command;
@@ -101,7 +111,7 @@ public static class ValidateCommand
     /// report with those issues removed so whatever gets printed afterward reflects post-update
     /// reality rather than repeating warnings that were just resolved.
     /// </summary>
-    private static RuleSourceCheckReport UpdateFingerprints(RuleSourceCheckReport sourceReport, TextWriter writer)
+    private static RuleSourceCheckReport UpdateSourceFingerprints(RuleSourceCheckReport sourceReport, TextWriter writer)
     {
         var remaining = new List<RuleSourceIssue>();
         var updated = 0;
@@ -112,7 +122,7 @@ public static class ValidateCommand
                 && issue.ComputedFingerprint is { } fingerprint)
             {
                 RuleSourceFingerprintWriter.WriteFingerprint(issue.SourceFile, fingerprint);
-                writer.WriteLine($"Updated fingerprint: {issue.RuleId} (was {issue.PreviousFingerprint ?? "missing"}, now {fingerprint})");
+                writer.WriteLine($"Updated source fingerprint: {issue.RuleId} (was {issue.PreviousFingerprint ?? "missing"}, now {fingerprint})");
                 updated++;
             }
             else
@@ -127,5 +137,26 @@ public static class ValidateCommand
         }
 
         return new RuleSourceCheckReport(remaining);
+    }
+
+    /// <summary>Same idea as <see cref="UpdateSourceFingerprints"/>, for <see cref="RuleVersionIssue"/>s.</summary>
+    private static RuleVersionCheckReport UpdateVersionFingerprints(RuleVersionCheckReport versionReport, TextWriter writer)
+    {
+        var updated = 0;
+
+        foreach (var issue in versionReport.Issues)
+        {
+            RuleVersionFingerprintWriter.WriteFingerprint(issue.SourceFile, issue.ComputedFingerprint);
+            writer.WriteLine(
+                $"Updated version fingerprint: {issue.RuleId} (was {issue.RecordedFingerprint ?? "missing"}, now {issue.ComputedFingerprint})");
+            updated++;
+        }
+
+        if (updated > 0)
+        {
+            writer.WriteLine();
+        }
+
+        return new RuleVersionCheckReport([]);
     }
 }

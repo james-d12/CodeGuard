@@ -43,3 +43,4 @@ tests:
         - name: Contoso.Domain
           projectReferences: ["Contoso.Infrastructure"]
     expect: fail
+versionFingerprint: sha256:c8f2faff990bbcdf91ce7d69fc084e5d474e65f60c13a0fc38f7ba325996c763

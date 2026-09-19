@@ -23,3 +23,4 @@ analyzer:
   const_name: "TypeName"
   yaml_file_pattern: "*.crd.yml"
   yaml_field_path: "spec.typeName"
+versionFingerprint: sha256:e4bc96926bbc4dcdcbffcc07cf486960ae7c65a9a40bd307aee0a34bf33f9985

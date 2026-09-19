@@ -10,6 +10,19 @@ public sealed class RuleDefinition
     public required string Id { get; init; }
     public required string Name { get; init; }
     public string? Description { get; init; }
+    public int Version { get; init; } = 1;
+
+    /// <summary>
+    /// `sha256:&lt;64 hex&gt;` of the rule's own canonicalized enforceable body (`target`+`assertions`+
+    /// `when`, or `analyzer` - see `RuleBodyCanonicalizer`), captured via
+    /// `rules validate --update-fingerprints`. Checked unconditionally for every rule: `codeguard
+    /// rules validate` recomputes the current fingerprint and fails - not just warns, unlike
+    /// <see cref="RuleSource.Fingerprint"/> - if this is missing or no longer matches, prompting a
+    /// human to bump <see cref="Version"/> and re-run `--update-fingerprints` to capture the new one.
+    /// See docs/RULE_VERSIONING_PLAN.md.
+    /// </summary>
+    public string? VersionFingerprint { get; init; }
+
     public Severity Severity { get; init; } = Severity.Warning;
     public EnforcementMetadata Enforcement { get; init; } = new();
     public IReadOnlyList<string> Tags { get; init; } = [];

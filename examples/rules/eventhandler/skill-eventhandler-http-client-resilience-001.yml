@@ -44,3 +44,4 @@ tests:
           invokedMember: HttpClient
           project: Contoso.Orders.EventHandler.Application
     expect: fail
+versionFingerprint: sha256:95cdb6796bb8929791ded6af0534181ed07606e06a19ea278fe3e49d51689a17

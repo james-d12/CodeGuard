@@ -38,3 +38,4 @@ tests:
           interfaces:
             - Contoso.Domain.IAggregateRoot
     expect: fail
+versionFingerprint: sha256:1a2994e398b6589b6f22cc4d8bab444a6446399a578c341e605ee0a4ff98a116

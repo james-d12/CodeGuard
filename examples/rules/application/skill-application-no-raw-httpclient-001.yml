@@ -42,3 +42,4 @@ tests:
           invokedMember: HttpClient
           project: Contoso.Application
     expect: fail
+versionFingerprint: sha256:e72cab744d05faf0b5f011aedafa6f7ef645a3ccadf48aefe89a79c265913485

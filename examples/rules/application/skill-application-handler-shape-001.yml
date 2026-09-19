@@ -42,3 +42,4 @@ tests:
           namespace: Contoso.Application.Handlers
           modifiers: [sealed, partial]
     expect: fail
+versionFingerprint: sha256:a30b02fcd66e1bc1cdcbbce7acd8b8a751911984cb46c87b7ebd7bb9cadc32bb

@@ -193,6 +193,41 @@ public sealed class RuleSetAnalyzerTests : IDisposable
     }
 
     [Fact]
+    public void Analyze_RulesDifferingOnlyInWhen_AreNotGroupedAsExactDuplicates()
+    {
+        // Regression test: the canonical shape compared here must include `when`, not just
+        // `target`+`assertions` - these two rules would otherwise look identical, even though
+        // `when` means they apply to a different, non-overlapping set of candidates.
+        WriteRuleFile("a.yml", """
+            id: DDD-ENTITY-001
+            name: Some rule
+            target:
+              kind: class
+              namespace: "Contoso.Domain.Entities"
+            when:
+              must_have_attribute:
+                type: "System.ObsoleteAttribute"
+            assertions:
+              - must_inherit_from:
+                  type: "Contoso.Domain.Entity<TId>"
+            """);
+        WriteRuleFile("b.yml", """
+            id: DDD-ENTITY-002
+            name: Some other rule
+            target:
+              kind: class
+              namespace: "Contoso.Domain.Entities"
+            assertions:
+              - must_inherit_from:
+                  type: "Contoso.Domain.Entity<TId>"
+            """);
+
+        var report = Analyze();
+
+        Assert.Empty(report.ExactDuplicateRules);
+    }
+
+    [Fact]
     public void Analyze_RuleWithoutMetadataSource_IsReportedAsMissingProvenanceButNotAFinding()
     {
         WriteRuleFile("no-provenance.yml", RuleYaml("DDD-ENTITY-001", withTests: true));

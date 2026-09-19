@@ -46,3 +46,4 @@ tests:
         - "requirements/sandbox"
         - "requirements/uat"
     expect: fail
+versionFingerprint: sha256:2b602ff47303eec158947fff8248edebd163240453cfc0f4631a96e45f2baa2c

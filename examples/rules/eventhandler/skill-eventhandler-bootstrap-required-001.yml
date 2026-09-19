@@ -51,3 +51,4 @@ tests:
           targetTypeName: ContosoWebApplication
           project: Contoso.Orders.EventHandler.Api
     expect: fail
+versionFingerprint: sha256:5f9b3f79025042fdedfe8a4e74da4541d8fca354100212245a44af6a4bf38adf

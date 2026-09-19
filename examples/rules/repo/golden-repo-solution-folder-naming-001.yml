@@ -34,3 +34,4 @@ tests:
         - path: "Contoso.slnx"
           content: '<Solution><Folder Name="/Contoso/"></Folder></Solution>'
     expect: fail
+versionFingerprint: sha256:9bfcf76ec16f8456824bdfcb42ace8d402ade4b805105bd5a77958c5f093ccca

@@ -56,3 +56,4 @@ tests:
             - name: Create
               modifiers: [static]
     expect: fail
+versionFingerprint: sha256:0865486d1bf266af9b318ab5eb96fb4f7320fb551431f37bdf231cde2ace93ba

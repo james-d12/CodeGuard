@@ -31,3 +31,4 @@ tests:
       directories:
         - "docs"
     expect: fail
+versionFingerprint: sha256:b66bb9b4b7a855ec1273694b947e8c5d4ed67d2d4889bf38015ec44bba6bf3eb

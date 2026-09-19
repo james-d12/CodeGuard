@@ -52,6 +52,87 @@ public sealed class RuleFileLoaderTests : IDisposable
         Assert.True(rule.Illustrative);
         Assert.Single(rule.Assertions!);
         Assert.Null(rule.Metadata);
+        Assert.Equal(1, rule.Version);
+    }
+
+    [Fact]
+    public void LoadFromFile_WithExplicitVersion_ParsesVersion()
+    {
+        var file = WriteRuleFile("versioned.yml", """
+            id: DDD-ENTITY-001
+            name: Domain entities must inherit from Entity
+            version: 3
+            target:
+              kind: class
+              namespace: "Contoso.Domain.Entities"
+            assertions:
+              - must_inherit_from:
+                  type: "Contoso.Domain.Entity<TId>"
+            """);
+
+        var rule = CreateLoader().LoadFromFile(file);
+
+        Assert.Equal(3, rule.Version);
+    }
+
+    private const string SampleFingerprint = "sha256:0000000000000000000000000000000000000000000000000000000000000000";
+
+    [Fact]
+    public void LoadFromFile_WithVersionFingerprint_ParsesFingerprint()
+    {
+        var file = WriteRuleFile("with-version-fingerprint.yml", $"""
+            id: DDD-ENTITY-001
+            name: Domain entities must inherit from Entity
+            version: 2
+            versionFingerprint: "{SampleFingerprint}"
+            target:
+              kind: class
+              namespace: "Contoso.Domain.Entities"
+            assertions:
+              - must_inherit_from:
+                  type: "Contoso.Domain.Entity<TId>"
+            """);
+
+        var rule = CreateLoader().LoadFromFile(file);
+
+        Assert.Equal(SampleFingerprint, rule.VersionFingerprint);
+    }
+
+    [Fact]
+    public void LoadFromFile_WithNoVersionFingerprint_LeavesItNull()
+    {
+        var file = WriteRuleFile("no-version-fingerprint.yml", """
+            id: DDD-ENTITY-001
+            name: Domain entities must inherit from Entity
+            target:
+              kind: class
+              namespace: "Contoso.Domain.Entities"
+            assertions:
+              - must_inherit_from:
+                  type: "Contoso.Domain.Entity<TId>"
+            """);
+
+        var rule = CreateLoader().LoadFromFile(file);
+
+        Assert.Null(rule.VersionFingerprint);
+    }
+
+    [Fact]
+    public void LoadFromFile_WithZeroVersion_ThrowsSchemaValidationException()
+    {
+        var file = WriteRuleFile("zero-version.yml", """
+            id: DDD-ENTITY-001
+            name: Domain entities must inherit from Entity
+            version: 0
+            target:
+              kind: class
+              namespace: "Contoso.Domain.Entities"
+            assertions:
+              - must_inherit_from:
+                  type: "Contoso.Domain.Entity<TId>"
+            """);
+
+        Assert.Throws<RuleSchemaValidationException>(() => CreateLoader().LoadFromFile(file));
     }
 
     [Fact]

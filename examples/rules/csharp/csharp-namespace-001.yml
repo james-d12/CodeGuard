@@ -34,3 +34,4 @@ tests:
         - name: Order
           namespace: Acme.Domain.Entities
     expect: fail
+versionFingerprint: sha256:ccb56b172b9c46390403029f9f7d7fd641391542ae58edd0199bf466275e8de3

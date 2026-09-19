@@ -39,3 +39,4 @@ tests:
           content: |
             counter.Add(1, new("client_key", key));
     expect: fail
+versionFingerprint: sha256:962990c66dcc93ddcf72f8b4ba458e9e855d652908dece50b97902bc46253767

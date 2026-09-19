@@ -102,3 +102,4 @@ tests:
             - name: Should_ReturnProblem_When500ServerError
             - name: Should_ReturnProblem_When503Unavailable
     expect: fail
+versionFingerprint: sha256:4db64fa4fb763f39f22c68e86c058424f0286199e8d1257df5627abc339e13e9

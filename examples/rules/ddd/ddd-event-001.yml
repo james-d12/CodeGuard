@@ -38,3 +38,4 @@ tests:
           namespace: Contoso.Domain.Entities
           interfaces: [Contoso.Domain.IDomainEvent]
     expect: fail
+versionFingerprint: sha256:c5afbb41234b628bc7a9df8d2b44dc6c8b60a27494924cc3ad6cf3c54b40ca47

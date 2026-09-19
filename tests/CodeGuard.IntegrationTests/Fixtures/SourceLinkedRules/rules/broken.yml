@@ -10,3 +10,4 @@ target:
 assertions:
   - must_inherit_from:
       type: "Entity<*>"
+versionFingerprint: sha256:95730b9d10943266ad0c918e7eb19f37d934a044d942266c265636eb2231393b

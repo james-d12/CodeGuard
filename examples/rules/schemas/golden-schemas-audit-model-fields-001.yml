@@ -67,3 +67,4 @@ tests:
             - name: ApplicationName
             - name: Operation
     expect: fail
+versionFingerprint: sha256:d7c04549f22c4e2ac80dcc98db2ce8f49f0c62a6be5428644f6bbfa773b89c09

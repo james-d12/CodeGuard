@@ -52,3 +52,4 @@ tests:
       files:
         - path: "src/Handlers/Internal/OrderHandler.cs"
     expect: fail
+versionFingerprint: sha256:5a9250a359e0a080da4c908c60308c9215f3867f615f6193d1b93ea42d9c7f49

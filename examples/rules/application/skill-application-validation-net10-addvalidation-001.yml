@@ -37,3 +37,4 @@ tests:
       callSites:
         - invokedMember: Bind
     expect: fail
+versionFingerprint: sha256:37a40fe5a4837370af7acb79b243ceb255ee6176d038894a61bcb65a82980cc7

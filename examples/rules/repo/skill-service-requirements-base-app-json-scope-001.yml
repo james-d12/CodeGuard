@@ -37,3 +37,4 @@ tests:
         - path: "requirements/base/app.json"
           content: '{"argocd": {}, "resources": {}}'
     expect: fail
+versionFingerprint: sha256:70469c2bee1154996b251003836cb5e14de5bdaff9547bd96a9bd593830aa9ab

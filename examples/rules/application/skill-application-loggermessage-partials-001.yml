@@ -47,3 +47,4 @@ tests:
         - invokedMember: LogInformation
           project: Contoso.Application
     expect: fail
+versionFingerprint: sha256:7362e6f77baf78dde10179e48dac4423e13ed67886f97458a0da21d2201f4275

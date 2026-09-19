@@ -44,3 +44,4 @@ tests:
           namespace: Contoso.Persistence.Repositories
           baseType: "DomainEntityRepository<Order, Guid>"
     expect: fail
+versionFingerprint: sha256:aa1137cca64060418604fe3ef5a4df8d45b328f048559a52890a46e91f4192d8

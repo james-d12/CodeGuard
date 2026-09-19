@@ -44,3 +44,4 @@ tests:
       callSites:
         - invokedMember: WithRequestTimeout
     expect: fail
+versionFingerprint: sha256:8b13828989a973e473f47d1fcf2e2943db84435a1a919a88fab9bfef959ef0b2

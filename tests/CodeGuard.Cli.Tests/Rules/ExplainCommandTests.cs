@@ -207,6 +207,146 @@ public class ExplainCommandTests
     }
 
     [Fact]
+    public async Task Run_Json_WithVersionFingerprint_IncludesItAtTopLevel()
+    {
+        var rulesDir = Directory.CreateTempSubdirectory("codeguard-explain-json-versionfingerprint-").FullName;
+        try
+        {
+            await File.WriteAllTextAsync(Path.Combine(rulesDir, "rule.yml"), """
+                id: DDD-ENTITY-001
+                name: Entities inherit Entity
+                version: 3
+                versionFingerprint: "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+                target:
+                  kind: class
+                  namespace: "Contoso.Domain"
+                assertions:
+                  - must_inherit_from:
+                      type: "Entity<*>"
+                """);
+
+            var (exitCode, output) = await RunExplain(["--rules-source", rulesDir, "DDD-ENTITY-001", "--format", "json"]);
+
+            Assert.Equal(0, exitCode);
+            using var document = JsonDocument.Parse(output);
+            var root = document.RootElement;
+
+            Assert.Equal(3, root.GetProperty("version").GetInt32());
+            Assert.Equal(
+                "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+                root.GetProperty("versionFingerprint").GetString());
+            // No metadata.source on this rule - versionFingerprint living at the top level rather
+            // than under metadata means it has no bearing on whether "metadata" itself is null.
+            Assert.Equal(JsonValueKind.Null, root.GetProperty("metadata").ValueKind);
+        }
+        finally
+        {
+            Directory.Delete(rulesDir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task Run_Json_WithMetadataSourceAndVersionFingerprint_IncludesBothIndependently()
+    {
+        var rulesDir = Directory.CreateTempSubdirectory("codeguard-explain-json-both-").FullName;
+        try
+        {
+            await File.WriteAllTextAsync(Path.Combine(rulesDir, "rule.yml"), """
+                id: DDD-ENTITY-001
+                name: Entities inherit Entity
+                versionFingerprint: "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+                metadata:
+                  source:
+                    document: Architecture Standards
+                target:
+                  kind: class
+                  namespace: "Contoso.Domain"
+                assertions:
+                  - must_inherit_from:
+                      type: "Entity<*>"
+                """);
+
+            var (exitCode, output) = await RunExplain(["--rules-source", rulesDir, "DDD-ENTITY-001", "--format", "json"]);
+
+            Assert.Equal(0, exitCode);
+            using var document = JsonDocument.Parse(output);
+            var root = document.RootElement;
+
+            Assert.Equal(
+                "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+                root.GetProperty("versionFingerprint").GetString());
+            Assert.Equal(
+                "Architecture Standards", root.GetProperty("metadata").GetProperty("source").GetProperty("document").GetString());
+        }
+        finally
+        {
+            Directory.Delete(rulesDir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task Run_Console_PrintsVersionAndFingerprintNotYetCaptured()
+    {
+        var rulesDir = Directory.CreateTempSubdirectory("codeguard-explain-console-").FullName;
+        try
+        {
+            await File.WriteAllTextAsync(Path.Combine(rulesDir, "rule.yml"), """
+                id: DDD-ENTITY-001
+                name: Entities inherit Entity
+                version: 2
+                target:
+                  kind: class
+                  namespace: "Contoso.Domain"
+                assertions:
+                  - must_inherit_from:
+                      type: "Entity<*>"
+                """);
+
+            var (exitCode, output) = await RunExplain(["--rules-source", rulesDir, "DDD-ENTITY-001"]);
+
+            Assert.Equal(0, exitCode);
+            Assert.Contains("Version:       2", output);
+            Assert.Contains("Fingerprint:   not yet captured", output);
+            Assert.Contains("Target kind:   class", output);
+            Assert.Contains("--- Raw YAML ---", output);
+        }
+        finally
+        {
+            Directory.Delete(rulesDir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task Run_Console_WithCapturedFingerprint_PrintsFingerprintLine()
+    {
+        var rulesDir = Directory.CreateTempSubdirectory("codeguard-explain-console-captured-").FullName;
+        try
+        {
+            await File.WriteAllTextAsync(Path.Combine(rulesDir, "rule.yml"), """
+                id: DDD-ENTITY-001
+                name: Entities inherit Entity
+                versionFingerprint: "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+                target:
+                  kind: class
+                  namespace: "Contoso.Domain"
+                assertions:
+                  - must_inherit_from:
+                      type: "Entity<*>"
+                """);
+
+            var (exitCode, output) = await RunExplain(["--rules-source", rulesDir, "DDD-ENTITY-001"]);
+
+            Assert.Equal(0, exitCode);
+            Assert.Contains(
+                "Fingerprint:   sha256:0000000000000000000000000000000000000000000000000000000000000000", output);
+        }
+        finally
+        {
+            Directory.Delete(rulesDir, recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task Run_Json_UnknownRule_ExitsOne()
     {
         var rulesDir = Directory.CreateTempSubdirectory("codeguard-explain-missing-").FullName;

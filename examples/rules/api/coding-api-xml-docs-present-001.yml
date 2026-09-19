@@ -19,3 +19,4 @@ analyzer:
   kind: roslyn-diagnostic-passthrough
   diagnostic_ids:
     - "CS1591"
+versionFingerprint: sha256:ed030f9bb8492f883a4a51ff6fcbdf76edb0c940db23abaec640dfed19b05648

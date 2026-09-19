@@ -48,3 +48,4 @@ tests:
             - id: Moq
               version: "4.20.0"
     expect: fail
+versionFingerprint: sha256:a645c614fce52419300c2cce427afeafd2f4dc4973879af7bb2025e552050274

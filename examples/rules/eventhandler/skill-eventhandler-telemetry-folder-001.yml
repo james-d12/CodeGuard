@@ -40,3 +40,4 @@ tests:
         - path: "Contoso.Shared/Telemetry/MetricNames.cs"
         - path: "Contoso.Shared/Telemetry/TagNames.cs"
     expect: fail
+versionFingerprint: sha256:122bf8126fb9485d4c02a982d6d67f6597412c774e4cbd426d18fff8b4e9b795

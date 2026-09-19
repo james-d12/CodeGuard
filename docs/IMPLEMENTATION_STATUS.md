@@ -515,9 +515,10 @@ field would have zero consumers: nothing would read it, filter by it, or surface
 `metadata.source`. `enabled`/`illustrative` already cover the on/off and real-vs-demonstrative axes;
 a third axis with no consumer wasn't worth the schema surface. `version` + diagnostic-level version
 stamping (the other half of that same REFACTORING.md section) was never evaluated on its own merits
-either way - it's a materially bigger, cross-cutting change (touches the evaluator and every
-`IViolationReporter`) that was out of scope for this decision regardless of the `status` outcome.
-Don't re-propose lifecycle state without first identifying a concrete consumer.
+either way at the time - it's a materially bigger, cross-cutting change (touches the evaluator and
+every `IViolationReporter`) that was out of scope for this decision regardless of the `status`
+outcome. **Since implemented - see "Post-v1 addition: rule versioning" below.** `status` itself
+remains not re-proposed; don't re-propose it without first identifying a concrete consumer.
 
 ### Post-v1 addition: `metadata.source.file`/`fingerprint` + `rules validate` drift warnings
 
@@ -582,6 +583,103 @@ than introducing a second, competing "source" concept:
   `CODING-DI-CONSTRUCTOR-INJECTION-ONLY-001` → `examples/docs/csharp-conventions.md` § Dependency
   Injection. The other 122 rules are untouched - `metadata.source` (with or without `file`) remains
   fully optional.
+
+### Post-v1 addition: rule versioning
+
+Design doc: `docs/RULE_VERSIONING_PLAN.md` (kept in `docs/`, not moved to `docs/done/`, until the
+plan's own listed items are all independently confirmed shipped). Implements the `version` half of
+`docs/REFACTORING.md` §12 that the `metadata.source` section above explicitly left unevaluated -
+`status` itself is **not** revisited here, per that section's closing instruction.
+
+Shipped in two passes: an initial opt-in design, then a deliberate redesign to make it mandatory,
+at the user's explicit request ("too much opt-in, makes using this confusing, we should just
+enforce strictness") after seeing the opt-in version working end-to-end. What's described below is
+the final, mandatory design - the opt-in intermediate state (`metadata.trackVersion` +
+`metadata.versionFingerprint`) shipped briefly on this branch and was fully replaced, not layered
+on top of.
+
+- `RuleDefinition.Version` (`int`, default `1`) - a plain positive integer, not SemVer: there's no
+  clear analogue of "patch vs. minor vs. major" for a declarative rule body, and
+  `docs/REFACTORING.md`'s own example (`version: 2`) already uses a bare integer. Stays optional and
+  defaulted, even though the fingerprint check below is mandatory: forcing every rule file to spell
+  out `version: 1` explicitly was considered and rejected as boilerplate with no signal, whereas the
+  fingerprint (see below) is the field that actually needs to always be present and correct.
+- `RuleDefinition.VersionFingerprint` (`string?`, `sha256:<64 hex>`) - a **top-level** field, sibling
+  to `Version`, holding a fingerprint of the rule's own enforceable body
+  (`target`+`assertions`+`when`, or `analyzer`; see `RuleBodyCanonicalizer` below). Both
+  `rule.schema.json` properties are purely additive.
+- **Version-drift checking is unconditional - there is no opt-in flag.** `RuleVersionChecker`
+  (`CodeGuard.Configuration/Versioning/`) recomputes every rule's body fingerprint and compares it
+  against `VersionFingerprint`, for every rule, always: `FingerprintMissing` if absent,
+  `ContentChanged` if it no longer matches. This is a **hard failure** in `rules validate` (not a
+  warning, unlike the analogous but opt-in `metadata.source` drift check above) - an undeclared
+  change to a rule's own behavior is treated as a stronger determinism violation than stale
+  documentation, so CI blocks it. `--update-fingerprints` (the existing flag, extended rather than
+  duplicated) recomputes and writes `versionFingerprint` for both drift kinds; it deliberately does
+  **not** auto-increment `version` itself - that remains a human decision the CLI only prompts for
+  (in its help text and in the "Version checks" console/JSON output section), never makes.
+  - **Known, explicitly-accepted consequence**: this makes `rules validate` fail by default for
+    *any* rule set - this repo's `examples/rules/`, or any other repo's, including future external
+    users of the packaged `codeguard` dotnet tool - that hasn't been through
+    `rules validate --update-fingerprints` at least once. Not an oversight; this is what "enforce
+    strictness" means in practice, confirmed with the user before implementing it this way.
+  - **Known limitation, stated up front rather than half-solved**: this detects "the enforceable
+    body changed since the fingerprint was last captured," not "and `version` was bumped
+    accordingly." Those are different questions - the fingerprint has no memory of what `version`
+    was when it was captured, so a human (or a future check) still has to judge whether the bump
+    was adequate. Verifying that would need persisted history (a git diff against a base branch, or
+    a repo-wide lock file), out of scope here - the same "document the edge, don't build around it"
+    treatment CLAUDE.md's own MSBuild self-analysis section already models.
+- Every `Violation` carries `RuleVersion` (`CodeGuard.Core.Results.ValidationResult.cs`), stamped
+  from `RuleDefinition.Version` at both construction sites in `RuleEvaluator`
+  (`EvaluateAnalyzerRule`/`CreateViolation`). This is the concrete consumer `metadata.source`'s
+  rejected `status` field lacked: `JsonViolationReporter` gets it for free (record serialization),
+  and `SarifViolationReporter` stamps it onto each rule's `ReportingDescriptor` via the SARIF SDK's
+  `properties` bag (`SetProperty("version", ...)`) - **not** a native `ReportingDescriptor.Version`
+  property, which does not exist in `Sarif.Sdk` 5.7.0 despite an early assumption otherwise (verified
+  by reflecting on the actual type; `ToolComponent` does have a `Version`, `ReportingDescriptor` does
+  not). The properties bag is SARIF's own sanctioned extensibility point for exactly this kind of
+  tool-specific metadata. `rules list`/`rules explain` (both `--format table|console` and `json`) also
+  surface `version`/`versionFingerprint` (at the top level in JSON, matching the model). Console/HTML
+  reporters were deliberately left untouched - showing `[v1]` on every line for the common,
+  not-yet-differentiated case is noise, not signal, and JSON/SARIF already cover the "concrete
+  consumer" bar.
+- The `target`+`assertions`(+`analyzer`) canonicalization `rules analyze`'s exact-duplicate check
+  (`RuleSetAnalyzer.FindExactDuplicates`, in the "Post-v1 addition: `codeguard rules analyze`" section
+  above) already did was extracted into a shared `RuleBodyCanonicalizer`
+  (`CodeGuard.Configuration/Analysis/`) so both checks agree on what counts as a rule's behavior -
+  and, in the same change, corrected to also include `when`, which the original inline version
+  omitted. `when` gates which candidates the assertions even run against, so two rules differing only
+  in `when` are genuinely different rules, not duplicates; they were previously capable of being
+  misclassified as exact duplicates of each other. No such pair existed in `examples/rules/` at the
+  time (`rules analyze` still reports 5 exact-duplicate groups, unchanged), but this is a real
+  correctness fix bundled into this change because both checks share the same underlying question.
+- `RuleVersionFingerprintWriter` splices `versionFingerprint` directly into the document root (empty
+  mapping path) rather than a nested object - it shares its splicing mechanics with
+  `RuleSourceFingerprintWriter` via `YamlMappingSplicer.SpliceScalar`
+  (`CodeGuard.Configuration/Yaml/`), extracted after the first (opt-in) pass copy-pasted the whole
+  algorithm nearly verbatim between the two writers (SonarCloud's duplicated-lines gate caught it).
+  - **A real, pre-existing correctness bug surfaced and was fixed while extracting this**: a
+    `YamlNode.End` mark from YamlDotNet's `RepresentationModel` is only reliable on a
+    `YamlScalarNode` - on a `YamlMappingNode`/`YamlSequenceNode` it's left equal to `.Start` rather
+    than advanced past the node's nested content. The original "insert after the last entry's
+    `.End`" logic worked by coincidence for `metadata.source`/`metadata.trackVersion` (their last
+    entry was always a single-line scalar), but broke as soon as splicing moved to the document
+    root: a rule whose last top-level key is `assertions:` (a sequence of mappings - the common case
+    for any rule with no `tests:` block) got its new key inserted *mid-structure*, right after
+    `must_inherit_from:` and before its own nested `type:` key, producing invalid YAML. Caught by
+    running the real bulk backfill (below) against `examples/rules/`, not by a unit test - the
+    existing fixtures were all too simple (single-line nested content) to expose it. Fixed by
+    recursing to the last actual scalar in the tree (`YamlMappingSplicer.GetTrueEnd`) instead of
+    trusting a container node's own `.End`; regression-tested
+    (`SpliceScalar_RootMappingWhereLastEntryIsASequenceOfMappings_InsertsAfterTheWholeSequence`).
+- All 126 `examples/rules/` files were backfilled with a real `versionFingerprint` in one pass
+  (`rules validate --rules-source examples/rules --update-fingerprints`) - not a demo/exception on
+  one rule, unlike the 3-rule `metadata.source.file` backfill above, because the check being
+  unconditional means every rule needs one for `rules validate` to pass at all. `version` itself was
+  left at its default (`1`) for all of them; no rule needed an explicit value.
+
+
 
 ### Post-v1 removal: `rules create`
 
@@ -850,10 +948,13 @@ All under `rules/`, all illustrative (`Contoso.*` namespace, `illustrative: true
   target repo) on the 97 generated rules — so `list-standards` produced ~60 mostly-singleton groups
   instead of a meaningful category list. `Documentation` (`IReadOnlyList<string>`) remains on
   `RuleDefinition` as the intended doc-reference field but is unpopulated by any current rule file.
-- Everything in `CodeGuard/REFACTORING.md` (analysis sessions/caching, rule versioning and
-  lifecycle states, the Selector/Predicate/Assertion/Diagnostic split, a custom-analyzer escape
-  hatch, rule fixture testing) — a deliberately separate, larger initiative the user chose not to
-  start yet. See "Where things stand" above.
+- Everything in `CodeGuard/REFACTORING.md` (analysis sessions/caching, rule lifecycle states, the
+  Selector/Predicate/Assertion/Diagnostic split, a custom-analyzer escape hatch, rule fixture
+  testing) — a deliberately separate, larger initiative the user chose not to start yet. See "Where
+  things stand" above. Exception: the `version` half of §12's rule-versioning proposal shipped as
+  its own small, scoped effort — see "Post-v1 addition: rule versioning" — without adopting any of
+  REFACTORING.md's broader model changes; `status` (the other half of §12) remains not done, and not
+  re-proposed without a concrete consumer (see "Post-v1 addition: `metadata.source`" above).
 - A fix for the remaining CLI self-analysis known limitation (gotcha #6) — the original
   Buildalyzer-crash cause is resolved, but `NoPureDelegationOverrideAnalyzer`'s
   `FullName`-uniqueness assumption still blocks full self-validation; documented but not solved.

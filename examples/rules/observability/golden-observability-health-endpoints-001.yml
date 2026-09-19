@@ -35,3 +35,4 @@ tests:
       callSites:
         - invokedMember: UseRouting
     expect: fail
+versionFingerprint: sha256:40fcf3f0928525349b0f083131afff9f6590f7edcd58fc2d0917d99719206ded
