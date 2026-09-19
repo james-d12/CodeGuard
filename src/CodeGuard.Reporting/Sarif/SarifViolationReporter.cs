@@ -35,7 +35,9 @@ public sealed class SarifViolationReporter : IViolationReporter
                 new Invocation
                 {
                     ExecutionSuccessful = result.EvaluationErrors.Count == 0,
-                    ToolExecutionNotifications = result.EvaluationErrors.Select(ToSarifNotification).ToList()
+                    ToolExecutionNotifications = result.EvaluationErrors.Select(ToSarifNotification)
+                        .Concat(result.AnalysisWarnings.Select(ToSarifNotification))
+                        .ToList()
                 }
             ]
         };
@@ -78,6 +80,13 @@ public sealed class SarifViolationReporter : IViolationReporter
         Level = FailureLevel.Error,
         Message = new Message($"{error.ExceptionType}: {error.Message}", null, null, null, null),
         Descriptor = new ReportingDescriptorReference { Id = error.RuleId }
+    };
+
+    private static Notification ToSarifNotification(AnalysisWarning warning) => new()
+    {
+        Level = FailureLevel.Warning,
+        Message = new Message(warning.Message, null, null, null, null),
+        Descriptor = new ReportingDescriptorReference { Id = warning.Code }
     };
 
     private static Location ToLocation(Violation violation) => new()

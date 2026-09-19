@@ -28,6 +28,7 @@ public sealed class HtmlViolationReporter : IViolationReporter
 
         AppendHeader(sb, result, violations);
         AppendEvaluationErrors(sb, result.EvaluationErrors);
+        AppendAnalysisWarnings(sb, result.AnalysisWarnings);
         AppendFilters(sb);
         AppendTable(sb, violations);
 
@@ -75,6 +76,26 @@ public sealed class HtmlViolationReporter : IViolationReporter
         {
             sb.Append("<li>");
             sb.Append($"<strong>{Esc(error.RuleId)}</strong>: {Esc(error.ExceptionType)}: {Esc(error.Message)}");
+            sb.Append("</li>\n");
+        }
+
+        sb.Append("</ul>\n</section>\n");
+    }
+
+    private static void AppendAnalysisWarnings(StringBuilder sb, IReadOnlyList<AnalysisWarning> warnings)
+    {
+        if (warnings.Count == 0)
+        {
+            return;
+        }
+
+        sb.Append("<section class=\"analysis-warnings\">\n");
+        sb.Append("<h2>Analysis warnings</h2>\n");
+        sb.Append("<p class=\"analysis-warnings-note\">Some rule results below may be incomplete for these projects.</p>\n<ul>\n");
+        foreach (var warning in warnings.OrderBy(w => w.Project, StringComparer.Ordinal))
+        {
+            sb.Append("<li>");
+            sb.Append($"<strong>{Esc(warning.Project ?? warning.FilePath ?? "<unknown>")}</strong>: {Esc(warning.Message)}");
             sb.Append("</li>\n");
         }
 
@@ -159,6 +180,10 @@ public sealed class HtmlViolationReporter : IViolationReporter
         .evaluation-errors { border: 1px solid #cf222e; border-radius: 0.3rem; padding: 0.5rem 1rem; margin-bottom: 1rem; }
         .evaluation-errors h2 { font-size: 1rem; margin: 0 0 0.4rem; }
         .evaluation-errors ul { margin: 0; padding-left: 1.2rem; }
+        .analysis-warnings { border: 1px solid #9a6700; border-radius: 0.3rem; padding: 0.5rem 1rem; margin-bottom: 1rem; }
+        .analysis-warnings h2 { font-size: 1rem; margin: 0 0 0.4rem; }
+        .analysis-warnings-note { margin: 0 0 0.4rem; opacity: 0.8; font-size: 0.9rem; }
+        .analysis-warnings ul { margin: 0; padding-left: 1.2rem; }
         .filters { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; margin-bottom: 1rem; }
         .filters label { white-space: nowrap; }
         table { border-collapse: collapse; width: 100%; }

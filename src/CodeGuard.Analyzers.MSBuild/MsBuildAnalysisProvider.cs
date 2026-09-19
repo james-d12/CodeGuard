@@ -31,16 +31,12 @@ public sealed class MsBuildAnalysisProvider(
         using var workspace = MSBuildWorkspace.Create();
         workspace.RegisterWorkspaceFailedHandler(e =>
         {
-            _logger.LogWarning("MSBuild workspace diagnostic: {Message}", e.Diagnostic.Message);
-            context.AddDiagnostics([
-                new DiagnosticModel(
-                    Id: "MSBUILD-WORKSPACE",
-                    Message: e.Diagnostic.Message,
-                    ProjectName: string.Empty,
-                    FilePath: string.Empty,
-                    Line: 0,
-                    Column: 0)
-            ]);
+            var (diagnostic, logProjectSuffix) = BuildWorkspaceFailureDiagnostic(e.Diagnostic.Message);
+
+            _logger.LogWarning(
+                "MSBuild workspace diagnostic{Project}: {Message}", logProjectSuffix, diagnostic.Message);
+
+            context.AddDiagnostics([diagnostic]);
         });
 
         // A project referenced by more than one solution is only added once, attributed to
@@ -104,6 +100,29 @@ public sealed class MsBuildAnalysisProvider(
             _logger.LogInformation("Solution {SolutionPath}: {ProjectCount} project(s) analyzed", solutionPath, projectModels.Count);
             context.AddSolution(new SolutionModel(solutionPath, projectModels));
         }
+    }
+
+    /// <summary>
+    /// Turns a raw <c>WorkspaceDiagnostic.Message</c> into the <see cref="DiagnosticModel"/> recorded on
+    /// the analysis model plus the "(ProjectName)" suffix used in the accompanying log line - split out
+    /// from the <c>RegisterWorkspaceFailedHandler</c> callback so it's unit-testable without a real
+    /// MSBuildWorkspace, mirroring <see cref="WorkspaceDiagnosticParser"/> itself.
+    /// </summary>
+    internal static (DiagnosticModel Diagnostic, string LogProjectSuffix) BuildWorkspaceFailureDiagnostic(string rawMessage)
+    {
+        var (projectPath, message) = WorkspaceDiagnosticParser.Parse(rawMessage);
+        var projectName = projectPath is null ? string.Empty : Path.GetFileNameWithoutExtension(projectPath);
+        var logProjectSuffix = projectName.Length > 0 ? $" ({projectName})" : string.Empty;
+
+        var diagnostic = new DiagnosticModel(
+            Id: "MSBUILD-WORKSPACE",
+            Message: message,
+            ProjectName: projectName,
+            FilePath: projectPath ?? string.Empty,
+            Line: 0,
+            Column: 0);
+
+        return (diagnostic, logProjectSuffix);
     }
 
     private async Task<ProjectAnalysisResult?> AnalyzeProjectAsync(
