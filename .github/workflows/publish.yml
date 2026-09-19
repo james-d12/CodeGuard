@@ -127,13 +127,14 @@ jobs:
             asset="dist/codeguard-${version}-${rid}.tar.gz"
             tar -C "publish/${rid}" -czf "$asset" .
           fi
+          (cd dist && sha256sum "$(basename "$asset")" > "$(basename "$asset").sha256")
           echo "ASSET_PATH=$asset" >> "$GITHUB_ENV"
 
       - name: Upload Binary Artifact
         uses: actions/upload-artifact@v4
         with:
           name: codeguard-${{ matrix.rid }}
-          path: ${{ env.ASSET_PATH }}
+          path: dist/*
           if-no-files-found: error
 
   release:
@@ -153,6 +154,13 @@ jobs:
           pattern: "*"
           path: release-assets
           merge-multiple: true
+
+      - name: Build Checksums File
+        run: |
+          set -euo pipefail
+          cd release-assets
+          cat ./*.sha256 > checksums.txt
+          rm ./*.sha256
 
       - name: Create GitHub Release
         env:
