@@ -27,7 +27,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\CodeGuard.Evaluation\CodeGuard.Evaluation.csproj" />
+    <ProjectReference Include="..\..\src\CodeGuard.Configuration\CodeGuard.Configuration.csproj" />
+    <ProjectReference Include="..\..\src\CodeGuard.Core\CodeGuard.Core.csproj" />
   </ItemGroup>
 
 </Project>
