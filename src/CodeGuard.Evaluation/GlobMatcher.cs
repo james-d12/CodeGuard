@@ -19,7 +19,7 @@ namespace CodeGuard.Evaluation;
 internal static class GlobMatcher
 {
     public static bool IsMatch(string value, string pattern) =>
-        Regex.IsMatch(value, ToRegexPattern(pattern));
+        Regex.IsMatch(value, ToRegexPattern(pattern), options: RegexOptions.None, matchTimeout: TimeSpan.FromMilliseconds(100));
 
     private static string ToRegexPattern(string pattern)
     {
