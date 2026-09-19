@@ -35,3 +35,4 @@ tests:
       projects:
         - name: Contoso.Domain
     expect: fail
+versionFingerprint: sha256:a3e58cc9bff35652ccbfee0808ec504afb82e518cee30be6d7f4bb0f5c939535

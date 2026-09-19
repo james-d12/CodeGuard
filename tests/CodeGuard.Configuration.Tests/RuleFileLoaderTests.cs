@@ -78,15 +78,13 @@ public sealed class RuleFileLoaderTests : IDisposable
     private const string SampleFingerprint = "sha256:0000000000000000000000000000000000000000000000000000000000000000";
 
     [Fact]
-    public void LoadFromFile_WithMetadataTrackVersion_ParsesTrackVersionAndFingerprint()
+    public void LoadFromFile_WithVersionFingerprint_ParsesFingerprint()
     {
-        var file = WriteRuleFile("with-track-version.yml", $"""
+        var file = WriteRuleFile("with-version-fingerprint.yml", $"""
             id: DDD-ENTITY-001
             name: Domain entities must inherit from Entity
             version: 2
-            metadata:
-              trackVersion: true
-              versionFingerprint: "{SampleFingerprint}"
+            versionFingerprint: "{SampleFingerprint}"
             target:
               kind: class
               namespace: "Contoso.Domain.Entities"
@@ -97,18 +95,15 @@ public sealed class RuleFileLoaderTests : IDisposable
 
         var rule = CreateLoader().LoadFromFile(file);
 
-        Assert.True(rule.Metadata?.TrackVersion);
-        Assert.Equal(SampleFingerprint, rule.Metadata!.VersionFingerprint);
+        Assert.Equal(SampleFingerprint, rule.VersionFingerprint);
     }
 
     [Fact]
-    public void LoadFromFile_WithVersionFingerprintButNoTrackVersion_ThrowsSchemaValidationException()
+    public void LoadFromFile_WithNoVersionFingerprint_LeavesItNull()
     {
-        var file = WriteRuleFile("fingerprint-without-track.yml", $"""
+        var file = WriteRuleFile("no-version-fingerprint.yml", """
             id: DDD-ENTITY-001
             name: Domain entities must inherit from Entity
-            metadata:
-              versionFingerprint: "{SampleFingerprint}"
             target:
               kind: class
               namespace: "Contoso.Domain.Entities"
@@ -117,7 +112,9 @@ public sealed class RuleFileLoaderTests : IDisposable
                   type: "Contoso.Domain.Entity<TId>"
             """);
 
-        Assert.Throws<RuleSchemaValidationException>(() => CreateLoader().LoadFromFile(file));
+        var rule = CreateLoader().LoadFromFile(file);
+
+        Assert.Null(rule.VersionFingerprint);
     }
 
     [Fact]

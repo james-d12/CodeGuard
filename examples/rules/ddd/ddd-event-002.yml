@@ -40,3 +40,4 @@ tests:
           interfaces: [Contoso.Domain.IDomainEvent]
           project: Contoso.Application
     expect: fail
+versionFingerprint: sha256:e5190da3852c0a869889eee15a76b434efc343902b21788aac69aa826359ff54

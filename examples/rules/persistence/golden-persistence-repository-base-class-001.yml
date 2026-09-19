@@ -40,3 +40,4 @@ tests:
         - name: OrderRepository
           namespace: Contoso.Persistence.Repositories
     expect: fail
+versionFingerprint: sha256:f0d93ceab018468aec6df8fe0a106ab294370e6704be98a8d7f7e7b194e857e2

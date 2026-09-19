@@ -44,3 +44,4 @@ tests:
         - name: LegacyThing
           namespace: Contoso.Domain.Entities
     expect: fail
+versionFingerprint: sha256:47faa29f6843b7d8af4b82bc0c118de5a01c524763c0fa8ae6c3ffe06aced4e1

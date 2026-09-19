@@ -40,3 +40,4 @@ tests:
           constructors:
             - accessibility: public
     expect: fail
+versionFingerprint: sha256:58a9df10a8d1e9e61651dc25eff16ccbc922f82402eb3976aefe9dfb4e6a9b7f

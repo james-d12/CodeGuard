@@ -136,6 +136,8 @@ explicitly example/sample content rather than a mandatory requirement.
 * Add a `tests` block with both a `pass` and a `fail` case (see `references/examples.md`).
 * Set `illustrative` per the rules above.
 * Set `enabled` to `true` unless the source indicates otherwise.
+* Run `rules validate --update-fingerprints` to capture `versionFingerprint` (required, see below) -
+  a rule isn't finished until this has been run.
 
 ## `metadata.source`
 
@@ -157,16 +159,20 @@ metadata:
 * Omit `metadata` entirely when you don't know the source document (e.g. a rule you're asked to
   generate without a cited document) — don't invent a plausible-sounding one.
 
-## `version` and `metadata.trackVersion` (rarely needed)
+## `version` and `versionFingerprint` (required, but never hand-authored)
 
-New rules don't need either — `version` defaults to `1`, and `metadata.trackVersion`/
-`versionFingerprint` are an opt-in, CLI-managed mechanism for detecting when an *existing* rule's
-enforceable body (`target`/`assertions`/`when`/`analyzer`) changes without a version bump, not
-something to hand-author. Never fabricate a `versionFingerprint` value — it's a sha256 hash computed
-by `rules validate --update-fingerprints`, and a guessed one will simply fail validation as a
-mismatch. If you're asked to modify an existing rule that already has `metadata.trackVersion: true`,
-bump `version` yourself, but tell the human to re-run `rules validate --update-fingerprints` to
-capture the new fingerprint — don't attempt to compute or edit it directly.
+Every rule needs a `versionFingerprint` to pass `rules validate` — this is checked unconditionally,
+not opt-in. It's a sha256 hash of the rule's enforceable body (`target`/`assertions`/`when`/
+`analyzer`), computed and written by `rules validate --update-fingerprints`, never something you
+hand-author: **never fabricate a `versionFingerprint` value** — a guessed one will simply fail
+validation as a mismatch, and even a correctly-formatted fake will be wrong the moment the real body
+hashes differently. After writing any new rule, always run
+`rules validate --update-fingerprints` to capture it before treating the rule as finished (fold this
+into the "Verify before you hand anything over" step below). `version` itself defaults to `1` and
+doesn't need to be written explicitly for a brand-new rule. If you're asked to modify an existing
+rule's `target`/`assertions`/`when`/`analyzer`, bump `version` yourself, then re-run
+`rules validate --update-fingerprints` to capture the new fingerprint for the changed body — don't
+attempt to compute or edit `versionFingerprint` directly.
 
 ## Verify before you hand anything over
 
@@ -174,7 +180,8 @@ Don't present generated rules as finished until the engine has checked them. All
 deterministic, need no repository, and take seconds:
 
 ```bash
-codeguard rules validate --rules-source <dir>   # schema, known kinds, no duplicate ids
+codeguard rules validate --rules-source <dir> --update-fingerprints  # captures versionFingerprint for new/changed rules
+codeguard rules validate --rules-source <dir>   # schema, known kinds, no duplicate ids, versionFingerprint present and matching
 codeguard rules test     --rules-source <dir>   # runs each rule's embedded tests:
 codeguard rules analyze  --rules-source <dir>   # rule-set-level problems, see below
 ```

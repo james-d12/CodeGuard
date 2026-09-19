@@ -59,3 +59,4 @@ tests:
             - name: PublicTotal
               type: System.Decimal
     expect: fail
+versionFingerprint: sha256:d5eaae6530072b8d9daeeede4cef885183857156d54202d0b24f176bd50f01ba

@@ -10,22 +10,10 @@ public sealed class RuleVersionCheckerTests : IDisposable
     private readonly string _directory = Directory.CreateTempSubdirectory("codeguard-versionchecker-").FullName;
 
     [Fact]
-    public void Check_RuleNotTracked_IsSkipped()
-    {
-        var file = WriteRuleFile("not-tracked.yml", RuleYaml("DDD-ENTITY-001"));
-        var rule = RuleWith("DDD-ENTITY-001", metadata: null);
-
-        var report = RuleVersionChecker.Check([(rule, file)]);
-
-        Assert.Empty(report.Issues);
-        Assert.True(report.IsValid);
-    }
-
-    [Fact]
-    public void Check_TrackedWithNoFingerprintYet_ReportsFingerprintMissing()
+    public void Check_RuleWithNoFingerprintYet_ReportsFingerprintMissing()
     {
         var file = WriteRuleFile("no-fingerprint.yml", RuleYaml("DDD-ENTITY-001"));
-        var rule = RuleWith("DDD-ENTITY-001", new RuleMetadata { TrackVersion = true });
+        var rule = RuleWith("DDD-ENTITY-001", versionFingerprint: null);
 
         var report = RuleVersionChecker.Check([(rule, file)]);
 
@@ -37,11 +25,11 @@ public sealed class RuleVersionCheckerTests : IDisposable
     }
 
     [Fact]
-    public void Check_TrackedWithMatchingFingerprint_ReportsNoIssue()
+    public void Check_MatchingFingerprint_ReportsNoIssue()
     {
         var file = WriteRuleFile("matching.yml", RuleYaml("DDD-ENTITY-001"));
         var fingerprint = RuleBodyCanonicalizer.ComputeFingerprint(RuleFileLoader.ReadDocument(file).AsObject());
-        var rule = RuleWith("DDD-ENTITY-001", new RuleMetadata { TrackVersion = true, VersionFingerprint = fingerprint });
+        var rule = RuleWith("DDD-ENTITY-001", fingerprint);
 
         var report = RuleVersionChecker.Check([(rule, file)]);
 
@@ -50,11 +38,11 @@ public sealed class RuleVersionCheckerTests : IDisposable
     }
 
     [Fact]
-    public void Check_TrackedWithMismatchedFingerprint_ReportsContentChanged()
+    public void Check_MismatchedFingerprint_ReportsContentChanged()
     {
         var file = WriteRuleFile("mismatched.yml", RuleYaml("DDD-ENTITY-001"));
         var staleFingerprint = "sha256:" + new string('0', 64);
-        var rule = RuleWith("DDD-ENTITY-001", new RuleMetadata { TrackVersion = true, VersionFingerprint = staleFingerprint });
+        var rule = RuleWith("DDD-ENTITY-001", staleFingerprint);
 
         var report = RuleVersionChecker.Check([(rule, file)]);
 
@@ -66,18 +54,20 @@ public sealed class RuleVersionCheckerTests : IDisposable
     }
 
     [Fact]
-    public void Check_MultipleRules_OnlyChecksTrackedOnes()
+    public void Check_MultipleRules_ChecksEveryOneUnconditionally()
     {
-        var trackedFile = WriteRuleFile("tracked.yml", RuleYaml("RULE-1"));
-        var untrackedFile = WriteRuleFile("untracked.yml", RuleYaml("RULE-2"));
+        var fileA = WriteRuleFile("a.yml", RuleYaml("RULE-1"));
+        var fileB = WriteRuleFile("b.yml", RuleYaml("RULE-2"));
 
-        var tracked = RuleWith("RULE-1", new RuleMetadata { TrackVersion = true });
-        var untracked = RuleWith("RULE-2", metadata: null);
+        var fingerprintA = RuleBodyCanonicalizer.ComputeFingerprint(RuleFileLoader.ReadDocument(fileA).AsObject());
+        var ruleA = RuleWith("RULE-1", fingerprintA);
+        var ruleB = RuleWith("RULE-2", versionFingerprint: null);
 
-        var report = RuleVersionChecker.Check([(tracked, trackedFile), (untracked, untrackedFile)]);
+        var report = RuleVersionChecker.Check([(ruleA, fileA), (ruleB, fileB)]);
 
         var issue = Assert.Single(report.Issues);
-        Assert.Equal("RULE-1", issue.RuleId);
+        Assert.Equal("RULE-2", issue.RuleId);
+        Assert.Equal(RuleVersionIssueKind.FingerprintMissing, issue.Kind);
     }
 
     private static string RuleYaml(string id) => $"""
@@ -91,11 +81,11 @@ public sealed class RuleVersionCheckerTests : IDisposable
               type: "Contoso.Domain.Entity<TId>"
         """;
 
-    private static RuleDefinition RuleWith(string id, RuleMetadata? metadata) => new()
+    private static RuleDefinition RuleWith(string id, string? versionFingerprint) => new()
     {
         Id = id,
         Name = "Some rule",
-        Metadata = metadata
+        VersionFingerprint = versionFingerprint
     };
 
     private string WriteRuleFile(string relativePath, string yaml)

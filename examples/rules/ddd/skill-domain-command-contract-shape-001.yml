@@ -49,3 +49,4 @@ tests:
           properties:
             - name: Audit
     expect: fail
+versionFingerprint: sha256:1c6ce0ee728d3256fa227537110663bd48668b79ba8690405975a2b30c39edf3

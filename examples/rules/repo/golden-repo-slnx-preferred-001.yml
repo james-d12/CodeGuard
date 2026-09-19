@@ -36,3 +36,4 @@ tests:
         - path: "Contoso.slnx"
         - path: "Contoso.sln"
     expect: fail
+versionFingerprint: sha256:827b554cfbf4a3eb938d288d60e8eff2415c5fecbcb27e15bda73c04150488a0

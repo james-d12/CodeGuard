@@ -48,3 +48,4 @@ tests:
         - kind: object_creation
           invokedMember: Meter
     expect: fail
+versionFingerprint: sha256:9580ae4421b3a889951a5271218fd1bf01297a30b62e331b4c6eb7369588aa72

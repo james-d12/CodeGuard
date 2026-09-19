@@ -5,14 +5,12 @@ namespace CodeGuard.Configuration.Tests.Versioning;
 public class RuleVersionFingerprintWriterTests
 {
     [Fact]
-    public void SpliceFingerprint_NoExistingFingerprint_InsertsAfterLastMetadataKeyWithMatchingIndentation()
+    public void SpliceFingerprint_NoExistingFingerprint_InsertsAfterLastTopLevelKey()
     {
         const string original = """
             id: DDD-ENTITY-001
             name: Some rule
             version: 1
-            metadata:
-              trackVersion: true
             target:
               kind: class
 
@@ -24,11 +22,9 @@ public class RuleVersionFingerprintWriterTests
             id: DDD-ENTITY-001
             name: Some rule
             version: 1
-            metadata:
-              trackVersion: true
-              versionFingerprint: sha256:new
             target:
               kind: class
+            versionFingerprint: sha256:new
 
             """;
 
@@ -41,9 +37,7 @@ public class RuleVersionFingerprintWriterTests
         const string original = """
             id: DDD-ENTITY-001
             name: Some rule
-            metadata:
-              trackVersion: true
-              versionFingerprint: sha256:old
+            versionFingerprint: sha256:old
             target:
               kind: class
 
@@ -54,9 +48,7 @@ public class RuleVersionFingerprintWriterTests
         const string expected = """
             id: DDD-ENTITY-001
             name: Some rule
-            metadata:
-              trackVersion: true
-              versionFingerprint: sha256:new
+            versionFingerprint: sha256:new
             target:
               kind: class
 
@@ -72,8 +64,6 @@ public class RuleVersionFingerprintWriterTests
             # A comment above the id.
             id: DDD-ENTITY-001
             name: Some rule
-            metadata:
-              trackVersion: true
             # A comment above target.
             target:
               kind: class
@@ -97,33 +87,24 @@ public class RuleVersionFingerprintWriterTests
         var original = string.Join("\r\n",
             "id: DDD-ENTITY-001",
             "name: Some rule",
-            "metadata:",
-            "  trackVersion: true",
             "target:",
             "  kind: class",
             "");
 
         var result = RuleVersionFingerprintWriter.SpliceFingerprint(original, "sha256:new");
 
-        Assert.Contains("\r\n  versionFingerprint: sha256:new\r\n", result);
+        Assert.Contains("\r\nversionFingerprint: sha256:new", result);
         Assert.DoesNotMatch(@"(?<!\r)\n", result);
     }
 
     [Fact]
-    public void SpliceFingerprint_FlowStyleMetadataMapping_InsertsBeforeClosingBrace()
+    public void SpliceFingerprint_NoTrailingNewline_AppendsAtEndOfFile()
     {
-        const string original = """
-            id: DDD-ENTITY-001
-            name: Some rule
-            metadata: { trackVersion: true }
-            target:
-              kind: class
-
-            """;
+        const string original = "id: DDD-ENTITY-001\nname: Some rule";
 
         var result = RuleVersionFingerprintWriter.SpliceFingerprint(original, "sha256:new");
 
-        Assert.Contains("metadata: { trackVersion: true, versionFingerprint: sha256:new }", result);
+        Assert.Equal("id: DDD-ENTITY-001\nname: Some rule\nversionFingerprint: sha256:new", result);
     }
 
     [Fact]
@@ -132,8 +113,6 @@ public class RuleVersionFingerprintWriterTests
         const string original = """
             id: DDD-ENTITY-001
             name: Some rule
-            metadata:
-              trackVersion: true
             target:
               kind: class
 
@@ -154,8 +133,6 @@ public class RuleVersionFingerprintWriterTests
             File.WriteAllText(tempFile, """
                 id: DDD-ENTITY-001
                 name: Some rule
-                metadata:
-                  trackVersion: true
                 target:
                   kind: class
 

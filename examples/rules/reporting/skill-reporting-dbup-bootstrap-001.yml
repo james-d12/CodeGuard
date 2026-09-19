@@ -21,3 +21,4 @@ illustrative: true
 analyzer:
   kind: project-convention
   project_pattern: "*.Reporting*"
+versionFingerprint: sha256:aa8f0f3f2be0b4cd96fa6a19f5c33f566ec10ce1438e6c3233e2ba7074fd5fc2

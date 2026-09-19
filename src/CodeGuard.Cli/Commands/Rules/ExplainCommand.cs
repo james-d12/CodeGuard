@@ -111,6 +111,7 @@ public static class ExplainCommand
             ["name"] = rule.Name,
             ["description"] = rule.Description?.Trim(),
             ["version"] = rule.Version,
+            ["versionFingerprint"] = rule.VersionFingerprint,
             ["severity"] = rule.Severity.ToString().ToLowerInvariant(),
             ["enforcement"] = new JsonObject
             {
@@ -134,42 +135,23 @@ public static class ExplainCommand
     }
 
     /// <summary>
-    /// Null when the rule has no metadata worth reporting (no provenance, not opted into version
-    /// tracking) - same "explicit null rather than omitted" convention <see cref="PrintJson"/> uses
-    /// throughout, since <see cref="JsonOptions"/> only drops nulls it never had a chance to see, not
-    /// ones assigned to <see cref="JsonObject"/> keys directly.
+    /// Null when the rule has no provenance metadata - same "explicit null rather than omitted"
+    /// convention <see cref="PrintJson"/> uses throughout, since <see cref="JsonOptions"/> only drops
+    /// nulls it never had a chance to see, not ones assigned to <see cref="JsonObject"/> keys directly.
     /// </summary>
-    private static JsonObject? BuildMetadataJson(RuleMetadata? metadata)
+    private static JsonObject? BuildMetadataJson(RuleMetadata? metadata) =>
+        metadata?.Source is { } source
+            ? new JsonObject { ["source"] = BuildSourceJson(source) }
+            : null;
+
+    private static JsonObject BuildSourceJson(RuleSource source) => new()
     {
-        if (metadata is not { } m || (m.Source is null && !m.TrackVersion))
-        {
-            return null;
-        }
-
-        return new JsonObject
-        {
-            ["source"] = BuildSourceJson(m.Source),
-            ["trackVersion"] = m.TrackVersion,
-            ["versionFingerprint"] = m.VersionFingerprint
-        };
-    }
-
-    private static JsonObject? BuildSourceJson(RuleSource? source)
-    {
-        if (source is null)
-        {
-            return null;
-        }
-
-        return new JsonObject
-        {
-            ["document"] = source.Document,
-            ["section"] = source.Section,
-            ["statement"] = source.Statement,
-            ["file"] = source.File,
-            ["fingerprint"] = source.Fingerprint
-        };
-    }
+        ["document"] = source.Document,
+        ["section"] = source.Section,
+        ["statement"] = source.Statement,
+        ["file"] = source.File,
+        ["fingerprint"] = source.Fingerprint
+    };
 
     private static string ToSnakeCase(string value) =>
         string.Concat(value.Select((c, i) => char.IsUpper(c) && i > 0 ? "_" + char.ToLowerInvariant(c) : char.ToLowerInvariant(c).ToString()));
@@ -188,8 +170,8 @@ public static class ExplainCommand
         Console.WriteLine($"Tags:          {(rule.Tags.Count == 0 ? "-" : string.Join(", ", rule.Tags))}");
         Console.WriteLine($"Enabled:       {rule.Enabled}");
         Console.WriteLine($"Illustrative:  {rule.Illustrative}");
+        Console.WriteLine($"Fingerprint:   {rule.VersionFingerprint ?? "not yet captured"}");
         PrintSourceSummary(rule.Metadata?.Source);
-        PrintVersionTrackSummary(rule.Metadata);
         PrintShapeSummary(rule);
         if (rule.Remediation is not null)
         {
@@ -213,17 +195,6 @@ public static class ExplainCommand
         {
             Console.WriteLine($"Source file:   {source.File}{(source.Fingerprint is null ? " (no fingerprint captured)" : "")}");
         }
-    }
-
-    private static void PrintVersionTrackSummary(RuleMetadata? metadata)
-    {
-        if (metadata?.TrackVersion is not true)
-        {
-            return;
-        }
-
-        var fingerprintStatus = metadata.VersionFingerprint is null ? "no fingerprint captured" : metadata.VersionFingerprint;
-        Console.WriteLine($"Version track: {fingerprintStatus}");
     }
 
     private static void PrintShapeSummary(RuleDefinition rule)

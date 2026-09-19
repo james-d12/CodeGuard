@@ -43,3 +43,4 @@ tests:
         - name: OrderPlacedEvent
           namespace: Contoso.Domain.Messages
     expect: fail
+versionFingerprint: sha256:606e93192b03cc3316197fcd4df154a051d0f9ee709093d1312a97564a2b53fb

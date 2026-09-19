@@ -11,6 +11,18 @@ public sealed class RuleDefinition
     public required string Name { get; init; }
     public string? Description { get; init; }
     public int Version { get; init; } = 1;
+
+    /// <summary>
+    /// `sha256:&lt;64 hex&gt;` of the rule's own canonicalized enforceable body (`target`+`assertions`+
+    /// `when`, or `analyzer` - see `RuleBodyCanonicalizer`), captured via
+    /// `rules validate --update-fingerprints`. Checked unconditionally for every rule: `codeguard
+    /// rules validate` recomputes the current fingerprint and fails - not just warns, unlike
+    /// <see cref="RuleSource.Fingerprint"/> - if this is missing or no longer matches, prompting a
+    /// human to bump <see cref="Version"/> and re-run `--update-fingerprints` to capture the new one.
+    /// See docs/RULE_VERSIONING_PLAN.md.
+    /// </summary>
+    public string? VersionFingerprint { get; init; }
+
     public Severity Severity { get; init; } = Severity.Warning;
     public EnforcementMetadata Enforcement { get; init; } = new();
     public IReadOnlyList<string> Tags { get; init; } = [];
@@ -65,23 +77,6 @@ public sealed class EnforcementMetadata
 public sealed class RuleMetadata
 {
     public RuleSource? Source { get; init; }
-
-    /// <summary>
-    /// Opts a rule into version-drift checking (docs/RULE_VERSIONING_PLAN.md): `codeguard rules
-    /// validate` recomputes a fingerprint of the rule's own enforceable body (`target`+`assertions`+
-    /// `when`, or `analyzer`) and fails - not just warns, unlike <see cref="RuleSource.Fingerprint"/> -
-    /// if <see cref="VersionFingerprint"/> is missing or no longer matches, prompting a human to
-    /// bump <see cref="RuleDefinition.Version"/> and re-run `rules validate --update-fingerprints`
-    /// to capture the new one. A rule that leaves this false is entirely unaffected, at zero cost.
-    /// </summary>
-    public bool TrackVersion { get; init; }
-
-    /// <summary>
-    /// `sha256:&lt;64 hex&gt;` of the rule's own canonicalized enforceable body, captured via
-    /// `rules validate --update-fingerprints`. Only meaningful when <see cref="TrackVersion"/> is
-    /// true; null until first captured.
-    /// </summary>
-    public string? VersionFingerprint { get; init; }
 }
 
 /// <param name="Document">Free text naming the source document, e.g. "Architecture Standards".</param>

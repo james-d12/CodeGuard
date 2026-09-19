@@ -37,3 +37,4 @@ tests:
         - name: PlaceOrderCommandHandler
           namespace: Contoso.Application.Handlers
     expect: fail
+versionFingerprint: sha256:dd1f4ca8d0554f48ac97a987ae8ffa83be0fcbf7d0b64f2f184447a61311b5c5

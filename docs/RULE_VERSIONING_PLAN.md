@@ -1,8 +1,15 @@
 # Rule Versioning Plan
 
-> Status: **in progress**. Tracked on `feature/rule-versioning`. Move to `docs/done/` only once
-> every item below is verified shipped (found in `src/`/`tests/`, not just asserted here), with
-> cross-references updated to the new path.
+> Status: **shipped**, in its final (mandatory) form - tracked on `feature/rule-versioning`. This
+> document describes the *original* opt-in design as proposed. That design shipped, then was
+> **deliberately replaced** with a mandatory one at the user's explicit request ("too much opt-in,
+> makes using this confusing, we should just enforce strictness") - not layered on top of it. For
+> the actual, final shape (`versionFingerprint` as a top-level field, checked unconditionally for
+> every rule, no `metadata.trackVersion`), see `docs/IMPLEMENTATION_STATUS.md`'s "Post-v1 addition:
+> rule versioning" section, which is the authoritative, up-to-date account. Kept here rather than
+> moved to `docs/done/` for now, since a straight move would present the superseded design below as
+> if it were still current - a deliberate future edit, once someone confirms every cross-reference
+> is updated too, not something to fold into this pass silently.
 
 ## Context
 

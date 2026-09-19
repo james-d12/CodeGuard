@@ -44,3 +44,4 @@ tests:
               modifiers: [static]
               accessibility: public
     expect: fail
+versionFingerprint: sha256:ccf74aea6d621b3c22781cfdd9f57d8ee94732bab0ea9f5269a7d5a9fb411e17

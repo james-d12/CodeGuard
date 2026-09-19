@@ -34,3 +34,4 @@ tests:
       files:
         - path: "azure-pipelines.yaml"
     expect: fail
+versionFingerprint: sha256:183b37e62ef706fc3557851fef02e6cf61f4352b8503401f1783d8278a047d63

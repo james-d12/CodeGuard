@@ -48,3 +48,4 @@ tests:
           properties:
             - name: CreatedDateTime
     expect: fail
+versionFingerprint: sha256:344ec84b4d47f71b83331edd98234d35fb8ac35151931cde3a28aaf44e951b99

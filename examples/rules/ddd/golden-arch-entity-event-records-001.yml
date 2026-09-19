@@ -43,3 +43,4 @@ tests:
           namespace: Contoso.Domain.Entities
           kind: class
     expect: fail
+versionFingerprint: sha256:f13719351c8a70df15b349c188074b6f75431970cc736aa23638b62ca53d2b4c

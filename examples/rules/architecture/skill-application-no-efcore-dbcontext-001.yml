@@ -40,3 +40,4 @@ tests:
           packageReferences:
             - id: "Microsoft.EntityFrameworkCore.SqlServer"
     expect: fail
+versionFingerprint: sha256:2ac652af65f84e7f6432599785b7dd5e4ef883528d22f1300deea9cdd8e65a06

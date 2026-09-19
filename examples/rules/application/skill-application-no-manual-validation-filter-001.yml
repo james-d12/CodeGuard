@@ -46,3 +46,4 @@ tests:
         - invokedMember: TryValidateObject
           containingType: Contoso.Api.Filters.CustomFilter
     expect: fail
+versionFingerprint: sha256:4b8b8833dfe84a010318c3c483a44e14b650049eb32c9faf4a27c4f277f02ac8

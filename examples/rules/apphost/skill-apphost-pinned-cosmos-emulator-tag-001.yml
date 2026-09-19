@@ -38,3 +38,4 @@ tests:
           content: >
             var cosmos = builder.AddAzureCosmosDB("cosmos").RunAsEmulator(e => e.WithImageTag("latest"));
     expect: fail
+versionFingerprint: sha256:7d9740b84d23fcf8bd48f37bd056d2160f53e05a2c607b6cdedd52840c499491

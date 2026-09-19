@@ -46,3 +46,4 @@ tests:
           properties:
             - name: PartitionKey
     expect: fail
+versionFingerprint: sha256:ede0c10aa7df4d8900ac40b036a29e9cfd0d947cb57f128cd074920606dacec6

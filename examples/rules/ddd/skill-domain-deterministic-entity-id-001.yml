@@ -41,3 +41,4 @@ tests:
           containingType: Contoso.Domain.Order
           project: Contoso.Domain
     expect: fail
+versionFingerprint: sha256:2120185a49660a839925c580c189b3d46b6f2b4e17af4e2bdfc8e8d816fdba6d

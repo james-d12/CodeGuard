@@ -33,3 +33,4 @@ tests:
       callSites:
         - invokedMember: AddFrameworkInstrumentation
     expect: fail
+versionFingerprint: sha256:5e50652ea0aa37cbff49eada0e090478d84cdeabb4fdb6014122c90c0946256c

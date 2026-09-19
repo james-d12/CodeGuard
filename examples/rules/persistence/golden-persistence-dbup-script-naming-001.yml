@@ -34,3 +34,4 @@ tests:
       files:
         - path: "Scripts/usp_CreateOrders.sql"
     expect: fail
+versionFingerprint: sha256:4938c59482246e2941750820deb898eb22914d16a6611ef4ec06e0d41145ceb2

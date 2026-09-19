@@ -37,3 +37,4 @@ tests:
         - path: "requirements/requirements.json"
           content: '{"dbup": {"deploymentType": "service"}}'
     expect: fail
+versionFingerprint: sha256:1bd9835fb27a3a5328c863e8ecf69d6fc0b7c0618c2afa9431893a9beeeab98b

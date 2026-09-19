@@ -38,3 +38,4 @@ tests:
         - id: CS1591
           message: Missing XML comment for publicly visible type or member
     expect: fail
+versionFingerprint: sha256:c07458ac0b3ddb2356a4f722782479ea6af258202c494356684c507c1d5e8f60

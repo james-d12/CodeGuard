@@ -38,3 +38,4 @@ tests:
         - name: OrderPersistenceProcessor
           namespace: Contoso.Reporting.Persistence
     expect: fail
+versionFingerprint: sha256:b12da520e020be0520150683c7185818fcae6601ce6813b1d4d863c14101d0d0

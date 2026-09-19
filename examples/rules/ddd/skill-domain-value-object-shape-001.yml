@@ -41,3 +41,4 @@ tests:
           namespace: Contoso.Domain.ValueObjects
           kind: record
     expect: fail
+versionFingerprint: sha256:91c68d1524868a9480d95201c7476fac3328a8b7cd158467d838f7a1301074c6

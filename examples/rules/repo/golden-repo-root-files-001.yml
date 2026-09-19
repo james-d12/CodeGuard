@@ -46,3 +46,4 @@ tests:
         - path: ".editorconfig"
         - path: ".gitignore"
     expect: fail
+versionFingerprint: sha256:2d50e8fb95f7ad448cb79bfc41a5924db52ad2a6e2e0b83d708d915cfdc3bf41

@@ -38,3 +38,4 @@ tests:
           methods:
             - name: TestCreate
     expect: fail
+versionFingerprint: sha256:57355095c3aac5d19778594166774fe242af2c5990864bf1b749095b7f884501

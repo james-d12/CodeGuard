@@ -41,3 +41,4 @@ tests:
           packageReferences:
             - id: "Microsoft.AspNetCore.App"
     expect: fail
+versionFingerprint: sha256:e223e3e7218e404ecde599f91d9279e69f7822ab4b6c9c0448c8602ecb42acc6

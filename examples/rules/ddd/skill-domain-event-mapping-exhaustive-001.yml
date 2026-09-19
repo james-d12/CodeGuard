@@ -21,3 +21,4 @@ illustrative: true
 analyzer:
   kind: exhaustive-switch
   namespace: "Contoso.Domain.*"
+versionFingerprint: sha256:c0bc1373963197d65b003de3ff1b0e086a44a08f1573400f0143d4b702cb1303

@@ -38,3 +38,4 @@ tests:
           packageReferences:
             - id: "Microsoft.EntityFrameworkCore"
     expect: fail
+versionFingerprint: sha256:4a2403db817277ca3e0dbc6c695d2d6c0b96580704aa18cbfabd398933eccdcf

@@ -42,9 +42,9 @@ public static class RuleValidationReportWriter
     /// does, plus a "Source checks" section for any `metadata.source.file` drift found by
     /// <see cref="RuleSourceChecker"/> (always warnings, never reflected in <paramref name="report"/>'s
     /// own pass/fail counts or exit code - see docs/done/RULE_SOURCE_AND_LINKED_DOCUMENTATION.md), and
-    /// a "Version checks" section for any drift found by <see cref="RuleVersionChecker"/> (these ARE
-    /// failures - see docs/RULE_VERSIONING_PLAN.md). Each section is omitted entirely when there's
-    /// nothing to report (the common case, since both checks are opt-in per rule).
+    /// a "Version checks" section for any drift found by <see cref="RuleVersionChecker"/>, checked
+    /// unconditionally for every rule with no opt-in (these ARE failures - see
+    /// docs/RULE_VERSIONING_PLAN.md). Each section is omitted entirely when there's nothing to report.
     /// </summary>
     public static void WriteConsole(
         RuleSetValidationReport report, RuleSourceCheckReport sourceReport, RuleVersionCheckReport versionReport, TextWriter writer)
@@ -143,7 +143,7 @@ public static class RuleValidationReportWriter
         switch (issue.Kind)
         {
             case RuleVersionIssueKind.FingerprintMissing:
-                writer.WriteLine($"  ✗ {issue.RuleId} - tracked but no versionFingerprint captured yet");
+                writer.WriteLine($"  ✗ {issue.RuleId} - no versionFingerprint captured yet");
                 writer.WriteLine($"      New fingerprint: {issue.ComputedFingerprint}");
                 return;
             case RuleVersionIssueKind.ContentChanged:

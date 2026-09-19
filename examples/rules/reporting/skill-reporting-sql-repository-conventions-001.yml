@@ -50,3 +50,4 @@ tests:
         - invokedMember: "IsDBNull"
           project: Contoso.Reporting.Sql
     expect: fail
+versionFingerprint: sha256:5b10ed26725e85af07dd0518486ef84dd4cfbfa768dfdc3734857d19781a5cfe

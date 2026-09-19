@@ -41,3 +41,4 @@ tests:
           namespace: Contoso.Api
           kind: enum
     expect: fail
+versionFingerprint: sha256:c961933bb510fb5bc373c13d645236ef9eca768bbd91d97defaf33d1cdffc9cd

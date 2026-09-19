@@ -42,3 +42,4 @@ tests:
           methods:
             - name: ToDateSurrogate
     expect: fail
+versionFingerprint: sha256:ad641f6c94233dd9daf5763c4a48b57a60276872125f185831b1a76baa4e8f28

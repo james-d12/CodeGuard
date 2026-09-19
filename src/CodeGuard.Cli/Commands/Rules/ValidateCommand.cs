@@ -22,14 +22,14 @@ public static class ValidateCommand
         {
             Description =
                 "Recompute and write metadata.source.fingerprint (for rules whose linked documentation " +
-                "has drifted or was never fingerprinted) and metadata.versionFingerprint (for rules " +
-                "opted into version-drift checking via metadata.trackVersion) alike. Off by default - " +
-                "this is the only `rules validate` mode that writes to rule files, and only edits the " +
+                "has drifted or was never fingerprinted) and versionFingerprint (for every rule whose " +
+                "enforceable body has drifted or was never fingerprinted) alike. Off by default - this " +
+                "is the only `rules validate` mode that writes to rule files, and only edits the " +
                 "relevant fingerprint value in place (comments/key order/formatting elsewhere are " +
                 "untouched). Rules with a broken source link (missing file/section, or an ambiguous " +
                 "section) have nothing to fingerprint and are left for a human to fix regardless of " +
-                "this flag; if you changed a tracked rule's enforceable behavior, consider bumping " +
-                "`version` before running this, since it only updates the fingerprint, never `version`.",
+                "this flag; if you changed a rule's enforceable behavior, consider bumping `version` " +
+                "before running this, since it only updates the fingerprint, never `version`.",
             DefaultValueFactory = _ => false
         };
 
@@ -37,15 +37,15 @@ public static class ValidateCommand
             "validate",
             "Validate a set of rule YAML files for structural correctness (schema conformance, known " +
             "selector/assertion/analyzer kinds, no duplicate rule ids) without evaluating them against a repository " +
-            "(that's what the top-level `validate` command does). Also checks two independent, opt-in " +
-            "fingerprint mechanisms: a rule's metadata.source.file link to its documentation drifting, " +
-            "being broken, or never fingerprinted (metadata.source.* - warns only, never fails the exit " +
-            "code); and a rule's own enforceable body (target/assertions/when/analyzer) drifting from its " +
-            "recorded metadata.versionFingerprint for rules opted in via metadata.trackVersion (fails the " +
-            "exit code - see docs/RULE_VERSIONING_PLAN.md). These are the only cases this command reads " +
-            "files outside the configured rules directory (source) or re-derives content from rules " +
-            "already loaded (version). Use --rules-source to point directly at a folder; otherwise " +
-            "validates whatever this repo is configured to use.");
+            "(that's what the top-level `validate` command does). Also checks two independent fingerprint " +
+            "mechanisms: a rule's optional metadata.source.file link to its documentation drifting, being " +
+            "broken, or never fingerprinted (metadata.source.* - warns only, never fails the exit code); " +
+            "and every rule's own enforceable body (target/assertions/when/analyzer) drifting from its " +
+            "recorded versionFingerprint, checked unconditionally for every rule with no opt-in (fails " +
+            "the exit code - see docs/RULE_VERSIONING_PLAN.md). These are the only cases this command " +
+            "reads files outside the configured rules directory (source) or re-derives content from " +
+            "rules already loaded (version). Use --rules-source to point directly at a folder; " +
+            "otherwise validates whatever this repo is configured to use.");
         command.Add(pathOption);
         command.Add(configOption);
         command.Add(rulesSourceOption);

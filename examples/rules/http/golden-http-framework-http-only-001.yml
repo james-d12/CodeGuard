@@ -40,3 +40,4 @@ tests:
           namespace: Contoso.Orders
           baseType: "System.Net.Http.HttpClient"
     expect: fail
+versionFingerprint: sha256:7f23af0b69e7c43895be7d5a076238bd8b1522ea5dd68d07e397a305cd9ace96

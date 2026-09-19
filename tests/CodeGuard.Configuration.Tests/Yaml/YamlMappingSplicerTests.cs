@@ -37,6 +37,41 @@ public sealed class YamlMappingSplicerTests
     }
 
     [Fact]
+    public void SpliceScalar_RootMappingWhereLastEntryIsASequenceOfMappings_InsertsAfterTheWholeSequence()
+    {
+        // Regression test: YamlDotNet leaves YamlMappingNode/YamlSequenceNode.End equal to .Start
+        // rather than advancing it past nested content, so naively using the last entry's own .End
+        // mark inserts mid-structure - previously this corrupted real rule files by inserting right
+        // after "must_inherit_from:" and before its own nested "type:" key, whenever a rule's last
+        // top-level key was "assertions:" (a sequence of mappings), which is the common case for any
+        // rule with no "tests:" block.
+        const string original = """
+            id: DDD-ENTITY-001
+            name: Some rule
+            target:
+              kind: class
+            assertions:
+              - must_inherit_from:
+                  type: "Entity<*>"
+            """;
+
+        var result = YamlMappingSplicer.SpliceScalar(original, [], "versionFingerprint", "sha256:new");
+
+        const string expected = """
+            id: DDD-ENTITY-001
+            name: Some rule
+            target:
+              kind: class
+            assertions:
+              - must_inherit_from:
+                  type: "Entity<*>"
+            versionFingerprint: sha256:new
+            """;
+
+        Assert.Equal(expected, result);
+    }
+
+    [Fact]
     public void SpliceScalar_MappingPathNotPresent_ThrowsInvalidOperationException()
     {
         // Callers are documented as only splicing into a path they've already confirmed exists -

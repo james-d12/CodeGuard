@@ -40,3 +40,4 @@ tests:
           containingType: Contoso.Domain.Order
           catchClauseCount: 5
     expect: fail
+versionFingerprint: sha256:2d2e7195eefe8921c22ac19c327d898fd74fbdab7208af20bfe670216d7cca5b

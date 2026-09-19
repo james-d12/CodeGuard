@@ -42,3 +42,4 @@ tests:
         - invokedMember: WriteLine
           targetTypeName: Console
     expect: fail
+versionFingerprint: sha256:2423d766845015cf1dc43d4fc97a608be2a9932d8447b79f4efde13016e0fc78

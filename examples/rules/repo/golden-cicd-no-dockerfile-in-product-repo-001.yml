@@ -32,3 +32,4 @@ tests:
       files:
         - path: "Dockerfile"
     expect: fail
+versionFingerprint: sha256:651d86a68bb15f6dfb6a9f332a00785198e396897f7b2648c41d2ac06bd48b58

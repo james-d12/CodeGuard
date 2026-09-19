@@ -38,3 +38,4 @@ tests:
           namespace: Contoso.Api
           baseType: Microsoft.AspNetCore.Mvc.ControllerBase
     expect: fail
+versionFingerprint: sha256:d2507cc483ca0e41ac1bc690ac9ce062824f48660577791b41fed7049f89ad2b

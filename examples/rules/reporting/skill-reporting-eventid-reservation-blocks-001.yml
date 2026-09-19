@@ -52,3 +52,4 @@ tests:
                 - typeName: LoggerMessageAttribute
                   constructorArgumentLiterals: ["3000"]
     expect: fail
+versionFingerprint: sha256:70d0bb9e2ebc616ebcc038fc46d5dbb66bd7a280898abf191d8a22c458b161ab

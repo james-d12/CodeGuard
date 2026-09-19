@@ -40,3 +40,4 @@ tests:
         - name: Contoso.Domain
           projectReferences: [Contoso.Persistence]
     expect: fail
+versionFingerprint: sha256:53937b16102816aebc825c748af6afa9257a09f61c0d6b3bce632d793d2529eb

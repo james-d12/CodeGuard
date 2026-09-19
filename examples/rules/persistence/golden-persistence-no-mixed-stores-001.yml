@@ -42,3 +42,4 @@ tests:
             - id: Microsoft.EntityFrameworkCore.Cosmos
               version: "8.0.0"
     expect: fail
+versionFingerprint: sha256:6d8d6ffabd43b3ac29a7b065b0aa5d3430dd4c548d28c168de8ecb65d4426d2e

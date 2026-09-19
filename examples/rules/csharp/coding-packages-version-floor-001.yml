@@ -47,3 +47,4 @@ tests:
             - id: Contoso.Sdk
               version: "7.9.0"
     expect: fail
+versionFingerprint: sha256:be8b602e321618ef08d63a216cafce8616114b475bb2f4bc5ca1e85651081ad5

@@ -36,3 +36,4 @@ tests:
           namespace: Contoso.Domain.Events
           kind: record
     expect: fail
+versionFingerprint: sha256:4acb8c781ca668c5ca2894a159ba19c006022592c37c5f4d62e5f0bdc1ea6b34

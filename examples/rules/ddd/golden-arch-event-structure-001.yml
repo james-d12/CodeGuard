@@ -42,3 +42,4 @@ tests:
           kind: record
           baseType: "Contoso.Domain.Events.EventBase"
     expect: fail
+versionFingerprint: sha256:a648384c041409f210c26be088fca22b5874086ffc8de1a7f36fd188b6a5ca50

@@ -51,3 +51,4 @@ tests:
         - invokedMember: "GetRequiredService"
           containingType: Contoso.Api.OrderController
     expect: fail
+versionFingerprint: sha256:b24b23cf03b9db7701eca582f56dd4ae1e8895e34a161fb4f844d8bfa044cd56
