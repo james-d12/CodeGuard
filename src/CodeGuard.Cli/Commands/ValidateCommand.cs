@@ -25,12 +25,8 @@ public static class ValidateCommand
         var rulesSourceOption = CommonOptions.CreateRulesSourceOption();
         var branchOption = CommonOptions.CreateBranchOption();
 
-        var formatOption = new Option<string>("--format")
-        {
-            Description = "Output format: console, json, sarif, or html.",
-            DefaultValueFactory = _ => "console"
-        };
-        formatOption.AcceptOnlyFromAmong("console", "json", "sarif", "html");
+        var formatOption = CommonOptions.CreateFormatOption(
+            "Output format: console, json, sarif, or html.", "console", "console", "json", "sarif", "html");
 
         var outputOption = new Option<string?>("--output")
         {
@@ -39,15 +35,7 @@ public static class ValidateCommand
                 "e.g. validation-report.html."
         };
 
-        var colorOption = new Option<bool>("--color")
-        {
-            Description = "Force ANSI color in console output, even when redirected. Ignored when --output is set."
-        };
-
-        var noColorOption = new Option<bool>("--no-color")
-        {
-            Description = "Disable ANSI color in console output, even in an interactive terminal."
-        };
+        var (colorOption, noColorOption) = CommonOptions.CreateColorOptions("Ignored when --output is set.");
 
         var ruleOption = new Option<string[]>("--rule")
         {
