@@ -1,0 +1,54 @@
+id: CODING-HANDLERS-FILENAME-SUFFIX-001
+name: Files in a Handlers folder must be named *Handler.cs
+description: >
+  Every .cs file anywhere under a Handlers folder must end in "Handler.cs", and
+  src/Handlers itself must contain at least one such file directly (not just in
+  a nested subfolder).
+severity: warning
+enforcement:
+  classification: deterministic
+tags:
+  - csharp
+  - naming
+remediation: >
+  Rename the file to end in "Handler.cs", or move it out of the Handlers
+  folder if it isn't a handler.
+illustrative: true
+
+target:
+  kind: repository
+
+assertions:
+  - must_all_match:
+      selector:
+        kind: file
+        path: "**/Handlers/*.cs"
+      assertions:
+        - must_match_name:
+            regex: "(^|/)[^/]*Handler\\.cs$"
+  - must_exist:
+      selector:
+        kind: file
+        path: "src/Handlers/*"
+        name: "*Handler.cs"
+
+tests:
+  - name: Handlers folder contains only *Handler.cs files
+    setup:
+      files:
+        - path: "src/Handlers/OrderHandler.cs"
+        - path: "src/Handlers/PaymentHandler.cs"
+    expect: pass
+
+  - name: Handlers folder contains a file that does not end in Handler.cs
+    setup:
+      files:
+        - path: "src/Handlers/OrderHandler.cs"
+        - path: "src/Handlers/RateLimitingMiddleware.cs"
+    expect: fail
+
+  - name: Handlers folder has no direct *Handler.cs file, only a nested one
+    setup:
+      files:
+        - path: "src/Handlers/Internal/OrderHandler.cs"
+    expect: fail

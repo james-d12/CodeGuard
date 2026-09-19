@@ -32,6 +32,11 @@ public class RepositoryFileProviderTests
             Assert.DoesNotContain(model.Files, f => f.RelativePath.StartsWith("bin", StringComparison.Ordinal));
             Assert.DoesNotContain(model.Files, f => f.RelativePath.StartsWith(".git", StringComparison.Ordinal));
             Assert.Equal(2, model.Files.Count);
+
+            var srcDirectory = Assert.Single(model.Directories);
+            Assert.Equal("src", srcDirectory.RelativePath);
+            Assert.Equal("src", srcDirectory.Name);
+            Assert.Equal(srcDir.FullName, srcDirectory.Path);
         }
         finally
         {

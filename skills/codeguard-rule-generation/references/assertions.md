@@ -38,13 +38,14 @@ works entirely through its own nested selector.
 | `must_match_argument` | `index` (int, required), `pattern` (regex, required) | CallSite |
 | `must_match_content` | `pattern` (regex, required) | File |
 | `must_match_filename` | *(none)* | Type |
-| `must_match_name` | `regex` (regex, required) | Type, Project, Method, Property, Field, File |
+| `must_match_name` | `regex` (regex, required) | Type, Project, Method, Property, Field, File, Directory |
 | `must_match_namespace_pattern` | `regex` (regex, required) | Type |
 | `must_none_match` | `selector` (nested selector, required), `assertions` (nested assertions, required) | any candidate |
 | `must_not_be_in_namespace` | `pattern` (glob, required) | Type |
 | `must_not_depend_on` | `type` (glob, required) | Project |
 | `must_not_exist` | `selector` (nested selector, required) | any candidate |
 | `must_not_have_attribute` | `type` (glob, required), `argument` (string, optional) | Type, Method, Property, Constructor, Field |
+| `must_not_have_directory` | `path` (glob, required) | Repository |
 | `must_not_have_field` | `name` (glob, required) | Type |
 | `must_not_have_file` | `path` (glob, required) | Repository |
 | `must_not_have_json_field` | `path` (string, required), `equals` (string, optional) | File |

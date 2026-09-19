@@ -11,9 +11,9 @@ public sealed record RepositoryModel(
     IReadOnlyList<TryBlockModel> TryBlocks,
     IReadOnlyList<MethodBodyShapeModel> MethodBodyShapes,
     IReadOnlyList<DiagnosticModel> Diagnostics,
-    IReadOnlyList<string> Directories = null!) // ??= [] below - a positional record parameter can't use a collection-expression default directly
+    IReadOnlyList<DirectoryModel> Directories = null!) // ??= [] below - a positional record parameter can't use a collection-expression default directly
 {
-    public IReadOnlyList<string> Directories { get; init; } = Directories ?? [];
+    public IReadOnlyList<DirectoryModel> Directories { get; init; } = Directories ?? [];
 }
 
 public sealed record SolutionModel(
@@ -25,3 +25,8 @@ public sealed record FileModel(
     string RelativePath,
     string Extension,
     string? Content = null);
+
+public sealed record DirectoryModel(
+    string Path,
+    string RelativePath,
+    string Name);

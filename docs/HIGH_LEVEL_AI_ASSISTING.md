@@ -245,7 +245,9 @@ is most likely to get wrong:
 
 * There is **no `rule:` wrapper** — `target` and `assertions` are top-level keys.
 * A target is `{ kind: project, name: "<glob>" }`, not a list of `.csproj` paths.
-* Globs support `*` only — no `**`, no path semantics.
+* Globs support `*` (one path segment), `**` (zero or more full path segments, used as a whole
+  segment — e.g. `**/Foo.cs`), and `?` (one character). No character classes (`[abc]`) or brace
+  expansion (`{a,b}`).
 * Each assertion is a **single-key map** (`must_not_reference_project:` → its params). The schema
   enforces exactly one key per entry, so a `{type:, value:}` pair fails validation.
 * `must_not_reference_project` is one of the 45 real assertion kinds; `forbidden-reference` is not a

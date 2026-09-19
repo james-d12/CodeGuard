@@ -16,7 +16,7 @@ illustrative: true
 
 target:
   kind: file
-  path: "*requirements.json"
+  path: "**/requirements.json"
 
 assertions:
   - must_have_json_field:

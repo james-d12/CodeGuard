@@ -16,7 +16,7 @@ illustrative: true
 
 target:
   kind: file
-  path: "*/AppHost/Program.cs"
+  path: "**/AppHost/Program.cs"
 
 assertions:
   - must_match_content:

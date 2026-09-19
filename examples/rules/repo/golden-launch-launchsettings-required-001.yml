@@ -15,7 +15,7 @@ illustrative: true
 
 target:
   kind: file
-  path: "*/Properties/launchSettings.json"
+  path: "**/Properties/launchSettings.json"
 
 assertions:
   - must_have_json_field:
