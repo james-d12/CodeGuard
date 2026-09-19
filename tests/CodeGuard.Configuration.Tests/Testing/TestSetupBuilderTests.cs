@@ -102,7 +102,10 @@ public sealed class TestSetupBuilderTests
             { "directories": ["src"] }
             """));
 
-        Assert.Equal(["src"], model.Directories);
+        var directory = Assert.Single(model.Directories);
+        Assert.Equal("src", directory.Path);
+        Assert.Equal("src", directory.RelativePath);
+        Assert.Equal("src", directory.Name);
     }
 
     [Fact]

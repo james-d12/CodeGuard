@@ -8,7 +8,7 @@ public sealed class MustHaveDirectoryAssertionTests
     [Fact]
     public void Evaluate_Passes_WhenDirectoryExistsInModel()
     {
-        var model = new RepositoryModel("/repo", [], [], [], [], [], [], [], [], []) { Directories = ["src"] };
+        var model = new RepositoryModel("/repo", [], [], [], [], [], [], [], [], []) { Directories = [new DirectoryModel("src", "src", "src")] };
 
         var outcome = new MustHaveDirectoryAssertion("src").Evaluate(model, model);
 

@@ -72,7 +72,9 @@ public static class TestSetupBuilder
         var tryBlocks = setup["tryBlocks"]?.AsArray()?.Select(node => ParseTryBlock(node!.AsObject())).ToList() ?? [];
         var methodBodyShapes = setup["methodBodyShapes"]?.AsArray()?.Select(node => ParseMethodBodyShape(node!.AsObject())).ToList() ?? [];
         var diagnostics = setup["diagnostics"]?.AsArray()?.Select(node => ParseDiagnostic(node!.AsObject())).ToList() ?? [];
-        var directories = setup.GetStringArray("directories");
+        var directories = setup.GetStringArray("directories")
+            .Select(path => new DirectoryModel(path, path, Path.GetFileName(path)))
+            .ToList();
 
         return new RepositoryModel(
             VirtualRootPath, solutions, files, callSites, switches, throwSites, mutationSites, tryBlocks,

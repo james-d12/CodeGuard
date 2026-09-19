@@ -22,6 +22,7 @@ internal static class CandidateDescriptor
         FieldModel field => $"{field.DeclaringType}.{field.Name}",
         ConstructorModel constructor => $"{constructor.DeclaringType}..ctor",
         FileModel file => file.RelativePath,
+        DirectoryModel directory => directory.RelativePath,
         _ => candidate.ToString() ?? candidate.GetType().Name
     };
 }

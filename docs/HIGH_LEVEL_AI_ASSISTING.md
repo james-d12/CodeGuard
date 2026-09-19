@@ -245,7 +245,9 @@ is most likely to get wrong:
 
 * There is **no `rule:` wrapper** — `target` and `assertions` are top-level keys.
 * A target is `{ kind: project, name: "<glob>" }`, not a list of `.csproj` paths.
-* Globs support `*` only — no `**`, no path semantics.
+* Globs support `*` (one path segment), `**` (zero or more full path segments, used as a whole
+  segment — e.g. `**/Foo.cs`), and `?` (one character). No character classes (`[abc]`) or brace
+  expansion (`{a,b}`).
 * Each assertion is a **single-key map** (`must_not_reference_project:` → its params). The schema
   enforces exactly one key per entry, so a `{type:, value:}` pair fails validation.
 * `must_not_reference_project` is one of the 45 real assertion kinds; `forbidden-reference` is not a
@@ -353,7 +355,6 @@ codeguard rules test      # run rules' embedded tests: cases (--format console|j
 codeguard rules list      # (--format table|json)
 codeguard rules explain   # --format console|json; see §13
 codeguard rules discover  # --format console|json|markdown; see §12
-codeguard rules create    # interactive rule scaffolder, descriptor-driven; see §12
 codeguard rules analyze   # --format console|json; Tier 1 + opportunistic Tier 2 only, see §14
 codeguard setup           # configure the rule source
 codeguard info            # show the resolved rule source and counts

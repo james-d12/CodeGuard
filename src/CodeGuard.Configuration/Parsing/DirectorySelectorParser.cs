@@ -13,10 +13,10 @@ public sealed class DirectorySelectorParser : ISelectorParser
         "directory",
         "Repository directories by path.",
         [
-            ParameterDescriptor.OptionalGlob("path", "Repository-relative directory path.")
+            ParameterDescriptor.OptionalGlob("path", "Repository-relative directory path.", @default: "**")
         ])
     { Produces = CandidateKind.Directory };
 
     public ITargetSelector Parse(JsonObject node) => new DirectorySelector(
-        node.GetOptionalString("path") ?? "*");
+        node.GetOptionalString("path") ?? "**");
 }

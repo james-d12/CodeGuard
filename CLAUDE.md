@@ -32,7 +32,6 @@ dotnet run --project src/CodeGuard.Cli -- rules validate --rules-source examples
 dotnet run --project src/CodeGuard.Cli -- rules test     --rules-source examples/rules  # embedded tests:, no repo/disk
 dotnet run --project src/CodeGuard.Cli -- rules analyze  --rules-source examples/rules  # rule-set-level problems (missing tests, unreachable assertions, exact duplicates), no repo/disk
 dotnet run --project src/CodeGuard.Cli -- rules discover --format json                  # engine's full selector/assertion/analyzer vocabulary, reads no rule files
-dotnet run --project src/CodeGuard.Cli -- rules create   # interactive scaffolder, descriptor-driven (see rules discover)
 dotnet run --project src/CodeGuard.Cli -- info
 dotnet run --project src/CodeGuard.Cli -- validate       # self-validation completes end-to-end, see "Known limitation" below
 ```
@@ -96,10 +95,14 @@ parser registered in `CodeGuard.Configuration/Parsing/DefaultParsers.cs` — it 
 rule file until both exist. See the table in `docs/IMPLEMENTATION_STATUS.md` ("Selectors and
 assertions implemented") for the current `kind` → class → parser-params mapping.
 
-All pattern matching (namespaces, base types, project names) goes through
-`CodeGuard.Evaluation.GlobMatcher` (`*` wildcard only), **not** exact string equality — this
-matters because Roslyn renders a closed generic base type as `Entity<int>`, not the open
-`Entity<TId>` placeholder used when authoring a rule, so rules must use `Entity<*>`.
+All pattern matching (namespaces, base types, project names, file/directory paths) goes through
+`CodeGuard.Evaluation.GlobMatcher`, **not** exact string equality — this matters because Roslyn
+renders a closed generic base type as `Entity<int>`, not the open `Entity<TId>` placeholder used
+when authoring a rule, so rules must use `Entity<*>`. `*` matches within one path segment (never
+crosses `/`); `**`, used as a whole segment, matches zero or more full path segments (e.g.
+`**/Properties/launchSettings.json` matches at any depth); `?` matches exactly one character. Only
+file/directory `path` values are ever `/`-delimited, so `**`/segment-boundary behavior only matters
+there — namespace/base-type/project/package patterns never contain `/` and are unaffected.
 
 YAML parsing for `when`/`and`/`or`/`not` is implemented: `AndCondition`/`OrCondition`/`NotCondition`
 (`CodeGuard.RuleModel.Conditions`, unit-tested) are wired up via `ConditionParserRegistry`

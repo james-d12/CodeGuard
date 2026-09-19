@@ -15,7 +15,7 @@ illustrative: true
 
 target:
   kind: file
-  path: "*/base/app.json"
+  path: "**/base/app.json"
 
 assertions:
   - must_have_json_field:

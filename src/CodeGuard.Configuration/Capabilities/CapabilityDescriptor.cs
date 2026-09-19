@@ -32,7 +32,11 @@ public enum ParameterType
     /// <summary>Matched literally.</summary>
     String,
 
-    /// <summary>Matched with <c>GlobMatcher</c> - <c>*</c> wildcard only, no <c>?</c>/<c>**</c>/regex.</summary>
+    /// <summary>
+    /// Matched with <c>GlobMatcher</c>: <c>*</c> matches within one path segment (never crosses
+    /// <c>/</c>), <c>**</c> as a whole segment matches zero or more full path segments, <c>?</c>
+    /// matches one character. No character classes, brace expansion, or regex.
+    /// </summary>
     Glob,
 
     /// <summary>A .NET regular expression.</summary>

@@ -63,6 +63,7 @@ public static class DefaultParsers
             new MustHaveFileAssertionParser(),
             new MustNotHaveFileAssertionParser(),
             new MustHaveDirectoryAssertionParser(),
+            new MustNotHaveDirectoryAssertionParser(),
             new MustMatchContentAssertionParser(),
             new MustNotMatchContentAssertionParser(),
             new MustHaveJsonFieldAssertionParser(),

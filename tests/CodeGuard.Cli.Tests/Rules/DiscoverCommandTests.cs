@@ -14,7 +14,7 @@ public sealed class DiscoverCommandTests
 
         Assert.Equal(0, exitCode);
         Assert.Contains("Target selectors (21)", output, StringComparison.Ordinal);
-        Assert.Contains("Assertions (45)", output, StringComparison.Ordinal);
+        Assert.Contains("Assertions (46)", output, StringComparison.Ordinal);
         Assert.Contains("Analyzers (11)", output, StringComparison.Ordinal);
         Assert.Contains("Conditions (3)", output, StringComparison.Ordinal);
     }
@@ -29,7 +29,7 @@ public sealed class DiscoverCommandTests
         var root = document.RootElement;
 
         Assert.Equal(21, root.GetProperty("selectors").GetArrayLength());
-        Assert.Equal(45, root.GetProperty("assertions").GetArrayLength());
+        Assert.Equal(46, root.GetProperty("assertions").GetArrayLength());
         Assert.Equal(11, root.GetProperty("analyzers").GetArrayLength());
 
         var inheritFrom = root.GetProperty("assertions").EnumerateArray()
@@ -45,7 +45,7 @@ public sealed class DiscoverCommandTests
 
     [Theory]
     [InlineData("selectors", 21)]
-    [InlineData("assertions", 45)]
+    [InlineData("assertions", 46)]
     [InlineData("analyzers", 11)]
     public async Task Run_Markdown_EmitsAWellFormedTable(string section, int expectedRows)
     {
