@@ -432,6 +432,70 @@ public class RuleEvaluatorTests
     }
 
     [Fact]
+    public void Evaluate_PopulatesAnalysisWarnings_FromMsBuildWorkspaceDiagnostics()
+    {
+        var model = BuildModelWithDiagnostics(
+            new DiagnosticModel("MSBUILD-WORKSPACE", "Project failed to load.", "Contoso.Domain", "Contoso.Domain.csproj", 0, 0));
+
+        var result = new RuleEvaluator().Evaluate([], model);
+
+        var warning = Assert.Single(result.AnalysisWarnings);
+        Assert.Equal("MSBUILD-WORKSPACE", warning.Code);
+        Assert.Equal("Project failed to load.", warning.Message);
+        Assert.Equal("Contoso.Domain", warning.Project);
+        Assert.Equal("Contoso.Domain.csproj", warning.FilePath);
+    }
+
+    [Fact]
+    public void Evaluate_AnalysisWarnings_TreatsEmptyProjectAndFilePathAsNull()
+    {
+        var model = BuildModelWithDiagnostics(
+            new DiagnosticModel("MSBUILD-WORKSPACE", "Project file not found.", string.Empty, string.Empty, 0, 0));
+
+        var result = new RuleEvaluator().Evaluate([], model);
+
+        var warning = Assert.Single(result.AnalysisWarnings);
+        Assert.Null(warning.Project);
+        Assert.Null(warning.FilePath);
+    }
+
+    [Fact]
+    public void Evaluate_AnalysisWarnings_IgnoresNonWorkspaceDiagnostics()
+    {
+        var model = BuildModelWithDiagnostics(
+            new DiagnosticModel("SOME-OTHER-DIAGNOSTIC", "Not a workspace warning.", "Contoso.Domain", "Contoso.Domain.csproj", 0, 0));
+
+        var result = new RuleEvaluator().Evaluate([], model);
+
+        Assert.Empty(result.AnalysisWarnings);
+    }
+
+    [Fact]
+    public void Evaluate_AnalysisWarnings_DoNotAffectValidationStatus()
+    {
+        var model = BuildModelWithDiagnostics(CreateEntityType("Order", EntityBaseType),
+            new DiagnosticModel("MSBUILD-WORKSPACE", "Project failed to load.", "Contoso.Domain", "Contoso.Domain.csproj", 0, 0));
+        var rules = new[] { CreateEntityInheritsRule() };
+
+        var result = new RuleEvaluator().Evaluate(rules, model);
+
+        Assert.Equal(ValidationStatus.Passed, result.Status);
+        Assert.Single(result.AnalysisWarnings);
+    }
+
+    private static RepositoryModel BuildModelWithDiagnostics(params DiagnosticModel[] diagnostics) =>
+        new(".", [], [], [], [], [], [], [], [], diagnostics);
+
+    private static RepositoryModel BuildModelWithDiagnostics(TypeModel type, params DiagnosticModel[] diagnostics)
+    {
+        var project = new ProjectModel(
+            "Contoso.Domain", "Contoso.Domain.csproj", "net10.0", "Microsoft.NET.Sdk",
+            [], [], new Dictionary<string, string>(), [type]);
+        var solution = new SolutionModel("Contoso.sln", [project]);
+        return new RepositoryModel(".", [solution], [], [], [], [], [], [], [], diagnostics);
+    }
+
+    [Fact]
     public void EvaluateRule_IgnoresEnabledFlag()
     {
         var model = BuildModel(CreateEntityType("LegacyThing", baseType: null));
