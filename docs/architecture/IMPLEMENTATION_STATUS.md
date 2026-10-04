@@ -306,7 +306,7 @@ one-off, per `docs/REFACTORING.md` §2.1. Four concrete additions:
   `CodeGuard.Configuration.Testing.TestSetupBuilder` to accept `switches:`/`throwSites:`/
   `mutationSites:`/`tryBlocks:`/`methodBodyShapes:`/`diagnostics:` setup arrays (previously these
   six keys explicitly threw `RuleParsingException` — "not supported yet" — since no selector
-  needed them; see `docs/RULES_TEST_DESIGN.md`'s "v1 setup scope").
+  needed them; see `docs/done/RULES_TEST_DESIGN.md`'s "v1 setup scope").
 - **`must_have_count`** (`MustHaveCountAssertion`): generalizes `must_exist`/`must_not_exist`
   (existence-only) to counting, via `min`/`max`/`exactly` params against a nested `selector:`
   template — same `SelectorTemplateResolver` plumbing. `must_exist`/`must_not_exist` are kept as
@@ -382,7 +382,7 @@ validate`/`codeguard rules test`.
 
 ### Post-v1 addition: capability descriptors, `rules discover`, structured validation errors, `rules explain --format json`
 
-Design doc: `docs/HIGH_LEVEL_AI_ASSISTING.md` (Phase 1 of §27). Implements the AI-assisting doc's
+Design doc: `docs/roadmap/HIGH_LEVEL_AI_ASSISTING.md` (Phase 1 of §27). Implements the AI-assisting doc's
 prerequisite for letting an agent discover CodeGuard's actual rule vocabulary instead of guessing at
 it, plus the three authoring-primitive gaps that prerequisite gated.
 
@@ -432,7 +432,7 @@ it, plus the three authoring-primitive gaps that prerequisite gated.
   adding introspection to every assertion class.
 - **`RuleTestRunner` relocated** `CodeGuard.Cli.Support` → `CodeGuard.Configuration.Testing`, so it
   can be driven by something other than the CLI (e.g. a future `rules analyze` or an MCP server, per
-  `docs/HIGH_LEVEL_AI_ASSISTING.md`'s Phase 4). Pure move — added a `CodeGuard.Configuration →
+  `docs/roadmap/HIGH_LEVEL_AI_ASSISTING.md`'s Phase 4). Pure move — added a `CodeGuard.Configuration →
   CodeGuard.Core` project reference (for `RuleEvaluator`, which `RuleTestRunner` drives), no
   behavior change. While re-validating this move, `CreateCommand` (`rules create`) was reworked to
   prompt for each selector/assertion kind's declared parameters by name (via the new descriptors)
@@ -444,7 +444,7 @@ it, plus the three authoring-primitive gaps that prerequisite gated.
 
 ### Post-v1 addition: `codeguard rules analyze`
 
-Design doc: `docs/HIGH_LEVEL_AI_ASSISTING.md` §14 (Phase 3 of §27). Landed sooner than that document's
+Design doc: `docs/roadmap/HIGH_LEVEL_AI_ASSISTING.md` §14 (Phase 3 of §27). Landed sooner than that document's
 original phase order expected, since §12's descriptor layer (above) already unlocked most of it
 without needing Phase 2's rule `metadata` first.
 
@@ -479,7 +479,7 @@ without needing Phase 2's rule `metadata` first.
 
 ### Post-v1 addition: `metadata.source` (rule provenance)
 
-Design doc: `docs/HIGH_LEVEL_AI_ASSISTING.md` §6/§19 (the provenance slice of Phase 2 of §27) - see
+Design doc: `docs/roadmap/HIGH_LEVEL_AI_ASSISTING.md` §6/§19 (the provenance slice of Phase 2 of §27) - see
 that doc for the design discussion this followed. Deliberately narrower than the doc's earlier
 drafts, both cuts made explicitly rather than by omission:
 
@@ -523,7 +523,7 @@ remains not re-proposed; don't re-propose it without first identifying a concret
 ### Post-v1 addition: `metadata.source.file`/`fingerprint` + `rules validate` drift warnings
 
 Design doc: `docs/done/RULE_SOURCE_AND_LINKED_DOCUMENTATION.md` (the "stale-rule detection" /
-"documentation-to-rule impact analysis" item `docs/HIGH_LEVEL_AI_ASSISTING.md` §26/§27 Phase 6 named
+"documentation-to-rule impact analysis" item `docs/roadmap/HIGH_LEVEL_AI_ASSISTING.md` §26/§27 Phase 6 named
 as future, undesigned work - this is that work). Extends the `metadata.source` shape above rather
 than introducing a second, competing "source" concept:
 
@@ -586,8 +586,8 @@ than introducing a second, competing "source" concept:
 
 ### Post-v1 addition: rule versioning
 
-Design doc: `docs/RULE_VERSIONING_PLAN.md` (kept in `docs/`, not moved to `docs/done/`, until the
-plan's own listed items are all independently confirmed shipped). Implements the `version` half of
+Design doc: `docs/done/RULE_VERSIONING_PLAN.md` (archived; its body describes the superseded opt-in
+design - its status banner summarises the shipped shape). Implements the `version` half of
 `docs/REFACTORING.md` §12 that the `metadata.source` section above explicitly left unevaluated -
 `status` itself is **not** revisited here, per that section's closing instruction.
 

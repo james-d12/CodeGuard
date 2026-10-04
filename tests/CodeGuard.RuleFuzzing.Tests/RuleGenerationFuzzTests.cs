@@ -10,7 +10,7 @@ namespace CodeGuard.RuleFuzzing.Tests;
 
 /// <summary>
 /// The primary crash-fuzzing oracle: a compatible-pairing rule, generated from the engine's own
-/// capability catalog, must never crash evaluation. See docs/RULE_FUZZING_PLAN.md.
+/// capability catalog, must never crash evaluation. See docs/done/RULE_FUZZING_PLAN.md.
 /// </summary>
 public sealed class RuleGenerationFuzzTests(ITestOutputHelper output)
 {

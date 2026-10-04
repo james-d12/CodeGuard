@@ -101,7 +101,7 @@ public static class ExplainCommand
     /// Emits the parsed rule's metadata plus its source document. The document is included verbatim
     /// (converted YAML to JSON) rather than reconstructed from the parsed rule: IAssertion exposes
     /// only a Kind, so a selector's or assertion's parameter *values* cannot be recovered from the
-    /// model at all - see docs/HIGH_LEVEL_AI_ASSISTING.md section 13.
+    /// model at all - see docs/roadmap/HIGH_LEVEL_AI_ASSISTING.md section 13.
     /// </summary>
     private static void PrintJson(RuleDefinition rule, string sourceFile)
     {

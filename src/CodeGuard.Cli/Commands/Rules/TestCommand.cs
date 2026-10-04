@@ -27,7 +27,7 @@ public static class TestCommand
         var command = new Command(
             "test",
             "Run a rule set's embedded `tests:` cases against a virtual analysis model, using the same " +
-            "evaluator as `codeguard validate` (no repository, no disk I/O). See docs/RULES_TEST_DESIGN.md.");
+            "evaluator as `codeguard validate` (no repository, no disk I/O). See docs/done/RULES_TEST_DESIGN.md.");
         command.Add(pathOption);
         command.Add(configOption);
         command.Add(rulesSourceOption);

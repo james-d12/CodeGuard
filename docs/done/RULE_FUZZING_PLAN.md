@@ -1,5 +1,9 @@
 # Combinatorial / property-based fuzz testing for rule.yaml
 
+> Status: **shipped** (PR #40), with minor intentional deviations (`PairingMode` instead of
+> `GenerationMode`; the embedded-test oracle reuses fixed setups). Deferred findings are tracked in
+> `tests/CodeGuard.RuleFuzzing.Tests/README.md` and issues #42, #43 and #44.
+
 ## Context
 
 CodeGuard's rule engine accepts declarative YAML rules built from a large, extensible

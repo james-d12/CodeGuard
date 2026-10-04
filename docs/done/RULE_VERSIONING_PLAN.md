@@ -1,19 +1,24 @@
 # Rule Versioning Plan
 
-> Status: **shipped**, in its final (mandatory) form - tracked on `feature/rule-versioning`. This
-> document describes the *original* opt-in design as proposed. That design shipped, then was
-> **deliberately replaced** with a mandatory one at the user's explicit request ("too much opt-in,
-> makes using this confusing, we should just enforce strictness") - not layered on top of it. For
-> the actual, final shape (`versionFingerprint` as a top-level field, checked unconditionally for
-> every rule, no `metadata.trackVersion`), see `docs/IMPLEMENTATION_STATUS.md`'s "Post-v1 addition:
-> rule versioning" section, which is the authoritative, up-to-date account. Kept here rather than
-> moved to `docs/done/` for now, since a straight move would present the superseded design below as
-> if it were still current - a deliberate future edit, once someone confirms every cross-reference
-> is updated too, not something to fold into this pass silently.
+> Status: **shipped** (PR #38), in its final, mandatory form. **The body below describes the
+> original opt-in design, which shipped and was then deliberately replaced** — read it as a design
+> record, not as current behaviour. As shipped:
+>
+> - `version` (int, default 1) and `versionFingerprint` are **top-level** rule fields (not
+>   `metadata.versionFingerprint`); there is no `metadata.trackVersion`.
+> - The check runs for **every** rule, unconditionally, and fails `rules validate`; a rule with no
+>   fingerprint is reported as `FingerprintMissing`. `rules validate --update-fingerprints` writes them.
+> - All `examples/rules/` files were backfilled with fingerprints.
+> - `Violation.RuleVersion` is emitted in JSON; SARIF carries the version in the rule's properties
+>   bag (Sarif.Sdk 5.7.0 has no native `ReportingDescriptor.Version`). Console/HTML deliberately omit it.
+> - Still open: verifying that `version` was actually *bumped* when the body changed (issue #47).
+>
+> The authoritative account is `docs/architecture/IMPLEMENTATION_STATUS.md`, "Post-v1 addition:
+> rule versioning".
 
 ## Context
 
-`docs/HIGH_LEVEL_ROADMAP.md` §8 ("Rule Identity") and §11 ("Versioning") call for rules to be
+`docs/roadmap/HIGH_LEVEL_ROADMAP.md` §8 ("Rule Identity") and §11 ("Versioning") call for rules to be
 versioned so that violations/diagnostics can be traced back to the exact rule version that produced
 them — a precondition for "the same source and rules should produce the same result" (§2, goal 1)
 and for later work like rule-change-impact analysis. `docs/REFACTORING.md` §12 sketches this in more
@@ -21,7 +26,7 @@ detail (`id`/`version`/`status`/`severity`, lifecycle states, diagnostics carryi
 that document is a separate, not-started architectural-evolution proposal (per CLAUDE.md) and must
 stay untouched.
 
-`docs/IMPLEMENTATION_STATUS.md` already records that half of §12 was evaluated and rejected: the
+`docs/architecture/IMPLEMENTATION_STATUS.md` already records that half of §12 was evaluated and rejected: the
 `status` lifecycle enum was scoped down and explicitly rejected for having no consumer. The `version`
 + diagnostic-stamping half was **never evaluated on its own merits** and is flagged as "a materially
 bigger, cross-cutting change (touches the evaluator and every `IViolationReporter`)." This plan
@@ -166,7 +171,7 @@ public static class RuleVersionChecker
 
 ### 9. Documentation
 
-- `docs/IMPLEMENTATION_STATUS.md`: add a "Post-v1 addition: rule versioning" section (matching the
+- `docs/architecture/IMPLEMENTATION_STATUS.md`: add a "Post-v1 addition: rule versioning" section (matching the
   existing style of the `metadata.source` section), describing: the final shape (`version` int +
   `metadata.versionFingerprint`), that it's hard-enforced once opted in (unlike source drift), the
   shared `RuleBodyCanonicalizer` extraction and its `when`-inclusion fix, and the known limitation

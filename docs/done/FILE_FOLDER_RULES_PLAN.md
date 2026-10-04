@@ -25,7 +25,7 @@ not its subfolders" vs "anywhere under this folder") and filename-shape rules
 checks as a first-class category alongside the existing C#/architecture checks.
 
 Research across `CodeGuard.Evaluation`, `CodeGuard.Analyzers.Repository`,
-`CodeGuard.Configuration.Parsing`, and the docs (`docs/IMPLEMENTATION_STATUS.md`,
+`CodeGuard.Configuration.Parsing`, and the docs (`docs/architecture/IMPLEMENTATION_STATUS.md`,
 `docs/REFACTORING.md` §2.1's "small stable primitive vocabulary" doctrine) found
 three concrete gaps and one enabling fix:
 
@@ -46,7 +46,7 @@ three concrete gaps and one enabling fix:
    requires hand-anchoring a regex against the full relative path).
 
 Per the project's own stated doctrine (`docs/REFACTORING.md` §2.1, cited by
-`docs/IMPLEMENTATION_STATUS.md`): extend existing primitives with new optional
+`docs/architecture/IMPLEMENTATION_STATUS.md`): extend existing primitives with new optional
 parameters rather than add one narrow assertion per condition. The plan below
 follows that — no new selector/assertion *kinds* beyond closing the
 `must_not_have_directory` parity gap; everything else is new optional parameters
@@ -90,8 +90,8 @@ unchanged).
 Update the three places documenting the old "`*`-only" limitation, since it stops
 being true:
 - `CLAUDE.md` (~line 100, "Adding a new selector/assertion" section)
-- `docs/IMPLEMENTATION_STATUS.md` (~line 154)
-- `docs/HIGH_LEVEL_AI_ASSISTING.md` (~line 248, "Globs support `*` only — no `**`,
+- `docs/architecture/IMPLEMENTATION_STATUS.md` (~line 154)
+- `docs/roadmap/HIGH_LEVEL_AI_ASSISTING.md` (~line 248, "Globs support `*` only — no `**`,
   no path semantics")
 - `ParameterType.Glob`'s XML doc comment in
   `src/CodeGuard.Configuration/Capabilities/CapabilityDescriptor.cs`

@@ -221,7 +221,7 @@ solution.
 Chose shelling out to the system `git` binary over a library like `LibGit2Sharp` deliberately: it
 reuses the developer's already-configured SSH keys/credential helpers for free, and avoids adding
 another per-platform native-dependency surface on top of the Buildalyzer/MSBuild native-dependency
-pain already documented in `docs/IMPLEMENTATION_STATUS.md`. The tradeoff is a runtime dependency on
+pain already documented in `docs/architecture/IMPLEMENTATION_STATUS.md`. The tradeoff is a runtime dependency on
 `git` being installed and on `PATH` — a safe assumption for engineers using a tool that validates
 .NET repositories they keep in git.
 

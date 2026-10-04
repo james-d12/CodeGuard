@@ -12,7 +12,7 @@ public sealed record UnreachableAssertionIssue(string RuleId, string SourceFile,
 public sealed record ExactDuplicateGroup(IReadOnlyList<string> RuleIds, IReadOnlyList<string> SourceFiles);
 
 /// <summary>
-/// Mechanically detectable problems across a whole rule set - docs/HIGH_LEVEL_AI_ASSISTING.md §14's
+/// Mechanically detectable problems across a whole rule set - docs/roadmap/HIGH_LEVEL_AI_ASSISTING.md §14's
 /// Tier 1 (cheap, no prerequisites) and Tier 2 (needs <see cref="CapabilityCatalog"/>) checks. Tier 3
 /// (overlapping selectors, conflicting assertions, mutation-tested coverage) is explicitly out of
 /// scope - see that section for why.

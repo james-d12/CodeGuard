@@ -217,7 +217,7 @@ default. See `docs/done/SETUP_COMMAND_PLAN.md` for the full design.
 > still doesn't complete end-to-end. It gets much further than it used to, but crashes in
 > `NoPureDelegationOverrideAnalyzer` on a `FullName` collision between identically-named
 > auto-generated stub types across test projects. Other repos aren't affected. See `CLAUDE.md`
-> and `docs/IMPLEMENTATION_STATUS.md` for details.
+> and `docs/architecture/IMPLEMENTATION_STATUS.md` for details.
 
 ## Anatomy of a rule
 
@@ -288,7 +288,7 @@ validated against the JSON Schema described above (see `examples/rules/` for sam
 ## Further reading
 
 - `docs/PRIMITIVES.md`: original design rationale
-- `docs/HIGH_LEVEL_AI_ASSISTING.md`: AI-assisted rule authoring — `rules discover`/`rules analyze`,
+- `docs/roadmap/HIGH_LEVEL_AI_ASSISTING.md`: AI-assisted rule authoring — `rules discover`/`rules analyze`,
   rule provenance (`metadata.source`), and the `codeguard-rule-generation` skill under `skills/`
 - `docs/done/SETUP_COMMAND_PLAN.md`: design of the `setup` command and rule-source resolution
 - `CLAUDE.md`: contributor/agent guidance, architecture detail, and known gotchas

@@ -42,7 +42,7 @@ public static class ValidateCommand
             "broken, or never fingerprinted (metadata.source.* - warns only, never fails the exit code); " +
             "and every rule's own enforceable body (target/assertions/when/analyzer) drifting from its " +
             "recorded versionFingerprint, checked unconditionally for every rule with no opt-in (fails " +
-            "the exit code - see docs/RULE_VERSIONING_PLAN.md). These are the only cases this command " +
+            "the exit code - see docs/done/RULE_VERSIONING_PLAN.md). These are the only cases this command " +
             "reads files outside the configured rules directory (source) or re-derives content from " +
             "rules already loaded (version). Use --rules-source to point directly at a folder; " +
             "otherwise validates whatever this repo is configured to use.");
@@ -98,7 +98,7 @@ public static class ValidateCommand
             }
 
             // Source-check findings never affect this - see docs/done/RULE_SOURCE_AND_LINKED_DOCUMENTATION.md
-            // ("No Automatic Decisions"). Version-check findings do - see docs/RULE_VERSIONING_PLAN.md.
+            // ("No Automatic Decisions"). Version-check findings do - see docs/done/RULE_VERSIONING_PLAN.md.
             return Task.FromResult(report.IsValid && versionReport.IsValid ? 0 : 1);
         });
 

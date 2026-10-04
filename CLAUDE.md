@@ -13,7 +13,7 @@ C# code, so new organisational rules can be added without touching the engine. D
 lives in `docs/PRIMITIVES.md` (original design doc — do not edit) and `docs/REFACTORING.md` (a
 separate, much larger architectural-evolution proposal that has **not been started** — read it
 before proposing further architectural changes, but treat it as a distinct initiative). Full build
-history/decisions/gotchas from the initial 8-PR implementation are in `docs/IMPLEMENTATION_STATUS.md`
+history/decisions/gotchas from the initial 8-PR implementation are in `docs/architecture/IMPLEMENTATION_STATUS.md`
 — read it before making non-trivial changes, it has context not reconstructable from code alone.
 
 ## Commands
@@ -92,7 +92,7 @@ resolved later — `CodeGuard.Configuration.Parsing` builds these directly from 
 
 Every selector/assertion needs **both** a concrete class in `CodeGuard.Evaluation` and a YAML
 parser registered in `CodeGuard.Configuration/Parsing/DefaultParsers.cs` — it isn't usable from a
-rule file until both exist. See the table in `docs/IMPLEMENTATION_STATUS.md` ("Selectors and
+rule file until both exist. See the table in `docs/architecture/IMPLEMENTATION_STATUS.md` ("Selectors and
 assertions implemented") for the current `kind` → class → parser-params mapping.
 
 All pattern matching (namespaces, base types, project names, file/directory paths) goes through
@@ -130,7 +130,7 @@ configures repository discovery (where rules/skills/agents/source/tests live) �
 deliberately configurable per-repo, missing paths are skipped silently.
 
 117 of the 125 rules carry an embedded `tests:` block run by `codeguard rules test` against a
-virtual analysis model (no disk, no Roslyn/MSBuild) — see `docs/RULES_TEST_DESIGN.md`. The 8 without
+virtual analysis model (no disk, no Roslyn/MSBuild) — see `docs/done/RULES_TEST_DESIGN.md`. The 8 without
 are analyzer-backed rules, which the virtual setup path can't drive. CI runs `rules validate` and
 `rules test` over `examples/rules` on every build, so a broken rule fails the build.
 
@@ -153,8 +153,8 @@ backs `rules discover` (prints the engine's actual vocabulary; `--format markdow
 `rules analyze` (rule-set-level checks: missing/one-sided tests, unreachable assertions — an
 assertion whose `AppliesTo` doesn't include its target selector's `Produces` — and exact-duplicate
 rules). Adding a new selector/assertion/analyzer means adding its `Descriptor` too, or
-`CapabilityCatalogTests` fails. See `docs/HIGH_LEVEL_AI_ASSISTING.md` for the design rationale and
-`docs/IMPLEMENTATION_STATUS.md` for full build detail on this and `metadata.source` (optional rule
+`CapabilityCatalogTests` fails. See `docs/roadmap/HIGH_LEVEL_AI_ASSISTING.md` for the design rationale and
+`docs/architecture/IMPLEMENTATION_STATUS.md` for full build detail on this and `metadata.source` (optional rule
 provenance — `document`/`section`/`statement`, surfaced by `rules explain --format json`).
 
 ### Known limitation — CLI self-analysis (resolved)
@@ -212,17 +212,23 @@ package+version it names; don't guess in advance.
 - The SARIF NuGet package is `Sarif.Sdk`, not `Microsoft.CodeAnalysis.Sarif` (that's just the C#
   namespace it exposes).
 
-## Documentation lifecycle (docs/ → docs/done/)
+## Documentation lifecycle (docs/ layout)
 
-`docs/` mixes three kinds of files: (1) evergreen scope/vision documents that never
-"complete" (`CORE_RULES.md`, `HIGH_LEVEL_ROADMAP.md`), (2) living design/status
-documents that are actively maintained alongside the code they describe and get
-updated in place rather than archived (`IMPLEMENTATION_STATUS.md`,
-`HIGH_LEVEL_AI_ASSISTING.md`, `RULES_TEST_DESIGN.md`), and (3) narrow, single-initiative
-plans that are meant to close. `docs/done/` holds only the third kind, once genuinely
-finished — see it for the pattern (`RULE_COVERAGE_PLAN.md`, `SETUP_COMMAND_PLAN.md`,
-etc.), which stay cross-referenced from code/README after moving, so "done" means
-"archived design record," not "deleted."
+`docs/README.md` is the index — it classifies every doc and links the GitHub epics that track
+outstanding work. Layout:
+
+- `docs/architecture/` — evergreen scope documents and living reference/status documents that are
+  updated in place, never archived (`CORE_RULES.md`, `IMPLEMENTATION_STATUS.md`).
+- `docs/roadmap/` — documents describing work that is still (at least partly) outstanding:
+  vision/roadmaps and living design docs with open phases (`HIGH_LEVEL_ROADMAP.md`,
+  `HIGH_LEVEL_AI_ASSISTING.md`, `SUPPORTING_TOOLS.md`, `REPORTING_API_PROMPT.md`). Their
+  outstanding items are tracked as GitHub issues/epics; keep the two in sync.
+- `docs/done/` — narrow, single-initiative plans, once genuinely finished (`RULE_COVERAGE_PLAN.md`,
+  `RULES_TEST_DESIGN.md`, `RULE_VERSIONING_PLAN.md`, etc.). They stay cross-referenced from
+  code/README after moving, so "done" means "archived design record," not "deleted."
+- `docs/PRIMITIVES.md` and `docs/REFACTORING.md` stay at the `docs/` root (see below).
+
+New single-initiative plans start at the `docs/` root and move to `docs/done/` when shipped.
 
 Before moving any `docs/` file into `docs/done/`:
 

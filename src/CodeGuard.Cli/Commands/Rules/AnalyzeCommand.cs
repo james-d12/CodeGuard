@@ -9,7 +9,7 @@ namespace CodeGuard.Cli.Commands.Rules;
 /// <summary>
 /// Analyses a rule set for mechanically detectable problems - invalid rules, duplicate ids, missing
 /// or one-sided tests, disabled/illustrative rules, unreachable assertions and exact-duplicate rules.
-/// See docs/HIGH_LEVEL_AI_ASSISTING.md §14. This is a superset of `rules validate`'s checks (it
+/// See docs/roadmap/HIGH_LEVEL_AI_ASSISTING.md §14. This is a superset of `rules validate`'s checks (it
 /// reuses the same load/validate pass) plus additional, non-fatal findings for a human or an AI
 /// agent to review - unlike `rules validate`, a non-empty report doesn't necessarily mean the rule
 /// set is broken (e.g. illustrative rules are expected in this repo's own `examples/rules/`).

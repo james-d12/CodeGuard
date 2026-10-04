@@ -1,5 +1,8 @@
 # One-liner install scripts for CodeGuard releases
 
+> Status: **shipped** (PR #39). Remaining follow-ups: end-to-end check of the first release that
+> publishes `checksums.txt` (issue #71) and CI linting of the install scripts (issue #72).
+
 ## Context
 
 CodeGuard is currently installed either via `dotnet tool install -g CodeGuard` or by manually
