@@ -9,6 +9,8 @@ namespace CodeGuard.Evaluation.Analyzers;
 /// construction (Roslyn's constructor symbol name is literally ".ctor") defeats that guarantee
 /// (docs/RULE_COVERAGE_PLAN.md skill.domain.immutable-mutation). The namespace scope is a rule
 /// YAML parameter, not hardcoded here, so this analyzer isn't tied to any one organisation's layout.
+/// Mutation sites are matched to record types by (ProjectPath, ProjectName, FullName) for the same
+/// reason as <see cref="NoPureDelegationOverrideAnalyzer"/>.
 /// </summary>
 public sealed class ImmutableMutationAnalyzer(string namespacePattern) : ICustomAnalyzer
 {
@@ -20,11 +22,11 @@ public sealed class ImmutableMutationAnalyzer(string namespacePattern) : ICustom
             .SelectMany(s => s.Projects)
             .SelectMany(p => p.Types)
             .Where(t => t.Kind == TypeKind.Record && GlobMatcher.IsMatch(t.FullName, namespacePattern))
-            .Select(t => (t.ProjectName, t.FullName))
+            .Select(t => (t.ProjectPath, t.ProjectName, t.FullName))
             .ToHashSet();
 
         return model.MutationSites
-            .Where(m => recordTypeNames.Contains((m.ProjectName, m.ContainingType)) && m.ContainingMethod != ".ctor")
+            .Where(m => recordTypeNames.Contains((m.ProjectPath, m.ProjectName, m.ContainingType)) && m.ContainingMethod != ".ctor")
             .Select(m => new AnalyzerViolation(
                 Message: $"Mutation of {m.ContainingType}.{m.TargetMemberName} outside its constructor violates record immutability.",
                 FilePath: m.FilePath,
