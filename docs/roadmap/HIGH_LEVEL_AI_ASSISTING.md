@@ -250,8 +250,8 @@ is most likely to get wrong:
   expansion (`{a,b}`).
 * Each assertion is a **single-key map** (`must_not_reference_project:` → its params). The schema
   enforces exactly one key per entry, so a `{type:, value:}` pair fails validation.
-* `must_not_reference_project` is one of the 45 real assertion kinds; `forbidden-reference` is not a
-  kind. Run `codeguard rules discover` (once implemented — §12) or read
+* `must_not_reference_project` is one of the 46 real assertion kinds; `forbidden-reference` is not a
+  kind. Run `codeguard rules discover` (§12) or read
   `skills/codeguard-rule-generation/references/assertions.md` for the current list.
 
 The important principle is that the rule retains **provenance**.
@@ -361,7 +361,8 @@ codeguard info            # show the resolved rule source and counts
 ```
 
 **Proposed** — nothing left in this document remains fully unimplemented in the CLI itself; the
-remaining gaps are the rule `metadata` schema (§6/§19) and MCP (§15).
+rule `metadata` schema (§6/§19) has since shipped as `metadata.source`, so the remaining gap is
+MCP (§15).
 
 Note the command group is nested (`codeguard rules <verb>`), not flat.
 
@@ -382,13 +383,13 @@ codeguard rules validate --rules-source examples/rules
 Actual output:
 
 ```text
-Checked 125 rule files: 125 passed, 0 failed.
+Checked 126 rule files: 126 passed, 0 failed.
 ```
 
 and on failure, the offending file followed by its errors:
 
 ```text
-Checked 125 rule files: 124 passed, 1 failed.
+Checked 126 rule files: 125 passed, 1 failed.
 
 /abs/path/ddd-042.yml
   - /assertions/0: Unknown assertion kind 'business-logic-quality'.
@@ -432,8 +433,11 @@ This is particularly important for AI consumption.
 
 **This already exists.** It is designed in `docs/done/RULES_TEST_DESIGN.md` and implemented end-to-end:
 each `tests:` case's `setup:` builds a virtual analysis model (no disk, no Roslyn, no MSBuild) which
-runs through the same `RuleEvaluator` as `codeguard validate`. 117 of this repo's 125 example rules
-carry tests; the 8 that don't are analyzer-backed, which the virtual setup path can't drive.
+runs through the same `RuleEvaluator` as `codeguard validate`. 118 of this repo's 126 example rules
+carry tests; the 8 that don't are analyzer-backed rules that simply haven't had tests written yet —
+`TestSetupBuilder` already accepts the analyzer facts they need (`switches`, `throwSites`,
+`mutationSites`, `tryBlocks`, `methodBodyShapes`, `diagnostics`, `files`), and other analyzer-backed
+rules already carry tests. Tracked in issue #63.
 
 It operates on a rule **source directory**, not a single file path:
 
@@ -561,6 +565,8 @@ originally proposed: since assertion parameter values can't be recovered from th
   "id": "DDD-ENTITY-001",
   "name": "Domain entities must inherit from Entity",
   "description": "All domain entities must inherit from the approved Entity<TId> base class.",
+  "version": 1,
+  "versionFingerprint": "sha256:47faa29f6843b7d8af4b82bc0c118de5a01c524763c0fa8ae6c3ffe06aced4e1",
   "severity": "error",
   "enforcement": { "classification": "deterministic" },
   "tags": ["ddd", "domain", "entity"],
@@ -568,6 +574,15 @@ originally proposed: since assertion parameter values can't be recovered from th
   "documentation": [],
   "enabled": true,
   "illustrative": true,
+  "metadata": {
+    "source": {
+      "document": "DDD Standards",
+      "section": "Entities",
+      "statement": "Every domain entity inherits from the shared Entity<TId> base class.",
+      "file": "examples/docs/ddd-standards.md",
+      "fingerprint": "sha256:5b1b4e48288337c841fff197c1f348b490296ec620528ef2eebfacedd4768cc6"
+    }
+  },
   "shape": "declarative",
   "testCount": 2,
   "sourceFile": "/abs/path/examples/rules/ddd/ddd-entity-001.yml",
@@ -579,8 +594,9 @@ originally proposed: since assertion parameter values can't be recovered from th
 }
 ```
 
-`source` (document/section provenance) still doesn't appear here — that's blocked on §6/§19's
-`metadata` block, which remains unimplemented (see below).
+`metadata` carries the rule's `metadata.source` provenance (§6/§19), or `null` when the rule has
+none; `version`/`versionFingerprint` come from rule versioning (see
+`docs/architecture/IMPLEMENTATION_STATUS.md`).
 
 This is useful both for developers and AI agents.
 
@@ -604,13 +620,13 @@ them being treated as one piece of work. They split into three tiers:
   (`context.ValidateRules()`), split back apart by `RuleErrorCodes.DuplicateRuleId`.
 * Missing tests — `rule.Tests.Count == 0`.
 * One-sided tests — a rule with only `pass` cases or only `fail` cases (distinct from the existing,
-  narrower vacuous-test guard in `RuleTestRunner`). As of this writing all 117 example rules that
+  narrower vacuous-test guard in `RuleTestRunner`). As of this writing all 118 example rules that
   carry `tests:` already have both, so this check has found nothing yet in this repo's own rule set
   — it's there for the next rule that gets it wrong.
 * Missing provenance — implemented now that §6/§19's `metadata.source` exists
   (`RuleAnalysisReport.RulesMissingProvenance`). Also excluded from `HasFindings`, same reasoning as
   disabled/illustrative below — `metadata.source` is optional, additive documentation, not a
-  requirement, so all 125 of this repo's own example rules currently lacking it isn't a problem.
+  requirement, so the 123 of this repo's 126 example rules currently lacking it isn't a problem.
 * Disabled rules; `illustrative: true` rules — counted and listed, but deliberately excluded from
   what makes the command exit non-zero (`RuleAnalysisReport.HasFindings`), since a rule set
   legitimately containing them — like this repo's own `examples/rules/`, all illustrative — isn't
@@ -646,7 +662,7 @@ Real output against this repo's own `examples/rules/`:
 ```text
 CodeGuard Rule Analysis
 
-Rules:                    125
+Rules:                    126
 Invalid:                  0
 Duplicate ids:            0
 Rules without tests:      8
@@ -654,12 +670,12 @@ One-sided tests:          0
 Unreachable assertions:   0
 Exact-duplicate rules:    5
 Disabled rules:           0
-Illustrative rules:       125
-Missing provenance:       125
+Illustrative rules:       126
+Missing provenance:       123
 ```
 
-(The 8 without tests are the analyzer-backed rules the virtual test-setup path can't drive — see
-CLAUDE.md's rules-directory notes; expected, not a defect.)
+(The 8 without tests are analyzer-backed rules that haven't had tests written yet — the virtual
+test-setup path can drive them, see §11; tracked in issue #63.)
 
 This is **not** intended to replace semantic AI analysis.
 
@@ -886,8 +902,8 @@ CodeGuard:
 
 # 21. Rule Testing as a First-Class Concept
 
-**This is already the case** — see §11. Embedded `tests:` are implemented, and 117 of this repo's
-125 example rules carry them, each with both a `pass` and a `fail` case. What follows describes the
+**This is already the case** — see §11. Embedded `tests:` are implemented, and 118 of this repo's
+126 example rules carry them, each with both a `pass` and a `fail` case. What follows describes the
 existing model rather than a proposal.
 
 Rules should be treated similarly to production code.
@@ -1139,7 +1155,7 @@ items below have since landed:
 One consequence worth noting for sequencing Phase 3: descriptors carrying `Produces`/`AppliesTo`
 means §14's Tier 2 "unreachable rules" check is now cheap and doesn't itself need anything from
 Phase 2 — only "missing provenance" and "exact-duplicate rules" (the latter for an unrelated reason,
-see §14) have real dependencies left.
+see §14) had real dependencies left, and both have since been implemented (§14).
 
 ### Phase 2 — Rule metadata
 
@@ -1147,7 +1163,8 @@ Introduce:
 
 * provenance — **done**. `metadata.source: {document, section, statement}`, deliberately narrower
   than this document originally sketched (no `generation` block, no multi-source list) — see §6/§19
-  for the shape and the reasoning. No backfill of the 125 existing example rules.
+  for the shape and the reasoning. No bulk backfill of the existing example rules (3 of today's 126
+  carry `metadata.source`, added deliberately as worked examples).
 * lifecycle state — **considered and deliberately rejected**, not merely deferred.
   `docs/REFACTORING.md` §12 proposed `status: experimental|active|deprecated|retired` (plus a
   separate `version` field with diagnostic-level version stamping, itself a materially bigger,
@@ -1169,8 +1186,9 @@ Introduce:
 codeguard rules analyze
 ```
 
-Tier 1 and Tier 2 from §14 both implemented, ahead of Phase 2 as anticipated — only the "missing
-provenance" line item still needs it, and remains skipped. Tier 3 is explicitly out of scope.
+Tier 1 and Tier 2 from §14 both implemented, ahead of Phase 2 as anticipated. The "missing
+provenance" line item, which had to wait for Phase 2's `metadata.source`, is now implemented too
+(`RuleAnalysisReport.RulesMissingProvenance`). Tier 3 is explicitly out of scope.
 
 ### Phase 4 — MCP
 
