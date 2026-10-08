@@ -16,7 +16,7 @@ public enum RuleVersionIssueKind
 /// (<see cref="RuleVersionIssueKind.FingerprintMissing"/>) or because the body changed since it was
 /// (<see cref="RuleVersionIssueKind.ContentChanged"/>). <see cref="RecordedFingerprint"/> is null for
 /// the former. Both kinds are acted on by `rules validate --update-fingerprints` and both fail
-/// `rules validate`'s exit code, for every rule unconditionally - see docs/RULE_VERSIONING_PLAN.md
+/// `rules validate`'s exit code, for every rule unconditionally - see docs/done/RULE_VERSIONING_PLAN.md
 /// for why this is both mandatory (unlike the analogous, opt-in <c>RuleSourceChecker</c> drift check)
 /// and stricter (a hard failure, not just a warning).
 /// </summary>
@@ -31,7 +31,7 @@ public sealed record RuleVersionCheckReport(IReadOnlyList<RuleVersionIssue> Issu
 /// <summary>
 /// Recomputes every rule's enforceable-body fingerprint and compares it against
 /// <see cref="RuleDefinition.VersionFingerprint"/> - unconditionally, for every rule, with no opt-in
-/// gate (see docs/RULE_VERSIONING_PLAN.md for why: an earlier opt-in design was deliberately replaced
+/// gate (see docs/done/RULE_VERSIONING_PLAN.md for why: an earlier opt-in design was deliberately replaced
 /// with this one). A rule that has never been through `rules validate --update-fingerprints` simply
 /// reports <see cref="RuleVersionIssueKind.FingerprintMissing"/>. Unlike <c>RuleSourceChecker</c>,
 /// this does no file I/O outside the rules directory (the "source" being checked is the rule's own

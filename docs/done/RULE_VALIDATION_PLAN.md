@@ -6,7 +6,7 @@
 > the new `check-rules` command (`src/CodeGuard.Cli/Commands/CheckRulesCommand.cs`), the shared
 > `RuleValidationReportWriter`, and the mandatory pre-flight gate in `ValidateCommand`. Covered by
 > new tests in `RuleFileLoaderTests` and `CodeGuard.Cli.Tests` (`CheckRulesCommandTests`,
-> `ValidateCommandPreflightTests`). See `docs/IMPLEMENTATION_STATUS.md` for the summary entry. Kept
+> `ValidateCommandPreflightTests`). See `docs/architecture/IMPLEMENTATION_STATUS.md` for the summary entry. Kept
 > for design rationale.
 
 ## Context

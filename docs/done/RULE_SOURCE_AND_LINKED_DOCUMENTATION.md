@@ -11,7 +11,7 @@ The goal is **traceability and maintenance**, not automatic synchronisation or p
 ## Relationship to `metadata.source`
 
 CodeGuard already ships `metadata.source` (`document`/`section`/`statement` — see
-`docs/IMPLEMENTATION_STATUS.md` and `docs/HIGH_LEVEL_AI_ASSISTING.md` §6/§19), a deliberately
+`docs/architecture/IMPLEMENTATION_STATUS.md` and `docs/roadmap/HIGH_LEVEL_AI_ASSISTING.md` §6/§19), a deliberately
 free-text, never-resolved provenance note: "why does this rule exist," with no guarantee the named
 document/section exists anywhere real. That design was intentional — an earlier, stricter field
 (`RuleDefinition.Standard`) broke when two authoring conventions collided over what a "source"

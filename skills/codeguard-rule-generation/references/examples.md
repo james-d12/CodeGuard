@@ -38,7 +38,7 @@ rejected outright:
 Use `types:` (a flat shortcut that folds everything into one synthetic project) unless the rule
 genuinely cares about project identity or references, in which case use `projects:`. Every field is
 optional and defaults to an empty value, so describe only what the rule actually inspects. The full
-setup shape is in `docs/RULES_TEST_DESIGN.md`.
+setup shape is in `docs/done/RULES_TEST_DESIGN.md`.
 
 Two things to get right, both of which `rules test` will reject:
 

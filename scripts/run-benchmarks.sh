@@ -3,7 +3,7 @@
 # configuration - benchmarks measure timing, and Debug JIT output makes the numbers meaningless.
 #
 # This is a separate, developer-run step, not part of `dotnet test`/CI (see
-# docs/IMPLEMENTATION_STATUS.md gotcha #11): a shared/throttled CI runner produces noisy,
+# docs/architecture/IMPLEMENTATION_STATUS.md gotcha #11): a shared/throttled CI runner produces noisy,
 # unrepresentative timing numbers, and a multi-minute perf run shouldn't gate every push.
 #
 # Usage: scripts/run-benchmarks.sh [BenchmarkDotNet args...]

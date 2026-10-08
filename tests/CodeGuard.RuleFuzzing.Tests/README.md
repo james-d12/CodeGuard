@@ -1,6 +1,6 @@
 # CodeGuard.RuleFuzzing.Tests
 
-Combinatorial/property-based fuzz testing for the rule engine. See `docs/RULE_FUZZING_PLAN.md` for the
+Combinatorial/property-based fuzz testing for the rule engine. See `docs/done/RULE_FUZZING_PLAN.md` for the
 full design. In short: `Generation/RuleDocumentGenerator` walks the engine's own
 `CapabilityCatalog.Create()` (every registered selector/assertion/analyzer kind and its parameters) to
 build random-but-structurally-valid rule documents, mixing benign and adversarial parameter values, and

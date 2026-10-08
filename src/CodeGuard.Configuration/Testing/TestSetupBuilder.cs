@@ -7,7 +7,7 @@ namespace CodeGuard.Configuration.Testing;
 
 /// <summary>
 /// Builds a <see cref="RepositoryModel"/> directly from a rule test's <c>setup:</c> block - no disk,
-/// no Roslyn/MSBuild. See docs/RULES_TEST_DESIGN.md for the setup shape, which now also covers the
+/// no Roslyn/MSBuild. See docs/done/RULES_TEST_DESIGN.md for the setup shape, which now also covers the
 /// syntax-fact records (switches, throw sites, mutation sites, try blocks, method-body shapes, and
 /// raw diagnostics) consumed by the `switch`/`throw_site`/`mutation_site`/`try_block`/
 /// `method_body_shape`/`diagnostic` selectors - these are supplied directly as flat records in the

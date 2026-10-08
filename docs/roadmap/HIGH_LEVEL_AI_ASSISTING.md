@@ -181,7 +181,7 @@ AI-generated rules should contain sufficient metadata to explain where they came
 `metadata.source` is real schema now — but it's `{document, section, statement}` only, with no
 `generation` block, and singular (`source`, not a `sources` list). Both cuts were deliberate design
 decisions, not omissions: a prior field with the same intent
-(`RuleDefinition.Standard`, see `docs/IMPLEMENTATION_STATUS.md`) was removed after two incompatible
+(`RuleDefinition.Standard`, see `docs/architecture/IMPLEMENTATION_STATUS.md`) was removed after two incompatible
 authoring conventions collided across hand-authored vs. generated rules, so this one gives `document`/
 `section` **no structure to be inconsistent about** — they're free text, never resolved against a real
 file or used for grouping/lookup by the engine. `statement` is a paraphrase in the rule author's own
@@ -430,7 +430,7 @@ This is particularly important for AI consumption.
 
 # 11. `codeguard rules test`
 
-**This already exists.** It is designed in `docs/RULES_TEST_DESIGN.md` and implemented end-to-end:
+**This already exists.** It is designed in `docs/done/RULES_TEST_DESIGN.md` and implemented end-to-end:
 each `tests:` case's `setup:` builds a virtual analysis model (no disk, no Roslyn, no MSBuild) which
 runs through the same `RuleEvaluator` as `codeguard validate`. 117 of this repo's 125 example rules
 carry tests; the 8 that don't are analyzer-backed, which the virtual setup path can't drive.
@@ -1084,7 +1084,7 @@ Mitigation:
 
 ## Rules become stale
 
-**Implemented** (`docs/done/RULE_SOURCE_AND_LINKED_DOCUMENTATION.md`, `docs/IMPLEMENTATION_STATUS.md`
+**Implemented** (`docs/done/RULE_SOURCE_AND_LINKED_DOCUMENTATION.md`, `docs/architecture/IMPLEMENTATION_STATUS.md`
 "Post-v1 addition: `metadata.source.file`/`fingerprint` + `rules validate` drift warnings") - the
 workflow originally sketched here:
 
@@ -1235,7 +1235,7 @@ Only after the workflow is proven:
 * documentation-to-rule impact analysis / stale-rule detection — **DONE**, ahead of the stated order
   (Phase 4/MCP isn't started yet). `metadata.source.file`/`fingerprint` + `rules validate` drift
   warnings — see "Rules become stale" above and
-  `docs/IMPLEMENTATION_STATUS.md` ("Post-v1 addition: `metadata.source.file`/`fingerprint` + `rules
+  `docs/architecture/IMPLEMENTATION_STATUS.md` ("Post-v1 addition: `metadata.source.file`/`fingerprint` + `rules
   validate` drift warnings").
 * rule confidence scoring
 * policy coverage reporting

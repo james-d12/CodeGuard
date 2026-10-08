@@ -15,7 +15,7 @@ public enum GitSyncResult
 /// Shells out to the system `git` binary rather than a managed git library (e.g. LibGit2Sharp) -
 /// this reuses the developer's existing SSH keys/credential helpers for free, and avoids adding
 /// another per-platform native-dependency surface on top of the Buildalyzer/MSBuild one already
-/// documented in docs/IMPLEMENTATION_STATUS.md. Every operation here is non-destructive: fetch,
+/// documented in docs/architecture/IMPLEMENTATION_STATUS.md. Every operation here is non-destructive: fetch,
 /// rev-parse, and `pull --ff-only` only - a diverged or dirty cache is reported as
 /// <see cref="GitSyncResult.Blocked"/> rather than force-reset.
 /// </summary>

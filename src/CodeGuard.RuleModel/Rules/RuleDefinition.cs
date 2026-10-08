@@ -19,7 +19,7 @@ public sealed class RuleDefinition
     /// rules validate` recomputes the current fingerprint and fails - not just warns, unlike
     /// <see cref="RuleSource.Fingerprint"/> - if this is missing or no longer matches, prompting a
     /// human to bump <see cref="Version"/> and re-run `--update-fingerprints` to capture the new one.
-    /// See docs/RULE_VERSIONING_PLAN.md.
+    /// See docs/done/RULE_VERSIONING_PLAN.md.
     /// </summary>
     public string? VersionFingerprint { get; init; }
 
@@ -63,11 +63,11 @@ public sealed class EnforcementMetadata
 
 /// <summary>
 /// Optional traceability back to the organisational documentation a rule was derived from - see
-/// docs/HIGH_LEVEL_AI_ASSISTING.md §6/§19 and docs/done/RULE_SOURCE_AND_LINKED_DOCUMENTATION.md.
+/// docs/roadmap/HIGH_LEVEL_AI_ASSISTING.md §6/§19 and docs/done/RULE_SOURCE_AND_LINKED_DOCUMENTATION.md.
 /// <see cref="RuleSource"/> supports two independent modes: free-text-only (just
 /// <see cref="RuleSource.Document"/>/<see cref="RuleSource.Section"/>/<see cref="RuleSource.Statement"/>,
 /// never resolved against a real file or used for grouping/lookup by the engine - a prior field with
-/// the same intent (`RuleDefinition.Standard`, see docs/IMPLEMENTATION_STATUS.md) was removed after
+/// the same intent (`RuleDefinition.Standard`, see docs/architecture/IMPLEMENTATION_STATUS.md) was removed after
 /// two incompatible authoring conventions collided, and the fix here is to give the field no
 /// convention to violate in the first place), and free-text-plus-checkable-link (also setting
 /// <see cref="RuleSource.File"/>, which opts the rule into `codeguard rules validate` resolving and

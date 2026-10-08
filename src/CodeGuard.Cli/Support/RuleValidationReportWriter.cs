@@ -44,7 +44,7 @@ public static class RuleValidationReportWriter
     /// own pass/fail counts or exit code - see docs/done/RULE_SOURCE_AND_LINKED_DOCUMENTATION.md), and
     /// a "Version checks" section for any drift found by <see cref="RuleVersionChecker"/>, checked
     /// unconditionally for every rule with no opt-in (these ARE failures - see
-    /// docs/RULE_VERSIONING_PLAN.md). Each section is omitted entirely when there's nothing to report.
+    /// docs/done/RULE_VERSIONING_PLAN.md). Each section is omitted entirely when there's nothing to report.
     /// </summary>
     public static void WriteConsole(
         RuleSetValidationReport report, RuleSourceCheckReport sourceReport, RuleVersionCheckReport versionReport, TextWriter writer)

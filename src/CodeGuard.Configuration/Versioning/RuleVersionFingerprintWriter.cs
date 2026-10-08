@@ -4,7 +4,7 @@ namespace CodeGuard.Configuration.Versioning;
 
 /// <summary>
 /// Writes a recomputed top-level <c>versionFingerprint</c> value into a rule YAML file - backs
-/// <c>codeguard rules validate --update-fingerprints</c>, see docs/RULE_VERSIONING_PLAN.md. Splicing
+/// <c>codeguard rules validate --update-fingerprints</c>, see docs/done/RULE_VERSIONING_PLAN.md. Splicing
 /// mechanics (exact-offset text splice rather than a YAML serializer round-trip, so comments/key
 /// order/formatting elsewhere are untouched) are shared with
 /// <c>CodeGuard.Configuration.Sources.RuleSourceFingerprintWriter</c> via

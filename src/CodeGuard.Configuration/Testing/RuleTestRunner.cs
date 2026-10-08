@@ -14,7 +14,7 @@ public sealed record RuleTestCaseResult(string RuleId, string TestName, TestOutc
 
 /// <summary>
 /// Runs a rule's embedded `tests:` cases through the same <see cref="RuleEvaluator"/> used by real
-/// repository validation - see docs/RULES_TEST_DESIGN.md ("Execution model"). One test case's setup
+/// repository validation - see docs/done/RULES_TEST_DESIGN.md ("Execution model"). One test case's setup
 /// or evaluation blowing up must not abort the others, mirroring <see cref="RuleEvaluator.Evaluate"/>'s
 /// own per-rule exception isolation.
 /// </summary>
