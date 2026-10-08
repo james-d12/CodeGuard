@@ -1,0 +1,59 @@
+id: TESTING-COMMAND-TESTS-001
+name: Every command must have tests
+description: >
+  Every type in `Contoso.Application.Commands` must have a corresponding
+  `{Name}Tests` class in a `Contoso.Application.Tests*` namespace. CodeGuard
+  can't tell whether the tests are any good - only that they exist - which is
+  exactly the line CORE_RULES.md §6.4 draws.
+severity: warning
+enforcement:
+  classification: deterministic
+tags:
+  - testing
+  - cqrs
+remediation: >
+  Add a `{CommandName}Tests` class covering the command to the Application
+  test project.
+illustrative: true
+
+metadata:
+  source:
+    document: Engineering Governance
+    section: Testing
+    statement: Every command must have tests.
+    file: examples/docs/engineering-governance.md
+    fingerprint: sha256:d50f983b0e39a00418afdf2e76f6344a98db7e3145af837dd6d8c1602980a801
+
+target:
+  kind: type
+  namespace: "Contoso.Application.Commands"
+
+assertions:
+  - must_have_count:
+      selector:
+        kind: type
+        namespace: "Contoso.Application.Tests*"
+        name: "${Name}Tests"
+      min: 1
+
+tests:
+  - name: Command with a test class
+    setup:
+      types:
+        - name: PlaceOrder
+          namespace: Contoso.Application.Commands
+        - name: PlaceOrderTests
+          namespace: Contoso.Application.Tests.Commands
+    expect: pass
+
+  - name: Command whose only tests are for a different command
+    setup:
+      types:
+        - name: PlaceOrder
+          namespace: Contoso.Application.Commands
+        - name: CancelOrder
+          namespace: Contoso.Application.Commands
+        - name: CancelOrderTests
+          namespace: Contoso.Application.Tests.Commands
+    expect: fail
+versionFingerprint: sha256:d25d3eebcaf20a639cbcfc8d708e2e143adee5b393f829010c1b9aec3ff95256
