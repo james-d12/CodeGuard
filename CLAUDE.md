@@ -20,7 +20,7 @@ history/decisions/gotchas from the initial 8-PR implementation are in `docs/arch
 
 ```bash
 dotnet build                    # 0 errors, 0 warnings expected
-dotnet test                     # 748 tests across 7 test projects, all should pass
+dotnet test                     # 921 tests across 8 test projects, all should pass
 dotnet test tests/CodeGuard.Evaluation.Tests   # run a single test project
 dotnet test --filter "FullyQualifiedName~MustInheritFromAssertionTests"  # run a single test class/method
 
@@ -117,7 +117,7 @@ conditions for a single candidate) are also implemented, as assertion kinds rath
 
 ### Rules directory
 
-`examples/rules/` holds this repo's own rule set — 125 YAML files organized by area (`ddd/`,
+`examples/rules/` holds this repo's own rule set — 126 YAML files organized by area (`ddd/`,
 `architecture/`, `csharp/`, `persistence/`, `reporting/`, …). There is **no** root `rules/`
 directory, so CLI commands against this repo need `--rules-source examples/rules`.
 
@@ -129,9 +129,12 @@ runs the script and diffs `skills/`, so a manual edit there just gets overwritte
 configures repository discovery (where rules/skills/agents/source/tests live) — discovery is
 deliberately configurable per-repo, missing paths are skipped silently.
 
-117 of the 125 rules carry an embedded `tests:` block run by `codeguard rules test` against a
+118 of the 126 rules carry an embedded `tests:` block run by `codeguard rules test` against a
 virtual analysis model (no disk, no Roslyn/MSBuild) — see `docs/done/RULES_TEST_DESIGN.md`. The 8 without
-are analyzer-backed rules, which the virtual setup path can't drive. CI runs `rules validate` and
+are analyzer-backed rules that just haven't had tests written yet — `TestSetupBuilder` already accepts
+the analyzer facts they need (`switches`, `throwSites`, `mutationSites`, `tryBlocks`,
+`methodBodyShapes`, `diagnostics`, `files`), and other analyzer-backed rules already carry tests;
+tracked in issue #63. CI runs `rules validate` and
 `rules test` over `examples/rules` on every build, so a broken rule fails the build.
 
 **Never add `examples/rules/` content to a packable project.** `CodeGuard.Cli` is published publicly
