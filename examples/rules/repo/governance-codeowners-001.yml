@@ -1,0 +1,59 @@
+id: GOVERNANCE-CODEOWNERS-001
+name: Repository must declare code owners
+description: >
+  The repository must contain a CODEOWNERS file in one of the locations GitHub
+  reads it from - the root, `.github/` or `docs/`. A CODEOWNERS file anywhere
+  else is ignored by GitHub, so it doesn't count: `must_any_match` requires at
+  least one CODEOWNERS file whose path is one of the three.
+severity: error
+enforcement:
+  classification: deterministic
+tags:
+  - governance
+  - structure
+remediation: >
+  Add a CODEOWNERS file at `.github/CODEOWNERS` (or the repository root, or
+  `docs/`) listing the owning team.
+illustrative: true
+
+metadata:
+  source:
+    document: Engineering Governance
+    section: Code Ownership
+    statement: Every repository declares its owners in a CODEOWNERS file at the root, in .github/ or in docs/.
+    file: examples/docs/engineering-governance.md
+    fingerprint: sha256:a0b38ede83b8fff46661dbd8f0b3dfa4159b5ddd4323609d7a82bacca5eae554
+
+target:
+  kind: repository
+
+assertions:
+  - must_any_match:
+      selector:
+        kind: file
+        name: "CODEOWNERS"
+      assertions:
+        - must_match_name:
+            regex: "^(\\.github/|docs/)?CODEOWNERS$"
+
+tests:
+  - name: CODEOWNERS in .github/
+    setup:
+      files:
+        - path: ".github/CODEOWNERS"
+        - path: "README.md"
+    expect: pass
+
+  - name: CODEOWNERS at the repository root
+    setup:
+      files:
+        - path: "CODEOWNERS"
+    expect: pass
+
+  - name: CODEOWNERS only in a location GitHub ignores
+    setup:
+      files:
+        - path: "src/CODEOWNERS"
+        - path: "README.md"
+    expect: fail
+versionFingerprint: sha256:8bf5a5f043b77bf79e55f80fba5b180aa90c1b18ca9dee1c5183e89aa7f7abdd

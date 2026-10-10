@@ -383,13 +383,13 @@ codeguard rules validate --rules-source examples/rules
 Actual output:
 
 ```text
-Checked 126 rule files: 126 passed, 0 failed.
+Checked 132 rule files: 132 passed, 0 failed.
 ```
 
 and on failure, the offending file followed by its errors:
 
 ```text
-Checked 126 rule files: 125 passed, 1 failed.
+Checked 132 rule files: 131 passed, 1 failed.
 
 /abs/path/ddd-042.yml
   - /assertions/0: Unknown assertion kind 'business-logic-quality'.
@@ -433,7 +433,7 @@ This is particularly important for AI consumption.
 
 **This already exists.** It is designed in `docs/done/RULES_TEST_DESIGN.md` and implemented end-to-end:
 each `tests:` case's `setup:` builds a virtual analysis model (no disk, no Roslyn, no MSBuild) which
-runs through the same `RuleEvaluator` as `codeguard validate`. 118 of this repo's 126 example rules
+runs through the same `RuleEvaluator` as `codeguard validate`. 124 of this repo's 132 example rules
 carry tests; the 8 that don't are analyzer-backed rules that simply haven't had tests written yet —
 `TestSetupBuilder` already accepts the analyzer facts they need (`switches`, `throwSites`,
 `mutationSites`, `tryBlocks`, `methodBodyShapes`, `diagnostics`, `files`), and other analyzer-backed
@@ -620,13 +620,13 @@ them being treated as one piece of work. They split into three tiers:
   (`context.ValidateRules()`), split back apart by `RuleErrorCodes.DuplicateRuleId`.
 * Missing tests — `rule.Tests.Count == 0`.
 * One-sided tests — a rule with only `pass` cases or only `fail` cases (distinct from the existing,
-  narrower vacuous-test guard in `RuleTestRunner`). As of this writing all 118 example rules that
+  narrower vacuous-test guard in `RuleTestRunner`). As of this writing all 124 example rules that
   carry `tests:` already have both, so this check has found nothing yet in this repo's own rule set
   — it's there for the next rule that gets it wrong.
 * Missing provenance — implemented now that §6/§19's `metadata.source` exists
   (`RuleAnalysisReport.RulesMissingProvenance`). Also excluded from `HasFindings`, same reasoning as
   disabled/illustrative below — `metadata.source` is optional, additive documentation, not a
-  requirement, so the 123 of this repo's 126 example rules currently lacking it isn't a problem.
+  requirement, so the 123 of this repo's 132 example rules currently lacking it isn't a problem.
 * Disabled rules; `illustrative: true` rules — counted and listed, but deliberately excluded from
   what makes the command exit non-zero (`RuleAnalysisReport.HasFindings`), since a rule set
   legitimately containing them — like this repo's own `examples/rules/`, all illustrative — isn't
@@ -662,7 +662,7 @@ Real output against this repo's own `examples/rules/`:
 ```text
 CodeGuard Rule Analysis
 
-Rules:                    126
+Rules:                    132
 Invalid:                  0
 Duplicate ids:            0
 Rules without tests:      8
@@ -670,7 +670,7 @@ One-sided tests:          0
 Unreachable assertions:   0
 Exact-duplicate rules:    5
 Disabled rules:           0
-Illustrative rules:       126
+Illustrative rules:       132
 Missing provenance:       123
 ```
 
@@ -902,8 +902,8 @@ CodeGuard:
 
 # 21. Rule Testing as a First-Class Concept
 
-**This is already the case** — see §11. Embedded `tests:` are implemented, and 118 of this repo's
-126 example rules carry them, each with both a `pass` and a `fail` case. What follows describes the
+**This is already the case** — see §11. Embedded `tests:` are implemented, and 124 of this repo's
+132 example rules carry them, each with both a `pass` and a `fail` case. What follows describes the
 existing model rather than a proposal.
 
 Rules should be treated similarly to production code.
@@ -1163,7 +1163,7 @@ Introduce:
 
 * provenance — **done**. `metadata.source: {document, section, statement}`, deliberately narrower
   than this document originally sketched (no `generation` block, no multi-source list) — see §6/§19
-  for the shape and the reasoning. No bulk backfill of the existing example rules (3 of today's 126
+  for the shape and the reasoning. No bulk backfill of the existing example rules (9 of today's 132
   carry `metadata.source`, added deliberately as worked examples).
 * lifecycle state — **considered and deliberately rejected**, not merely deferred.
   `docs/REFACTORING.md` §12 proposed `status: experimental|active|deprecated|retired` (plus a

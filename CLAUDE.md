@@ -117,7 +117,7 @@ conditions for a single candidate) are also implemented, as assertion kinds rath
 
 ### Rules directory
 
-`examples/rules/` holds this repo's own rule set — 126 YAML files organized by area (`ddd/`,
+`examples/rules/` holds this repo's own rule set — 132 YAML files organized by area (`ddd/`,
 `architecture/`, `csharp/`, `persistence/`, `reporting/`, …). There is **no** root `rules/`
 directory, so CLI commands against this repo need `--rules-source examples/rules`.
 
@@ -129,7 +129,7 @@ runs the script and diffs `skills/`, so a manual edit there just gets overwritte
 configures repository discovery (where rules/skills/agents/source/tests live) — discovery is
 deliberately configurable per-repo, missing paths are skipped silently.
 
-118 of the 126 rules carry an embedded `tests:` block run by `codeguard rules test` against a
+124 of the 132 rules carry an embedded `tests:` block run by `codeguard rules test` against a
 virtual analysis model (no disk, no Roslyn/MSBuild) — see `docs/done/RULES_TEST_DESIGN.md`. The 8 without
 are analyzer-backed rules that just haven't had tests written yet — `TestSetupBuilder` already accepts
 the analyzer facts they need (`switches`, `throwSites`, `mutationSites`, `tryBlocks`,

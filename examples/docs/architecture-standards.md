@@ -17,3 +17,13 @@ an abstraction defined in Domain, and Infrastructure provides the implementation
 
 Application projects may depend on Domain, but never on Infrastructure directly - infrastructure
 concerns are wired up at the composition root, not referenced from application/command-handling code.
+Beyond that, an Application project may only depend on approved layers: its own `Contoso.Application.*`
+types, `Contoso.Domain.*`, the base class library, and the `Microsoft.Extensions.*` abstractions
+(logging, options, dependency injection). Anything else is a sign that infrastructure or
+presentation concerns have leaked inward.
+
+## API Layer
+
+API projects are the presentation layer: they translate HTTP requests into application commands and
+queries. They must not take a project reference on a Persistence project - data access goes through
+the Application layer, never around it.

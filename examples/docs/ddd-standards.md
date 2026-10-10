@@ -14,3 +14,9 @@ domain model and lets tooling (including CodeGuard's own DDD rules) recognise en
 
 An aggregate root is the only entity in its aggregate that outside code may hold a reference to;
 everything else in the aggregate is reached through it.
+
+## Domain Events
+
+Every domain event must have at least one handler implementing
+`Contoso.Application.IDomainEventHandler<TEvent>` for it. An event nothing handles is either dead
+code or a missing reaction to something the domain said happened.
