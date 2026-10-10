@@ -46,6 +46,35 @@ public sealed class ProjectConventionAnalyzerTests : IDisposable
     }
 
     [Fact]
+    public void Analyze_Flags_Project_WhenOnlyASameNamedProjectAtAnotherPathHasTheCallSite()
+    {
+        // Two solutions can contain different project files with the same name; a call site from
+        // the other one must not satisfy this project's convention.
+        var project = WriteProject("Contoso.Reporting", WithScriptsContent);
+        var otherProjectsCallSite = BootstrapCallSite("Contoso.Reporting") with { ProjectPath = "/other/Contoso.Reporting.csproj" };
+        var model = TestModels.RepositoryWithFacts(projects: [project], callSites: [otherProjectsCallSite]);
+        var analyzer = new ProjectConventionAnalyzer("*.Reporting*");
+
+        var violations = analyzer.Analyze(model).ToList();
+
+        var violation = Assert.Single(violations);
+        Assert.Contains("call-site", violation.Message);
+    }
+
+    [Fact]
+    public void Analyze_DoesNotFlag_Project_WhenCallSiteProjectPathMatches()
+    {
+        var project = WriteProject("Contoso.Reporting", WithScriptsContent);
+        var callSite = BootstrapCallSite("Contoso.Reporting") with { ProjectPath = _projectPath };
+        var model = TestModels.RepositoryWithFacts(projects: [project], callSites: [callSite]);
+        var analyzer = new ProjectConventionAnalyzer("*.Reporting*");
+
+        var violations = analyzer.Analyze(model).ToList();
+
+        Assert.Empty(violations);
+    }
+
+    [Fact]
     public void Analyze_Flags_ProjectMissingRequiredCallSite()
     {
         var project = WriteProject("Contoso.Reporting", WithScriptsContent);

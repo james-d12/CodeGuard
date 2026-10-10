@@ -15,6 +15,8 @@ namespace CodeGuard.Evaluation.Analyzers;
 /// golden-persistence-dbup-script-naming-001.yml. All three coordinates (which projects, which
 /// call, which folder) are rule YAML parameters, not hardcoded here, so this analyzer works for
 /// any "matching projects must call X and package folder Y as content" convention, not just DbUp.
+/// Call sites are attributed to a project by path as well as name, so a same-named project in
+/// another solution can't satisfy (or mask) this project's convention.
 /// </summary>
 public sealed class ProjectConventionAnalyzer(
     string projectPattern,
@@ -31,7 +33,7 @@ public sealed class ProjectConventionAnalyzer(
         foreach (var project in projects)
         {
             var hasRequiredCallSite = model.CallSites.Any(cs =>
-                cs.ProjectName == project.Name && GlobMatcher.IsMatch(cs.InvokedMember, requiredCallPattern));
+                cs.ProjectName == project.Name && IsSameProjectPath(cs.ProjectPath, project.Path) && GlobMatcher.IsMatch(cs.InvokedMember, requiredCallPattern));
             var hasRequiredContentEntry = HasRequiredContentEntry(project.Path);
 
             if (!hasRequiredCallSite || !hasRequiredContentEntry)
@@ -49,6 +51,11 @@ public sealed class ProjectConventionAnalyzer(
             }
         }
     }
+
+    // A call site with no ProjectPath comes from a model built without paths (e.g. rules test), where
+    // ProjectName is the only identity available.
+    private static bool IsSameProjectPath(string callSiteProjectPath, string projectPath) =>
+        callSiteProjectPath.Length == 0 || string.Equals(callSiteProjectPath, projectPath, StringComparison.OrdinalIgnoreCase);
 
     private bool HasRequiredContentEntry(string projectPath)
     {

@@ -9,31 +9,31 @@ namespace CodeGuard.Analyzers.Roslyn;
 
 public static class RoslynTypeExtractor
 {
-    public static IReadOnlyList<TypeModel> ExtractTypes(CSharpCompilation compilation, string projectName)
+    public static IReadOnlyList<TypeModel> ExtractTypes(CSharpCompilation compilation, string projectName, string projectPath = "")
     {
         var types = new List<TypeModel>();
-        CollectTypes(compilation.Assembly.GlobalNamespace, projectName, types);
+        CollectTypes(compilation.Assembly.GlobalNamespace, projectName, projectPath, types);
         return types;
     }
 
-    private static void CollectTypes(INamespaceOrTypeSymbol container, string projectName, List<TypeModel> types)
+    private static void CollectTypes(INamespaceOrTypeSymbol container, string projectName, string projectPath, List<TypeModel> types)
     {
         foreach (var member in container.GetMembers())
         {
             switch (member)
             {
                 case INamespaceSymbol ns:
-                    CollectTypes(ns, projectName, types);
+                    CollectTypes(ns, projectName, projectPath, types);
                     break;
                 case INamedTypeSymbol type:
-                    types.Add(ToTypeModel(type, projectName));
-                    CollectTypes(type, projectName, types);
+                    types.Add(ToTypeModel(type, projectName, projectPath));
+                    CollectTypes(type, projectName, projectPath, types);
                     break;
             }
         }
     }
 
-    private static TypeModel ToTypeModel(INamedTypeSymbol symbol, string projectName)
+    private static TypeModel ToTypeModel(INamedTypeSymbol symbol, string projectName, string projectPath)
     {
         var location = symbol.Locations.FirstOrDefault(l => l.IsInSource);
         var lineSpan = location?.GetLineSpan();
@@ -68,7 +68,8 @@ public static class RoslynTypeExtractor
             ProjectName: projectName,
             FilePath: location?.SourceTree?.FilePath ?? string.Empty,
             Line: (lineSpan?.StartLinePosition.Line ?? -1) + 1,
-            Column: (lineSpan?.StartLinePosition.Character ?? -1) + 1);
+            Column: (lineSpan?.StartLinePosition.Character ?? -1) + 1,
+            ProjectPath: projectPath);
     }
 
     private static TypeKind MapTypeKind(INamedTypeSymbol symbol) => symbol.TypeKind switch

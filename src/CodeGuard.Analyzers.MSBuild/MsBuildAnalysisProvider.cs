@@ -137,8 +137,8 @@ public sealed class MsBuildAnalysisProvider(
         }
 
         var projectName = Path.GetFileNameWithoutExtension(projectPath);
-        var types = RoslynTypeExtractor.ExtractTypes(csharpCompilation, projectName);
-        var syntaxFacts = RoslynSyntaxFactExtractor.Extract(csharpCompilation, projectName);
+        var types = RoslynTypeExtractor.ExtractTypes(csharpCompilation, projectName, projectPath);
+        var syntaxFacts = RoslynSyntaxFactExtractor.Extract(csharpCompilation, projectName, projectPath);
         var diagnostics = RoslynDiagnosticExtractor.Extract(csharpCompilation, projectName);
 
         var projectReferenceNames = roslynProject.ProjectReferences

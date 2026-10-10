@@ -24,7 +24,8 @@ public sealed record MutationSiteModel(
     string TargetMemberName,
     string ProjectName,
     string FilePath,
-    int Line);
+    int Line,
+    string ProjectPath = "");
 
 public sealed record TryBlockModel(
     string ContainingMethod,
@@ -42,4 +43,5 @@ public sealed record MethodBodyShapeModel(
     int StatementCount,
     bool IsSingleBaseCallDelegation,
     string FilePath,
-    int Line);
+    int Line,
+    string ProjectPath = "");

@@ -21,4 +21,5 @@ public sealed record CallSiteModel(
     int Line,
     int Column,
     string? EnclosingComparisonOperator = null,
-    string? EnclosingComparisonValue = null);
+    string? EnclosingComparisonValue = null,
+    string ProjectPath = "");
