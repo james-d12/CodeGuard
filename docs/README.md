@@ -13,7 +13,7 @@ Evergreen scope documents and living reference docs, updated in place and never 
 | [`PRIMITIVES.md`](PRIMITIVES.md) | Original design and requirements doc. **Frozen**: do not edit or move. Unbuilt primitive families are tracked in [#85](https://github.com/james-d12/CodeGuard/issues/85). |
 | [`REFACTORING.md`](REFACTORING.md) | A separate, larger architectural-evolution proposal. Not started as an initiative; do not edit or move. Phases are tracked in [#84](https://github.com/james-d12/CodeGuard/issues/84). |
 | [`architecture/CORE_RULES.md`](architecture/CORE_RULES.md) | Product scope: the six policy pillars, non-goals, enforcement levels and waivers. |
-| [`architecture/IMPLEMENTATION_STATUS.md`](architecture/IMPLEMENTATION_STATUS.md) | Build history, decisions and gotchas. Read before making non-trivial changes. Some stale statements are tracked in [#80](https://github.com/james-d12/CodeGuard/issues/80). |
+| [`architecture/IMPLEMENTATION_STATUS.md`](architecture/IMPLEMENTATION_STATUS.md) | Build history, decisions and gotchas. Read before making non-trivial changes. |
 
 ## Roadmap (outstanding)
 

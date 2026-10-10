@@ -15,8 +15,9 @@ rules — they're illustrating a *shape*, not a library of reusable values.
 A rule may include a `tests` array. These are **executable** — `codeguard rules test` builds a
 virtual analysis model from each `setup:` and runs the rule through the same evaluator as
 `codeguard validate`, with no repository and no disk I/O. Write them for every rule that can have
-them: 117 of the 125 example rules in this repository do, and the 8 that don't are analyzer-backed
-rules, which the virtual setup path can't drive.
+them: 118 of the 126 example rules in this repository do. Analyzer-backed rules can have them too —
+`setup:` accepts analyzer facts such as `switches`, `throwSites`, `mutationSites`, `tryBlocks`,
+`methodBodyShapes`, `diagnostics` and `files`.
 
 ```yaml
 tests:

@@ -7,36 +7,36 @@ the code alone.
 
 ## Essential reading (in this order)
 
-1. `CodeGuard/PRIMITIVES.md` — the original design/requirements doc for this whole project.
-2. The approved implementation plan: `/home/james/.claude/plans/reading-the-codeguard-primitives-md-pla-imperative-quail.md`
-   (11 sections: primitive vocabulary, starter rule set, analysis model, Roslyn/MSBuild
-   integration, rule schema, repository discovery, project structure, CLI, results model, test
-   strategy, and an 8-PR incremental plan). This file (`IMPLEMENTATION_STATUS.md`) tracks
-   progress *against that plan* — the plan is still the source of truth for intent and design
-   rationale; this file is the "what's actually been built and what's left" status report.
+1. `docs/PRIMITIVES.md` — the original design/requirements doc for this whole project.
+2. The original implementation plan (11 sections: primitive vocabulary, starter rule set, analysis
+   model, Roslyn/MSBuild integration, rule schema, repository discovery, project structure, CLI,
+   results model, test strategy, and an 8-PR incremental plan) was a local planning file outside
+   this repository and isn't checked in. Its intent survives in `docs/PRIMITIVES.md` plus the
+   decisions recorded in this file, which is now the source of truth for what was built and why.
 3. This file, for what's been built and what's left.
 
 ## Where things stand
 
-**All 8 PRs of the plan are done**, including the optional PR8 fast-follow. All tests pass across
-6 test projects. The solution builds with 0 errors and 0 warnings (Buildalyzer, which used to pull
-in a transitive `System.Security.Cryptography.Xml` dependency triggering 14 `NU1903` advisory
-warnings, has since been removed — see the updated gotcha #2 and #6 below).
+**All 8 PRs of the original plan are done**, including the optional PR8 fast-follow, and a long
+list of post-v1 additions has landed since (see the "Post-v1 addition" sections below). All tests
+pass across 8 test projects. The solution builds with 0 errors and 0 warnings (Buildalyzer, which
+used to pull in a transitive `System.Security.Cryptography.Xml` dependency triggering 14 `NU1903`
+advisory warnings, has since been removed — see the updated gotcha #2 and #6 below).
 
-**PR8 — CI workflow.** `.github/workflows/ci.yml` runs `dotnet restore` / `build` / `test` on
-`ubuntu-latest` for pushes/PRs to `main` plus manual `workflow_dispatch`. A `global.json` pinning
-the SDK to `10.0.100` (`rollForward: latestFeature`) was added alongside it so CI resolves the
-same SDK feature band this was built and tested against — `actions/setup-dotnet@v4` reads it via
-`global-json-file: global.json`. This workflow has **not been exercised on actual GitHub Actions**
-(no remote configured) — only structurally validated (YAML parses, steps mirror the exact commands
-verified manually throughout this project). Verify it end-to-end the first time this repo is
-pushed to a GitHub remote.
+**PR8 — CI workflow.** `.github/workflows/ci.yml` runs on GitHub Actions (`ubuntu-latest`) for
+pushes/PRs to `main` plus manual `workflow_dispatch`, and has grown well beyond the original
+restore/build/test: `dotnet format --verify-no-changes`, a vulnerable-package check, build+test
+wrapped in a SonarCloud scan (coverage via `coverlet`), `rules validate`/`rules test` against
+`examples/rules/`, a check that `scripts/sync-skill-references.sh` produces no diff, `dotnet
+publish`, and a coverage report on the job summary. A `global.json` pinning the SDK to `10.0.100`
+(`rollForward: latestFeature`) makes CI resolve the same SDK feature band this is built and
+tested against — `actions/setup-dotnet` reads it via `global-json-file: global.json`.
 
 The v1 plan is now fully implemented. The only outstanding, deliberately separate work is the
-`CodeGuard/REFACTORING.md` architectural-evolution proposal — see below.
+`docs/REFACTORING.md` architectural-evolution proposal — see below.
 
 There is also a separate, much larger **architectural evolution** proposal in
-`CodeGuard/REFACTORING.md` (Selector/Predicate/Assertion/Diagnostic separation, analysis
+`docs/REFACTORING.md` (Selector/Predicate/Assertion/Diagnostic separation, analysis
 sessions with caching, rule versioning/lifecycle, a custom-analyzer escape hatch, rule fixture
 testing, etc.). The user explicitly deferred that in favor of finishing PR7 first — it has **not**
 been started. Read it before proposing any further architectural changes, but treat it as a
@@ -45,36 +45,48 @@ separate initiative from the PR1–PR8 plan, not something to blend into it oppo
 ## Verifying the current state
 
 ```bash
-cd /home/james/Dev/CodeGuard
-dotnet build          # should succeed, 0 errors (14 pre-existing NU1903 advisory warnings, see above)
-dotnet test           # should show 81 passed across 6 test projects, 0 failed
-dotnet run --project CodeGuard/CodeGuard.Cli -- list-rules       # works against this repo's own rules/
-dotnet run --project CodeGuard/CodeGuard.Cli -- explain-rule DDD-ENTITY-001
-dotnet run --project CodeGuard/CodeGuard.Cli -- validate   # see "Known limitation" below — self-validation still crashes
+dotnet build          # should succeed, 0 errors, 0 warnings
+dotnet test           # 921 tests across 8 test projects, 0 failed
+dotnet run --project src/CodeGuard.Cli -- rules list     --rules-source examples/rules
+dotnet run --project src/CodeGuard.Cli -- rules explain  DDD-ENTITY-001 --rules-source examples/rules
+dotnet run --project src/CodeGuard.Cli -- rules validate --rules-source examples/rules  # 126 rule files, all pass
+dotnet run --project src/CodeGuard.Cli -- rules test     --rules-source examples/rules
+dotnet run --project src/CodeGuard.Cli -- validate       # self-validation completes end-to-end, see gotcha #6
 ```
+
+There is no root `rules/` directory — this repo's own rule set lives in `examples/rules/`, so
+commands that read rules need `--rules-source examples/rules`.
 
 ## Architecture overview
 
 ```
 CodeGuard.sln
 Directory.Build.props          # net10.0, Nullable enable, ImplicitUsings enable, LangVersion latest
-global.json                    # pins SDK to 10.0.100 (rollForward: latestFeature) — read by CI (PR8)
-.github/workflows/ci.yml       # dotnet restore/build/test on push/PR to main + workflow_dispatch (PR8)
-.codeguard/config.yml        # repository discovery config for THIS repo (PR6)
+global.json                    # pins SDK to 10.0.100 (rollForward: latestFeature) — read by CI
+.github/workflows/ci.yml       # build/test/format/Sonar/rule checks on push/PR to main + workflow_dispatch
 
-rules/                         # the 11 illustrative starter rules (YAML), all tagged illustrative: true
-  ddd/                         # 7 files — entity, aggregate, event, command-handler rules
-  architecture/                # 3 files — layering/package rules
-  csharp/                      # 1 file — namespace convention rule
-  schema/rule.schema.json      # JSON Schema (2020-12) for rule YAML files
-
-CodeGuard/
+docs/
   PRIMITIVES.md                 # original design doc — do not edit
   REFACTORING.md                # separate, much larger architectural-evolution proposal — not started, see above
-  CodeGuard.Cli/               # System.CommandLine-based CLI (net10.0 exe, AssemblyName=codeguard)
+  README.md                     # index of every doc; architecture/, roadmap/, done/ subfolders
+
+examples/
+  rules/                        # this repo's own rule set: 126 YAML files by area (ddd/, architecture/,
+                                #   csharp/, persistence/, reporting/, ...), all illustrative: true;
+                                #   118 carry embedded tests:
+  docs/                         # sample standards docs that some rules' metadata.source links point at
+
+skills/codeguard-rule-generation/ # AI rule-authoring skill; references/ regenerated by scripts/sync-skill-references.sh
+scripts/                        # sync-skill-references.sh, verify-nupkg-contents.sh, run-benchmarks.sh, install scripts
+benchmarks/CodeGuard.Benchmarks/ # BenchmarkDotNet harness (not run by dotnet test/CI)
+
+src/
+  CodeGuard.Cli/               # System.CommandLine-based CLI (net10.0 exe, AssemblyName=codeguard, packed as a dotnet tool)
     Program.cs                  #   MSBuildLocator bootstrap + composes RootCommand from Commands/
-    Commands/                   #   ValidateCommand, ListRulesCommand, ExplainRuleCommand
-    Support/                    #   CliRepositoryContext (shared --path/--config resolution), CommonOptions
+    Commands/                   #   ValidateCommand, SetupCommand, InfoCommand, RulesCommand
+      Rules/                    #   rules list/explain/validate/test/analyze/discover
+    Support/                    #   CliRepositoryContext (shared --path/--config/--rules-source resolution),
+                                #   CommonOptions, report writers, SolutionFileLocator, GitRuleSourceSync
   CodeGuard.Core/              # RuleEvaluator, ValidationResult/Violation (Core.Evaluation, Core.Results)
   CodeGuard.RuleModel/         # RuleDefinition, Severity, EnforcementClassification;
                                  #   ITargetSelector/IAssertion/IConditionNode interfaces;
@@ -82,22 +94,26 @@ CodeGuard/
   CodeGuard.Analysis/          # Provider-agnostic analysis model (RepositoryModel, ProjectModel,
                                  #   TypeModel, etc. in AnalysisModel/) + IAnalysisProvider,
                                  #   AnalysisModelBuilderContext, AnalysisModelBuilder (Providers/)
-  CodeGuard.Evaluation/        # Concrete executable selectors/assertions (see table below) + GlobMatcher
-  CodeGuard.Configuration/     # YAML rule loading/parsing/validation + repository discovery (see below)
-  CodeGuard.Reporting/         # IViolationReporter + Console/Json/Sarif reporters (Console/, Json/, Sarif/)
+  CodeGuard.Evaluation/        # Concrete executable selectors/assertions/analyzers (see table below) + GlobMatcher
+  CodeGuard.Configuration/     # YAML rule loading/parsing/validation, capability descriptors, rule
+                                 #   tests/analysis/versioning, repository discovery (see below);
+                                 #   JSON Schema at Validation/Schemas/rule.schema.json (embedded resource)
+  CodeGuard.Reporting/         # IViolationReporter + Console/Json/Sarif/Html reporters
   CodeGuard.Analyzers.Roslyn/  # RoslynTypeExtractor: CSharpCompilation -> IReadOnlyList<TypeModel>
   CodeGuard.Analyzers.MSBuild/ # MsBuildAnalysisProvider: MSBuildWorkspace + Microsoft.Build.Evaluation -> ProjectModel (+ Types via Roslyn)
   CodeGuard.Analyzers.Repository/ # RepositoryFileProvider: walks the filesystem -> FileModel (no Roslyn/MSBuild)
 
-tests/
-  CodeGuard.Core.Tests/            (9 tests)  — RuleEvaluator, Console/Json/Sarif violation reporters
-  CodeGuard.Evaluation.Tests/      (41 tests) — every selector/assertion + And/Or/Not composition
-  CodeGuard.Configuration.Tests/   (15 tests) — RuleFileLoader (incl. source-tracking), RepositoryDiscovery,
-                                                    CodeGuardConfigLoader (incl. explicit --config path)
-  CodeGuard.Analyzers.Roslyn.Tests/(12 tests) — RoslynTypeExtractor against in-memory source snippets
-  CodeGuard.Analyzers.Repository.Tests/ (1 test) — RepositoryFileProvider walk + directory exclusions
-  CodeGuard.IntegrationTests/      (3 tests)  — full pipeline against a real fixture solution, incl.
-                                                    JSON/SARIF reporter output shape
+tests/                             (test counts as of this writing)
+  CodeGuard.Core.Tests/            (53)  — RuleEvaluator, Console/Json/Sarif/Html violation reporters
+  CodeGuard.Evaluation.Tests/      (453) — every selector/assertion/analyzer + And/Or/Not composition
+  CodeGuard.Configuration.Tests/   (220) — rule loading/parsing/validation, capability catalog,
+                                             rule tests/analysis/versioning, repository discovery
+  CodeGuard.Analyzers.Roslyn.Tests/(49)  — RoslynTypeExtractor against in-memory source snippets
+  CodeGuard.Analyzers.Repository.Tests/ (1) — RepositoryFileProvider walk + directory exclusions
+  CodeGuard.Cli.Tests/             (117) — CLI commands invoked in-process (Console.Out redirected)
+  CodeGuard.RuleFuzzing.Tests/     (7)   — combinatorial fuzzing of the rule engine
+  CodeGuard.IntegrationTests/      (21)  — full pipeline against a real fixture solution, incl.
+                                             JSON/SARIF reporter output shape, MSBuild load diagnostics
     Fixtures/SimpleDomainSolution/   — real 3-project .sln (Contoso.Domain/Application/Infrastructure)
                                         used ONLY by MsBuildAnalysisProvider at test-time, not built by the main solution
 ```
@@ -159,16 +175,17 @@ one character. This only changes matching behavior for file/directory `path` val
 only `/`-delimited strings passed through it — namespace/base-type/project/package patterns never
 contain `/`, so `*` there behaves exactly as before (unbounded match).
 
-`AndCondition`/`OrCondition`/`NotCondition` exist in `CodeGuard.RuleModel.Conditions` and are
-unit-tested, but **there is no YAML parsing for `when`/`and`/`or`/`not` yet** — no starter rule
-needs it, so it was deliberately deferred (not stubbed); PR7 didn't end up needing it either. If a
-future rule needs it, you'll need to add a
-`ConditionParserRegistry` in `CodeGuard.Configuration.Parsing` and wire `when:` parsing into
-`RuleDocumentParser`, plus add `"when"` to `rules/schema/rule.schema.json`.
+`AndCondition`/`OrCondition`/`NotCondition` live in `CodeGuard.RuleModel.Conditions` and are
+wired up to YAML: `ConditionParserRegistry` (`CodeGuard.Configuration.Parsing`) parses
+`when`/`and`/`or`/`not` into `RuleDefinition.When`, `RuleDocumentParser` consults it, and
+`RuleEvaluator` filters candidates against it before running assertions. `rule.schema.json` has a
+recursive `whenNode` `$def` for it, and a bare assertion `kind` can be used directly as a `when:`
+leaf via `AssertionCondition`. (This was deferred during PR1–PR8 and added later — see "Things NOT
+done" below.)
 
 ## CLI commands (PR7)
 
-All four commands live in `CodeGuard/CodeGuard.Cli/Commands/`, share `--path`/`--config`
+All four commands lived in `CodeGuard.Cli/Commands/` (now `src/CodeGuard.Cli/Commands/`), share `--path`/`--config`
 resolution via `Support/CliRepositoryContext.cs`, and are composed in `Program.cs`. **Note:**
 the table below documents the original PR7 command names; `list-rules`/`explain-rule`/`check-rules`
 were later regrouped under a `rules` subcommand (`rules list`/`rules explain`/`rules validate`,
@@ -917,8 +934,8 @@ All under `rules/`, all illustrative (`Contoso.*` namespace, `illustrative: true
       `RepositoryModel` built directly in `SyntheticModelBuilder.cs` (no MSBuild involved, so the
       rule-evaluation benchmark measures rule-evaluation cost in isolation). `BuildAsync` only
       exercises MSBuild solution loading, which CLAUDE.md's "Known limitation" section already
-      confirms is fixed for self-analysis — it never reaches the unrelated
-      `NoPureDelegationOverrideAnalyzer` crash further down the `validate` pipeline.
+      confirms is fixed for self-analysis — it never reaches the analyzer stage further down the
+      `validate` pipeline (where the since-fixed `NoPureDelegationOverrideAnalyzer` crash was).
     - `validate` also now logs stage durations (`Analysis model built in {ms} ms` /
       `Evaluation complete in {ms} ms`) at `Information` level via a plain `Stopwatch` in
       `ValidateCommand.cs` — no BenchmarkDotNet dependency needed for a user running `validate` on
@@ -942,8 +959,10 @@ All under `rules/`, all illustrative (`Contoso.*` namespace, `illustrative: true
 - Method-body assertions (`MustCall`, `MustAwait`, etc.), naming-convention assertions
   (`MustUsePascalCase` etc. — already expressible via `must_match_name`'s regex, so low priority),
   generic relationship assertions (`MustBeRelatedTo`/`MustHaveParent`/ownership-graph concepts —
-  no concrete use case yet), package version-range constraints (`MustUsePackageVersionAtLeast`),
-  property-setter assertions (`MustNotHaveSetter`).
+  no concrete use case yet), property-setter assertions (`MustNotHaveSetter`). Package
+  version-range constraints (`MustUsePackageVersionAtLeast` etc.) are **done** as the single generic
+  `must_use_package_version` kind (`{package, constraint}`, e.g. `constraint: ">=8.0.0"`) — see
+  "Post-v1 addition: expanded generic primitive vocabulary" above.
 - Non-C# analysis providers (YAML/JSON/Terraform/K8s/etc.) — architecture left open via
   `IAnalysisProvider`, nothing implemented.
 - A dedicated standards-file format was never built. The `RuleDefinition.Standard` field and the
@@ -954,13 +973,15 @@ All under `rules/`, all illustrative (`Contoso.*` namespace, `illustrative: true
   target repo) on the 97 generated rules — so `list-standards` produced ~60 mostly-singleton groups
   instead of a meaningful category list. `Documentation` (`IReadOnlyList<string>`) remains on
   `RuleDefinition` as the intended doc-reference field but is unpopulated by any current rule file.
-- Everything in `CodeGuard/REFACTORING.md` (analysis sessions/caching, rule lifecycle states, the
+- Everything in `docs/REFACTORING.md` (analysis sessions/caching, rule lifecycle states, the
   Selector/Predicate/Assertion/Diagnostic split, a custom-analyzer escape hatch, rule fixture
   testing) — a deliberately separate, larger initiative the user chose not to start yet. See "Where
   things stand" above. Exception: the `version` half of §12's rule-versioning proposal shipped as
   its own small, scoped effort — see "Post-v1 addition: rule versioning" — without adopting any of
   REFACTORING.md's broader model changes; `status` (the other half of §12) remains not done, and not
   re-proposed without a concrete consumer (see "Post-v1 addition: `metadata.source`" above).
-- A fix for the remaining CLI self-analysis known limitation (gotcha #6) — the original
-  Buildalyzer-crash cause is resolved, but `NoPureDelegationOverrideAnalyzer`'s
-  `FullName`-uniqueness assumption still blocks full self-validation; documented but not solved.
+- CLI self-analysis (gotcha #6) is **no longer blocked** — the Buildalyzer crash, the
+  `NoPureDelegationOverrideAnalyzer`/`ImmutableMutationAnalyzer` `FullName`-uniqueness bugs and the
+  `.claude` worktree double-discovery are all fixed, and `codeguard validate` against this repo
+  completes end-to-end. Only the unproven multi-solution `(ProjectName, FullName)` edge case noted
+  in gotcha #6 remains.

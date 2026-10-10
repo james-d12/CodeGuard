@@ -47,7 +47,21 @@ almost always used as the **nested** selector inside `must_exist` / `must_not_ex
 
 ## Glob patterns
 
-Pattern matching (namespaces, base types, project names, etc.) uses `*` as a wildcard only — no
-`?`, `**`, character classes, or regex syntax. Roslyn renders a closed generic base type as
-`Entity<int>`, not the open `Entity<TId>` placeholder used when authoring a rule, so target the
-closed-generic shape with a wildcard: `Entity<*>`, not `Entity<TId>`.
+Every `glob` parameter (namespaces, base types, project names, file/directory paths, etc.) is
+matched against the whole value, case-sensitively, with three wildcards:
+
+- `*` matches any run of characters within one path segment — it never crosses `/`.
+- `**`, used as a whole path segment, spans directories: `**/` matches zero or more leading
+  directories (`**/Properties/launchSettings.json` matches at any depth, including the repository
+  root; `src/**/*.cs` matches `src/Foo.cs` and `src/a/b/Foo.cs`), a trailing `/**` matches
+  everything below a directory (`src/**`, though not `src` itself), and `**` alone matches anything.
+  Embedded in a segment (`foo**bar`) it is just two `*`s.
+- `?` matches exactly one character (never `/`).
+
+Everything else is literal — no character classes (`[abc]`), brace expansion (`{a,b}`), or regex
+syntax. Only file/directory `path` values contain `/`, so for namespaces, type names, project names
+etc. `*` and `**` behave the same: `MyApp.*` matches `MyApp.Domain.Entities`.
+
+Roslyn renders a closed generic base type as `Entity<int>`, not the open `Entity<TId>` placeholder
+used when authoring a rule, so target the closed-generic shape with a wildcard: `Entity<*>`, not
+`Entity<TId>`.
