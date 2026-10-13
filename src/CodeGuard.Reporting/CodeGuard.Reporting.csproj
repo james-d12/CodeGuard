@@ -8,4 +8,8 @@
       <PackageReference Include="Sarif.Sdk" Version="5.7.0" />
     </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="Schemas\validation-report.v1.schema.json" LogicalName="CodeGuard.Reporting.Schemas.validation-report.v1.schema.json" />
+  </ItemGroup>
+
 </Project>

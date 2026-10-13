@@ -1,0 +1,141 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://codeguard.internal/schemas/validation-report.v1.schema.json",
+  "title": "CodeGuard validation report (v1)",
+  "description": "Output of `codeguard validate --format json`. schemaVersion identifies this contract; a breaking change to the shape requires a new major schema version.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "toolVersion",
+    "status",
+    "evaluatedAtUtc",
+    "durationMs",
+    "metrics",
+    "violations",
+    "evaluationErrors",
+    "analysisWarnings"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "1.0",
+      "description": "Version of this result contract."
+    },
+    "toolVersion": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Version of the CodeGuard CLI that produced the report, without any build-metadata suffix."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["passed", "failed", "partiallyEvaluated"],
+      "description": "passed: no violations reported and no evaluation errors. failed: at least one violation reported and no evaluation errors. partiallyEvaluated: at least one rule threw during evaluation, so results are incomplete."
+    },
+    "evaluatedAtUtc": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When rule evaluation completed, ISO 8601 with offset."
+    },
+    "durationMs": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Wall-clock milliseconds from the start of the validate command until the report is written. Zero when the producer did not measure it."
+    },
+    "metrics": { "$ref": "#/$defs/metrics" },
+    "violations": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/violation" }
+    },
+    "evaluationErrors": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/evaluationError" }
+    },
+    "analysisWarnings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/analysisWarning" }
+    }
+  },
+  "$defs": {
+    "severity": {
+      "type": "string",
+      "enum": ["info", "warning", "error", "critical"]
+    },
+    "metrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rulesEvaluated",
+        "rulesPassed",
+        "rulesFailed",
+        "rulesErrored",
+        "violationCount",
+        "violationsBySeverity",
+        "evaluationErrorCount",
+        "analysisWarningCount"
+      ],
+      "properties": {
+        "rulesEvaluated": { "type": "integer", "minimum": 0 },
+        "rulesPassed": { "type": "integer", "minimum": 0 },
+        "rulesFailed": { "type": "integer", "minimum": 0 },
+        "rulesErrored": { "type": "integer", "minimum": 0 },
+        "violationCount": { "type": "integer", "minimum": 0 },
+        "violationsBySeverity": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["info", "warning", "error", "critical"],
+          "properties": {
+            "info": { "type": "integer", "minimum": 0 },
+            "warning": { "type": "integer", "minimum": 0 },
+            "error": { "type": "integer", "minimum": 0 },
+            "critical": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "evaluationErrorCount": { "type": "integer", "minimum": 0 },
+        "analysisWarningCount": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "violation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ruleId", "ruleVersion", "severity", "message", "documentationReferences"],
+      "properties": {
+        "ruleId": { "type": "string", "minLength": 1 },
+        "ruleVersion": { "type": "integer", "minimum": 1 },
+        "severity": { "$ref": "#/$defs/severity" },
+        "message": { "type": "string" },
+        "file": { "type": "string", "description": "Repository-relative or absolute file path, when known." },
+        "line": { "type": "integer", "minimum": 0, "description": "1-based line; 0 when the location is unknown." },
+        "column": { "type": "integer", "minimum": 0, "description": "1-based column; 0 when the location is unknown." },
+        "symbol": { "type": "string" },
+        "project": { "type": "string" },
+        "remediation": { "type": "string" },
+        "documentationReferences": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "evaluationError": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ruleId", "exceptionType", "message"],
+      "properties": {
+        "ruleId": { "type": "string", "minLength": 1 },
+        "exceptionType": { "type": "string" },
+        "message": { "type": "string" },
+        "stackTrace": { "type": "string" }
+      }
+    },
+    "analysisWarning": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message"],
+      "properties": {
+        "code": { "type": "string", "minLength": 1 },
+        "message": { "type": "string" },
+        "project": { "type": "string" },
+        "filePath": { "type": "string" }
+      }
+    }
+  }
+}
