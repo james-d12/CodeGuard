@@ -91,6 +91,8 @@ variables, because piped input cannot receive arguments.
 Review [`scripts/install.sh`](../scripts/install.sh) or [`scripts/install.ps1`](../scripts/install.ps1)
 before running them if you prefer not to pipe a script into a shell.
 
+For running these in a CI pipeline, see [CI integration](CI.md).
+
 <details>
 <summary>Manual install</summary>
 
@@ -284,6 +286,7 @@ Architecture notes, gotchas and the CI pipeline are in [`CLAUDE.md`](../CLAUDE.m
 
 ## Further reading
 
+- [`docs/CI.md`](CI.md): CI integration recipes, exit codes and `--fail-on`
 - [`docs/PRIMITIVES.md`](PRIMITIVES.md): original design rationale
 - [`docs/roadmap/HIGH_LEVEL_AI_ASSISTING.md`](roadmap/HIGH_LEVEL_AI_ASSISTING.md): AI-assisted rule
   authoring, including `rules discover`, `rules analyze`, rule provenance (`metadata.source`) and
