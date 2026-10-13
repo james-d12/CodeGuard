@@ -91,7 +91,10 @@ public static class ValidationReportMapper
         Symbol: v.Symbol,
         Project: v.Project,
         Remediation: v.Remediation,
-        DocumentationReferences: v.DocumentationReferences);
+        DocumentationReferences: v.DocumentationReferences,
+        EndLine: v.EndLine,
+        EndColumn: v.EndColumn,
+        Metadata: v.Metadata);
 
     private static SeverityCountsV1 CountBySeverity(IReadOnlyList<Violation> violations)
     {

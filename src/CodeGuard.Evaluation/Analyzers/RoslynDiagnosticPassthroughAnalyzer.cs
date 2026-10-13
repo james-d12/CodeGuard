@@ -23,6 +23,8 @@ public sealed class RoslynDiagnosticPassthroughAnalyzer(IReadOnlyList<string> di
                 Message: $"{d.Id}: {d.Message}",
                 FilePath: d.FilePath,
                 Line: d.Line,
+                EndLine: d.EndLine,
+                EndColumn: d.EndColumn,
                 Column: d.Column,
                 ProjectName: d.ProjectName));
 }

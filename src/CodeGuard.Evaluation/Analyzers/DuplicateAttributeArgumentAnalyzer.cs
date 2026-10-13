@@ -36,16 +36,18 @@ public sealed class DuplicateAttributeArgumentAnalyzer(string attributeNamePatte
                 Message: $"{r.Symbol} has attribute argument value '{r.Value}', which is already used elsewhere in the repository.",
                 FilePath: r.FilePath,
                 Line: r.Line,
+                EndLine: r.EndLine,
+                EndColumn: r.EndColumn,
                 ProjectName: r.ProjectName));
     }
 
     private IEnumerable<Reservation> Collect(TypeModel type) =>
-        type.Methods.Select(m => (Symbol: $"{type.FullName}.{m.Name}", m.Attributes, m.FilePath, m.Line, m.ProjectName))
-            .Concat(type.Properties.Select(p => (Symbol: $"{type.FullName}.{p.Name}", p.Attributes, p.FilePath, p.Line, p.ProjectName)))
-            .Concat(type.Fields.Select(f => (Symbol: $"{type.FullName}.{f.Name}", f.Attributes, f.FilePath, f.Line, f.ProjectName)))
+        type.Methods.Select(m => (Symbol: $"{type.FullName}.{m.Name}", m.Attributes, m.FilePath, m.Line, m.ProjectName, m.EndLine, m.EndColumn))
+            .Concat(type.Properties.Select(p => (Symbol: $"{type.FullName}.{p.Name}", p.Attributes, p.FilePath, p.Line, p.ProjectName, p.EndLine, p.EndColumn)))
+            .Concat(type.Fields.Select(f => (Symbol: $"{type.FullName}.{f.Name}", f.Attributes, f.FilePath, f.Line, f.ProjectName, f.EndLine, f.EndColumn)))
             .SelectMany(member => member.Attributes
                 .Where(a => GlobMatcher.IsMatch(a.TypeName, attributeNamePattern) && a.ConstructorArgumentLiterals.Count > argumentIndex)
-                .Select(a => new Reservation(member.Symbol, a.ConstructorArgumentLiterals[argumentIndex], member.FilePath, member.Line, member.ProjectName)));
+                .Select(a => new Reservation(member.Symbol, a.ConstructorArgumentLiterals[argumentIndex], member.FilePath, member.Line, member.ProjectName, member.EndLine, member.EndColumn)));
 
-    private readonly record struct Reservation(string Symbol, string Value, string FilePath, int Line, string ProjectName);
+    private readonly record struct Reservation(string Symbol, string Value, string FilePath, int Line, string ProjectName, int? EndLine, int? EndColumn);
 }

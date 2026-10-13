@@ -22,5 +22,7 @@ public sealed class ExhaustiveSwitchAnalyzer(string namespacePattern) : ICustomA
                 Message: $"Switch in {s.ContainingType}.{s.ContainingMethod} has no default/discard arm and cannot be proven exhaustive.",
                 FilePath: s.FilePath,
                 Line: s.Line,
+                EndLine: s.EndLine,
+                EndColumn: s.EndColumn,
                 ProjectName: s.ProjectName));
 }

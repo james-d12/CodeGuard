@@ -129,4 +129,23 @@ public class ValidationReportMapperTests
         Violations: violations ?? [],
         EvaluationErrors: [],
         EvaluatedAtUtc: DateTimeOffset.UtcNow);
+
+    [Fact]
+    public void ToV1_MapsEndPositionAndMetadata()
+    {
+        var violation = new Violation(
+            RuleId: "R-1", RuleVersion: 1, Severity: Severity.Error, Message: "msg",
+            File: "F.cs", Line: 1, Column: 2, Symbol: null, Project: null, Remediation: null,
+            DocumentationReferences: [], EndLine: 3, EndColumn: 4,
+            Metadata: new Dictionary<string, string> { ["k"] = "v" });
+        var result = new ValidationResult(
+            Status: ValidationStatus.Failed, RulesEvaluated: 1, RulesPassed: 0, RulesFailed: 1, RulesErrored: 0,
+            Violations: [violation], EvaluationErrors: [], EvaluatedAtUtc: DateTimeOffset.UtcNow);
+
+        var mapped = ValidationReportMapper.ToV1(result, TimeSpan.Zero, "1.0.0").Violations.Single();
+
+        Assert.Equal(3, mapped.EndLine);
+        Assert.Equal(4, mapped.EndColumn);
+        Assert.Equal("v", mapped.Metadata!["k"]);
+    }
 }

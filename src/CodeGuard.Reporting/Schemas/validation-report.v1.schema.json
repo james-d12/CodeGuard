@@ -126,6 +126,13 @@
         "file": { "type": "string", "description": "Repository-relative or absolute file path, when known." },
         "line": { "type": "integer", "minimum": 0, "description": "1-based line; 0 when the location is unknown." },
         "column": { "type": "integer", "minimum": 0, "description": "1-based column; 0 when the location is unknown." },
+        "endLine": { "type": "integer", "minimum": 1, "description": "1-based line of the end of the violation's span. Present only when the producer knows the span." },
+        "endColumn": { "type": "integer", "minimum": 1, "description": "1-based column just past the end of the span (exclusive, SARIF endColumn semantics). Present only with endLine." },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": { "type": "string" },
+          "description": "Free-form string key/value details attached by the producer. Omitted when there are none."
+        },
         "symbol": { "type": "string" },
         "project": { "type": "string" },
         "remediation": { "type": "string" },

@@ -769,6 +769,26 @@ Decisions and gotchas:
   sync share one process runner. A missing git binary or a non-repository directory yields nulls and
   never fails validation.
 
+### Post-v1 addition: violation end positions and metadata (#68)
+
+`Violation` (and `AnalyzerViolation`) gained optional `EndLine`/`EndColumn` (`int?`, default `null`)
+and `Violation` gained `Metadata` (`IReadOnlyDictionary<string, string>?`, default `null`). Existing
+constructors and call sites still compile.
+
+- End positions come from `GetLineSpan().EndLinePosition`, using the same 1-based convention as the
+  start. The end column is exclusive, the column just past the last character, which matches SARIF
+  `region.endColumn`. They are threaded through the Roslyn-backed models (`TypeModel`, `MethodModel`,
+  `PropertyModel`, `ConstructorModel`, `FieldModel`, `CallSiteModel`, `DiagnosticModel`, and the syntax
+  fact models `SwitchModel`, `ThrowSiteModel`, `TryBlockModel`, `MethodBodyShapeModel`,
+  `MutationSiteModel`) and into the analyzers that produce violations from them.
+- Span coverage: type and member end positions cover the declaring identifier, because that is the
+  symbol location. Syntax fact models carry only `EndLine`/`EndColumn`, not a start column. Repository,
+  project, file and MSBuild-derived violations have no end span.
+- SARIF: `Region.EndLine`/`EndColumn` are set only when present. `Metadata` entries go into the result's
+  property bag under their own keys.
+- JSON (v1 contract): `endLine`, `endColumn` and `metadata` are optional additive properties on each
+  violation, documented in `RESULT_CONTRACT.md` and the schema. No built-in rule populates `Metadata` yet.
+
 ## The 11 starter rules
 
 All under `rules/`, all illustrative (`Contoso.*` namespace, `illustrative: true`), matching the

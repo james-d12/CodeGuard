@@ -31,6 +31,8 @@ public sealed class ImmutableMutationAnalyzer(string namespacePattern) : ICustom
                 Message: $"Mutation of {m.ContainingType}.{m.TargetMemberName} outside its constructor violates record immutability.",
                 FilePath: m.FilePath,
                 Line: m.Line,
+                EndLine: m.EndLine,
+                EndColumn: m.EndColumn,
                 ProjectName: m.ProjectName));
     }
 }

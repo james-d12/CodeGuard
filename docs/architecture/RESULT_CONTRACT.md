@@ -60,8 +60,14 @@ object has `additionalProperties: false`, so a consumer can rely on the set of k
 }
 ```
 
-Optional fields (`file`, `line`, `column`, `symbol`, `project`, `remediation`, and the optional
-fields of `evaluationErrors` and `analysisWarnings`) are omitted when unknown, not written as `null`.
+Optional fields (`file`, `line`, `column`, `endLine`, `endColumn`, `metadata`, `symbol`, `project`,
+`remediation`, and the optional fields of `evaluationErrors` and `analysisWarnings`) are omitted when
+unknown, not written as `null`.
+
+Per violation, `endLine` and `endColumn` give the end of the source span when the producer knows it
+(currently Roslyn-backed rules). `endColumn` is 1-based and exclusive, i.e. the column just past the last
+character, matching SARIF `region.endColumn`. `metadata` is an optional string-to-string bag for
+producer-specific details; no built-in rule populates it yet.
 
 ## Top-level fields
 
