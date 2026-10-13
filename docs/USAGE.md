@@ -158,6 +158,11 @@ cd codeguard
 files. It recomputes `metadata.source.fingerprint` and `versionFingerprint` values in place, and
 leaves other content untouched. Rules with a broken source link are not fixed automatically.
 
+`validate --format json` writes the versioned result contract (`schemaVersion` `1.0`). It is a
+breaking change from the earlier output, which serialised the internal result model. See
+[`architecture/RESULT_CONTRACT.md`](architecture/RESULT_CONTRACT.md) for the shape, status values and
+the JSON Schema location.
+
 `--rule` on `validate` and `rules test` takes an ID. Repeat the flag to select several rules, for
 example `--rule A --rule B`. Space-separated values are not supported.
 
