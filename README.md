@@ -96,6 +96,8 @@ Embedded test format is described in [`docs/done/RULES_TEST_DESIGN.md`](docs/don
 
 - [Detailed usage](docs/USAGE.md): requirements, installation, full CLI reference, rule sources,
   rule anatomy, configuration and project layout
+- [CI integration](docs/CI.md): exit codes, `--fail-on`, and copy-paste recipes for GitHub Actions,
+  Azure Pipelines, GitLab CI, Jenkins and Bitbucket Pipelines
 - [Documentation index](docs/README.md): every doc under `docs/`, grouped by status
 - [`CLAUDE.md`](CLAUDE.md): contributor and agent guidance, architecture and gotchas
 - [`docs/PRIMITIVES.md`](docs/PRIMITIVES.md): original design rationale
