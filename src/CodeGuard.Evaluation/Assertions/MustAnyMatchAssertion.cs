@@ -24,9 +24,20 @@ public sealed class MustAnyMatchAssertion(
         var matches = selector.SelectCandidates(model).ToList();
         var satisfied = matches.Any(match => assertions.All(assertion => assertion.Evaluate(match, model).Passed));
 
-        return satisfied
-            ? AssertionOutcome.Success()
-            : AssertionOutcome.Failure(
-                $"Expected at least one match for a '{selector.Kind}' selector to satisfy every nested assertion, but none of the {matches.Count} match(es) did.");
+        if (satisfied)
+        {
+            return AssertionOutcome.Success();
+        }
+
+        var nestedFailures = matches
+            .SelectMany(match => assertions.Select(assertion => assertion.Evaluate(match, model)))
+            .Where(outcome => !outcome.Passed)
+            .ToList();
+
+        return AssertionOutcome.Failure(
+            $"Expected at least one match for a '{selector.Kind}' selector to satisfy every nested assertion, but none of the {matches.Count} match(es) did.",
+            CandidateDescriptor.CommonValue(nestedFailures.Select(outcome => outcome.Expected)),
+            $"0 of {matches.Count} match(es) satisfied every nested assertion",
+            matches.Count == 0 ? null : matches.Select(CandidateDescriptor.Describe).ToList());
     }
 }

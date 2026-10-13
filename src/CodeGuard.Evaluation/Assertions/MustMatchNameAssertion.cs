@@ -29,6 +29,6 @@ public sealed class MustMatchNameAssertion(string regex) : IAssertion
 
         return AssertionRegex.IsMatch(name, regex, Kind)
             ? AssertionOutcome.Success()
-            : AssertionOutcome.Failure($"'{name}' must match name pattern '{regex}'.");
+            : AssertionOutcome.Failure($"'{name}' must match name pattern '{regex}'.", regex, name, null);
     }
 }

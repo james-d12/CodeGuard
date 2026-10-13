@@ -21,6 +21,6 @@ public sealed class MustMatchNamespacePatternAssertion(string regex) : IAssertio
 
         return AssertionRegex.IsMatch(type.Namespace, regex, Kind)
             ? AssertionOutcome.Success()
-            : AssertionOutcome.Failure($"'{type.Namespace}' must match namespace pattern '{regex}'.");
+            : AssertionOutcome.Failure($"'{type.Namespace}' must match namespace pattern '{regex}'.", regex, type.Namespace, [type.FullName]);
     }
 }

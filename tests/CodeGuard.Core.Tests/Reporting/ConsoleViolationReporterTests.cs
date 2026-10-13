@@ -45,6 +45,59 @@ public class ConsoleViolationReporterTests
     }
 
     [Fact]
+    public async Task WriteAsync_PrintsExpectedActualAndEvidence_WhenPresent()
+    {
+        var result = new ValidationResult(
+            Status: ValidationStatus.Failed,
+            RulesEvaluated: 1,
+            RulesPassed: 0,
+            RulesFailed: 1,
+            RulesErrored: 0,
+            Violations:
+            [
+                new Violation(
+                    RuleId: "DDD-ENTITY-001",
+                    RuleVersion: 1,
+                    Severity: Severity.Error,
+                    Message: "'Contoso.Domain.Entities.LegacyThing' must inherit from 'Contoso.Domain.Entity<TId>'.",
+                    File: "LegacyThing.cs",
+                    Line: 5,
+                    Column: 14,
+                    Symbol: "Contoso.Domain.Entities.LegacyThing",
+                    Project: "Contoso.Domain",
+                    Remediation: null,
+                    DocumentationReferences: [],
+                    Expected: "Contoso.Domain.Entity<TId>",
+                    Actual: "(none)",
+                    Evidence: ["Contoso.Domain.Entities.LegacyThing"])
+            ],
+            EvaluationErrors: [],
+            EvaluatedAtUtc: DateTimeOffset.UtcNow);
+
+        var writer = new StringWriter();
+        await new ConsoleViolationReporter().WriteAsync(result, writer);
+        var output = writer.ToString();
+
+        Assert.Contains("    expected: Contoso.Domain.Entity<TId>", output);
+        Assert.Contains("    actual: (none)", output);
+        Assert.Contains("    evidence: Contoso.Domain.Entities.LegacyThing", output);
+    }
+
+    [Fact]
+    public async Task WriteAsync_OmitsExpectedActualAndEvidence_WhenAbsent()
+    {
+        var result = SingleErrorResult();
+
+        var writer = new StringWriter();
+        await new ConsoleViolationReporter().WriteAsync(result, writer);
+        var output = writer.ToString();
+
+        Assert.DoesNotContain("expected:", output);
+        Assert.DoesNotContain("actual:", output);
+        Assert.DoesNotContain("evidence:", output);
+    }
+
+    [Fact]
     public async Task WriteAsync_PrintsSummaryOnly_WhenNoViolations()
     {
         var result = new ValidationResult(

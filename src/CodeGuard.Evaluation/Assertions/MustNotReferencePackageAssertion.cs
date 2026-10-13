@@ -17,6 +17,6 @@ public sealed class MustNotReferencePackageAssertion(string packageIdPattern) : 
         var match = project.PackageReferences.FirstOrDefault(p => GlobMatcher.IsMatch(p.Id, packageIdPattern));
         return match is null
             ? AssertionOutcome.Success()
-            : AssertionOutcome.Failure($"Project '{project.Name}' must not reference package '{match.Id}'.");
+            : AssertionOutcome.Failure($"Project '{project.Name}' must not reference package '{match.Id}'.", $"no reference to package matching '{packageIdPattern}'", match.Id, [match.Id]);
     }
 }

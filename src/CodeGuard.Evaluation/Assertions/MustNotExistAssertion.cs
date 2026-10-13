@@ -12,8 +12,14 @@ public sealed class MustNotExistAssertion(JsonObject selectorTemplate, Func<Json
     public AssertionOutcome Evaluate(object candidate, RepositoryModel model)
     {
         var selector = selectorFactory(SelectorTemplateResolver.Resolve(selectorTemplate, candidate));
-        return selector.SelectCandidates(model).Any()
-            ? AssertionOutcome.Failure($"Expected no matches for a '{selector.Kind}' selector, but found at least one.")
+        var matches = selector.SelectCandidates(model).ToList();
+
+        return matches.Count > 0
+            ? AssertionOutcome.Failure(
+                $"Expected no matches for a '{selector.Kind}' selector, but found at least one.",
+                "no matches",
+                $"{matches.Count} match(es)",
+                matches.Select(CandidateDescriptor.Describe).ToList())
             : AssertionOutcome.Success();
     }
 }

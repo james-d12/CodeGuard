@@ -17,6 +17,6 @@ public sealed class MustMatchFilenameAssertion : IAssertion
         var expectedName = Path.GetFileNameWithoutExtension(type.FilePath);
         return type.Name == expectedName
             ? AssertionOutcome.Success()
-            : AssertionOutcome.Failure($"'{type.FullName}' must be declared in a file named '{type.Name}.cs' (found '{Path.GetFileName(type.FilePath)}').");
+            : AssertionOutcome.Failure($"'{type.FullName}' must be declared in a file named '{type.Name}.cs' (found '{Path.GetFileName(type.FilePath)}').", $"{type.Name}.cs", Path.GetFileName(type.FilePath), [type.FullName]);
     }
 }

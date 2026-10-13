@@ -8,4 +8,7 @@ public sealed record AnalyzerViolation(
     string? Symbol = null,
     string? ProjectName = null,
     int? EndLine = null,
-    int? EndColumn = null);
+    int? EndColumn = null,
+    string? Expected = null,
+    string? Actual = null,
+    IReadOnlyList<string>? Evidence = null);

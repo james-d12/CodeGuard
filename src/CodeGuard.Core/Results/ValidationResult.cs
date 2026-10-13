@@ -37,7 +37,10 @@ public sealed record Violation(
     IReadOnlyList<string> DocumentationReferences,
     int? EndLine = null,
     int? EndColumn = null,
-    IReadOnlyDictionary<string, string>? Metadata = null);
+    IReadOnlyDictionary<string, string>? Metadata = null,
+    string? Expected = null,
+    string? Actual = null,
+    IReadOnlyList<string>? Evidence = null);
 
 /// <summary>A rule whose selector/assertion/analyzer threw instead of producing a pass/fail result.</summary>
 public sealed record RuleEvaluationError(

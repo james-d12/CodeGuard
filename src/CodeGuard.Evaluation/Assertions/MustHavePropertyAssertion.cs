@@ -16,6 +16,6 @@ public sealed class MustHavePropertyAssertion(string namePattern) : IAssertion
 
         return type.Properties.Any(p => GlobMatcher.IsMatch(p.Name, namePattern))
             ? AssertionOutcome.Success()
-            : AssertionOutcome.Failure($"'{type.FullName}' must have a property matching '{namePattern}'.");
+            : AssertionOutcome.Failure($"'{type.FullName}' must have a property matching '{namePattern}'.", namePattern, CandidateDescriptor.ListOrNone(type.Properties.Select(p => p.Name)), [type.FullName]);
     }
 }

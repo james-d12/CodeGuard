@@ -26,6 +26,6 @@ public sealed class MustDependOnAssertion(string requiredTypePattern) : IAsserti
 
         return hasMatch
             ? AssertionOutcome.Success()
-            : AssertionOutcome.Failure($"Project '{project.Name}' must depend on a type matching '{requiredTypePattern}'.");
+            : AssertionOutcome.Failure($"Project '{project.Name}' must depend on a type matching '{requiredTypePattern}'.", requiredTypePattern, null, [project.Name]);
     }
 }

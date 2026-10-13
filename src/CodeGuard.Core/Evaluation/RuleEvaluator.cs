@@ -167,7 +167,10 @@ public sealed class RuleEvaluator(ILogger<RuleEvaluator>? logger = null) : IRule
                 rule.Remediation,
                 rule.Documentation,
                 EndLine: analyzerViolation.EndLine,
-                EndColumn: analyzerViolation.EndColumn));
+                EndColumn: analyzerViolation.EndColumn,
+                Expected: analyzerViolation.Expected,
+                Actual: analyzerViolation.Actual,
+                Evidence: analyzerViolation.Evidence));
         }
     }
 
@@ -217,7 +220,10 @@ public sealed class RuleEvaluator(ILogger<RuleEvaluator>? logger = null) : IRule
             rule.Remediation,
             rule.Documentation,
             EndLine: endLine,
-            EndColumn: endColumn);
+            EndColumn: endColumn,
+            Expected: outcome.Expected,
+            Actual: outcome.Actual,
+            Evidence: outcome.Evidence);
     }
 
     private static (string? File, int? Line, int? Column, int? EndLine, int? EndColumn, string? Symbol, string? Project) ExtractLocation(object candidate) =>

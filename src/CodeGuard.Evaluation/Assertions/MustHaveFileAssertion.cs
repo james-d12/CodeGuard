@@ -16,6 +16,6 @@ public sealed class MustHaveFileAssertion(string pathPattern) : IAssertion
 
         return repository.Files.Any(f => GlobMatcher.IsMatch(f.RelativePath, pathPattern))
             ? AssertionOutcome.Success()
-            : AssertionOutcome.Failure($"Repository must have a file matching '{pathPattern}'.");
+            : AssertionOutcome.Failure($"Repository must have a file matching '{pathPattern}'.", pathPattern, null, null);
     }
 }

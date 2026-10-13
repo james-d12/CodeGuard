@@ -17,6 +17,6 @@ public sealed class MustNotHaveDirectoryAssertion(string path) : IAssertion
         var match = repository.Directories.FirstOrDefault(d => GlobMatcher.IsMatch(d.RelativePath, path));
         return match is null
             ? AssertionOutcome.Success()
-            : AssertionOutcome.Failure($"Repository must not have a directory matching '{path}' (found '{match.RelativePath}').");
+            : AssertionOutcome.Failure($"Repository must not have a directory matching '{path}' (found '{match.RelativePath}').", $"no directory matching '{path}'", match.RelativePath, [match.RelativePath]);
     }
 }

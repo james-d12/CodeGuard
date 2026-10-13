@@ -1060,3 +1060,31 @@ All under `rules/`, all illustrative (`Contoso.*` namespace, `illustrative: true
   `.claude` worktree double-discovery are all fixed, and `codeguard validate` against this repo
   completes end-to-end. Only the unproven multi-solution `(ProjectName, FullName)` edge case noted
   in gotcha #6 remains.
+
+### Post-v1 addition: structured expected/actual/evidence on violations (#69)
+
+`AssertionOutcome` gained optional `Expected`, `Actual` and `Evidence` (`IReadOnlyList<string>?`), all
+defaulting to `null`, plus a `Failure(message, expected, actual, evidence)` overload. `Violation` and
+`AnalyzerViolation` gained the same optional fields, and `RuleEvaluator.CreateViolation` copies them
+from the outcome. Existing constructors and call sites still compile, and `Message` text is unchanged.
+
+- Populated by the assertions in `CodeGuard.Evaluation.Assertions` wherever there is a natural value.
+  Examples: `must_inherit_from` gives the pattern as `expected`, the actual base type as `actual`, and
+  the type as evidence. The dependency assertions (`must_not_depend_on`, `must_only_depend_on`) give
+  the offending types or dependency names as evidence. The naming and namespace assertions give the
+  pattern as `expected` and the name as `actual`. The count and existence assertions give the expected
+  and actual counts, with the matched candidates as evidence.
+- Quantifiers aggregate nested outcomes. `expected` is kept only when every nested failure agrees on it.
+  `evidence` is the failing matches, each qualified by its nested evidence (`<match>: <item>`).
+- Helpers `CandidateDescriptor.ListOrNone` and `CandidateDescriptor.CommonValue` are internal to the
+  evaluation assembly. Assertions with no sensible structured value leave the fields `null`. These are
+  file/directory existence
+  checks, `must_have_modifier`/`must_not_have_modifier` (`actual` is absent), `must_depend_on`
+  (`actual` is absent), `must_use_package_version` with a missing package, and every "can only be
+  evaluated against X" misapplication failure. The file and directory existence checks give `expected`
+  only. The content checks give the pattern as `expected` and the file as evidence, with no `actual`.
+- Surfaced in the console reporter as indented `expected:`/`actual:`/`evidence:` lines, only when
+  present. The JSON v1 contract gains optional `expected`, `actual` and `evidence` properties on each
+  violation (`schemaVersion` stays `1.0`, see `RESULT_CONTRACT.md`). In SARIF they go into the result
+  property bag under the keys `expected`, `actual` and `evidence`. A `Metadata` key with the same name
+  takes precedence. The HTML reporter shows them under the message.

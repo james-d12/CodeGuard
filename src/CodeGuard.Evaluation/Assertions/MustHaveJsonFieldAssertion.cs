@@ -33,13 +33,13 @@ public sealed class MustHaveJsonFieldAssertion(string path, string? equals) : IA
 
         if (fieldValue is null)
         {
-            return AssertionOutcome.Failure($"File '{file.RelativePath}' must have JSON field '{path}'.");
+            return AssertionOutcome.Failure($"File '{file.RelativePath}' must have JSON field '{path}'.", path, "(none)", [file.RelativePath]);
         }
 
         if (equals is not null && fieldValue.ToString() != equals)
         {
             return AssertionOutcome.Failure(
-                $"File '{file.RelativePath}' must have JSON field '{path}' equal to '{equals}' (found '{fieldValue}').");
+                $"File '{file.RelativePath}' must have JSON field '{path}' equal to '{equals}' (found '{fieldValue}').", equals, fieldValue.ToString(), [file.RelativePath]);
         }
 
         return AssertionOutcome.Success();

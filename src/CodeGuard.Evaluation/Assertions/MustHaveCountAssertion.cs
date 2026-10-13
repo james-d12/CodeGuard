@@ -25,24 +25,29 @@ public sealed class MustHaveCountAssertion(
     public AssertionOutcome Evaluate(object candidate, RepositoryModel model)
     {
         var selector = selectorFactory(SelectorTemplateResolver.Resolve(selectorTemplate, candidate));
-        var count = selector.SelectCandidates(model).Count();
+        var matches = selector.SelectCandidates(model).ToList();
+        var count = matches.Count;
+        var evidence = matches.Count == 0 ? null : matches.Select(CandidateDescriptor.Describe).ToList();
 
         if (exactly is not null && count != exactly)
         {
             return AssertionOutcome.Failure(
-                $"Expected exactly {exactly} match(es) for a '{selector.Kind}' selector, but found {count}.");
+                $"Expected exactly {exactly} match(es) for a '{selector.Kind}' selector, but found {count}.",
+                $"exactly {exactly}", count.ToString(), evidence);
         }
 
         if (min is not null && count < min)
         {
             return AssertionOutcome.Failure(
-                $"Expected at least {min} match(es) for a '{selector.Kind}' selector, but found {count}.");
+                $"Expected at least {min} match(es) for a '{selector.Kind}' selector, but found {count}.",
+                $"at least {min}", count.ToString(), evidence);
         }
 
         if (max is not null && count > max)
         {
             return AssertionOutcome.Failure(
-                $"Expected at most {max} match(es) for a '{selector.Kind}' selector, but found {count}.");
+                $"Expected at most {max} match(es) for a '{selector.Kind}' selector, but found {count}.",
+                $"at most {max}", count.ToString(), evidence);
         }
 
         return AssertionOutcome.Success();

@@ -30,7 +30,7 @@ public sealed class MustUsePackageVersionAssertion(string packageIdPattern, stri
         var matches = project.PackageReferences.Where(p => GlobMatcher.IsMatch(p.Id, packageIdPattern)).ToList();
         if (matches.Count == 0)
         {
-            return AssertionOutcome.Failure($"Project '{project.Name}' does not reference a package matching '{packageIdPattern}'.");
+            return AssertionOutcome.Failure($"Project '{project.Name}' does not reference a package matching '{packageIdPattern}'.", packageIdPattern, "(none)", [project.Name]);
         }
 
         var match = ConstraintPattern.Match(constraint);
@@ -43,7 +43,7 @@ public sealed class MustUsePackageVersionAssertion(string packageIdPattern, stri
             ? AssertionOutcome.Success()
             : AssertionOutcome.Failure(
                 $"Project '{project.Name}' must reference '{packageIdPattern}' with version {constraint} " +
-                $"(found: {string.Join(", ", offending.Select(p => $"{p.Id} {p.Version}"))}).");
+                $"(found: {string.Join(", ", offending.Select(p => $"{p.Id} {p.Version}"))}).", constraint, string.Join(", ", offending.Select(p => $"{p.Id} {p.Version}")), offending.Select(p => p.Id).ToList());
     }
 
     private static bool Satisfies(Version actual, string op, Version required) => op switch

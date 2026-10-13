@@ -235,6 +235,42 @@ public class SarifViolationReporterTests
         Assert.False(sarifResult.TryGetProperty("properties", out _));
     }
 
+    [Fact]
+    public async Task WriteAsync_PutsExpectedActualAndEvidenceInPropertyBag()
+    {
+        var result = CreateResult(new Violation(
+            RuleId: "DDD-ENTITY-001", RuleVersion: 1, Severity: Severity.Error, Message: "msg",
+            File: "LegacyThing.cs", Line: 5, Column: 14, Symbol: null, Project: null, Remediation: null,
+            DocumentationReferences: [],
+            Expected: "Contoso.Domain.Entity<*>", Actual: "Contoso.Other.Base",
+            Evidence: ["Contoso.Domain.Entities.LegacyThing", "Contoso.Domain.Entities.Other"]));
+
+        var sarifResult = await WriteSingleResultAsync(result);
+
+        var properties = sarifResult.GetProperty("properties");
+        Assert.Equal("Contoso.Domain.Entity<*>", properties.GetProperty("expected").GetString());
+        Assert.Equal("Contoso.Other.Base", properties.GetProperty("actual").GetString());
+        var evidence = properties.GetProperty("evidence");
+        Assert.Equal(JsonValueKind.Array, evidence.ValueKind);
+        Assert.Equal(2, evidence.GetArrayLength());
+        Assert.Equal("Contoso.Domain.Entities.LegacyThing", evidence[0].GetString());
+    }
+
+    [Fact]
+    public async Task WriteAsync_MetadataKeyWins_OverStructuredEvidenceKey()
+    {
+        var result = CreateResult(new Violation(
+            RuleId: "R-1", RuleVersion: 1, Severity: Severity.Error, Message: "msg",
+            File: null, Line: null, Column: null, Symbol: null, Project: null, Remediation: null,
+            DocumentationReferences: [],
+            Expected: "structured", Actual: null, Evidence: null,
+            Metadata: new Dictionary<string, string> { ["expected"] = "from metadata" }));
+
+        var sarifResult = await WriteSingleResultAsync(result);
+
+        Assert.Equal("from metadata", sarifResult.GetProperty("properties").GetProperty("expected").GetString());
+    }
+
     private static ValidationResult CreateResult(Violation violation) => new(
         Status: ValidationStatus.Failed, RulesEvaluated: 1, RulesPassed: 0, RulesFailed: 1, RulesErrored: 0,
         Violations: [violation], EvaluationErrors: [], EvaluatedAtUtc: DateTimeOffset.UtcNow);

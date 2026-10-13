@@ -46,7 +46,10 @@ public sealed record ViolationV1(
     IReadOnlyList<string> DocumentationReferences,
     int? EndLine = null,
     int? EndColumn = null,
-    IReadOnlyDictionary<string, string>? Metadata = null);
+    IReadOnlyDictionary<string, string>? Metadata = null,
+    string? Expected = null,
+    string? Actual = null,
+    IReadOnlyList<string>? Evidence = null);
 
 public sealed record EvaluationErrorV1(
     string RuleId,

@@ -17,6 +17,6 @@ public sealed class MustNotHaveFieldAssertion(string namePattern) : IAssertion
         var match = type.Fields.FirstOrDefault(f => GlobMatcher.IsMatch(f.Name, namePattern));
         return match is null
             ? AssertionOutcome.Success()
-            : AssertionOutcome.Failure($"'{type.FullName}' must not have a field matching '{namePattern}' (found '{match.Name}').");
+            : AssertionOutcome.Failure($"'{type.FullName}' must not have a field matching '{namePattern}' (found '{match.Name}').", $"no field matching '{namePattern}'", match.Name, [CandidateDescriptor.Describe(match)]);
     }
 }

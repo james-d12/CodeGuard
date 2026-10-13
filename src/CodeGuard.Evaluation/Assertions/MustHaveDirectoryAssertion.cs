@@ -16,6 +16,6 @@ public sealed class MustHaveDirectoryAssertion(string path) : IAssertion
 
         return repository.Directories.Any(d => GlobMatcher.IsMatch(d.RelativePath, path))
             ? AssertionOutcome.Success()
-            : AssertionOutcome.Failure($"Repository must have a directory at '{path}'.");
+            : AssertionOutcome.Failure($"Repository must have a directory at '{path}'.", path, null, null);
     }
 }

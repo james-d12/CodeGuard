@@ -16,13 +16,13 @@ public sealed class MustHaveMsBuildPropertyAssertion(string name, string? value)
 
         if (!project.Properties.TryGetValue(name, out var actualValue))
         {
-            return AssertionOutcome.Failure($"Project '{project.Name}' must define MSBuild property '{name}'.");
+            return AssertionOutcome.Failure($"Project '{project.Name}' must define MSBuild property '{name}'.", name, "(none)", [project.Name]);
         }
 
         if (value is not null && !string.Equals(actualValue, value, StringComparison.OrdinalIgnoreCase))
         {
             return AssertionOutcome.Failure(
-                $"Project '{project.Name}' must have MSBuild property '{name}' set to '{value}' (found '{actualValue}').");
+                $"Project '{project.Name}' must have MSBuild property '{name}' set to '{value}' (found '{actualValue}').", value, actualValue, [project.Name]);
         }
 
         return AssertionOutcome.Success();

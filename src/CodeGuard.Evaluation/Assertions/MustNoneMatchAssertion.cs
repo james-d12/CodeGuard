@@ -29,6 +29,9 @@ public sealed class MustNoneMatchAssertion(
         return offenders.Count == 0
             ? AssertionOutcome.Success()
             : AssertionOutcome.Failure(
-                $"Expected no match for a '{selector.Kind}' selector to satisfy every nested assertion, but {offenders.Count} did: {string.Join(", ", offenders)}.");
+                $"Expected no match for a '{selector.Kind}' selector to satisfy every nested assertion, but {offenders.Count} did: {string.Join(", ", offenders)}.",
+                "no match satisfies every nested assertion",
+                $"{offenders.Count} offending match(es)",
+                offenders);
     }
 }

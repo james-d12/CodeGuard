@@ -13,7 +13,7 @@ public sealed class MustNotHaveModifierAssertion(string modifier) : IAssertion
         return matches switch
         {
             null => AssertionOutcome.Failure($"Modifier '{modifier}' is not applicable to this candidate."),
-            true => AssertionOutcome.Failure($"Candidate must not have modifier '{modifier}'."),
+            true => AssertionOutcome.Failure($"Candidate must not have modifier '{modifier}'.", $"not {modifier}", modifier, [CandidateDescriptor.Describe(candidate)]),
             false => AssertionOutcome.Success()
         };
     }

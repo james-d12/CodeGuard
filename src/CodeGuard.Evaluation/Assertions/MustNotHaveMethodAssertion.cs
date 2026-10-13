@@ -17,6 +17,6 @@ public sealed class MustNotHaveMethodAssertion(string namePattern) : IAssertion
         var match = type.Methods.FirstOrDefault(m => GlobMatcher.IsMatch(m.Name, namePattern));
         return match is null
             ? AssertionOutcome.Success()
-            : AssertionOutcome.Failure($"'{type.FullName}' must not have a method matching '{namePattern}' (found '{match.Name}').");
+            : AssertionOutcome.Failure($"'{type.FullName}' must not have a method matching '{namePattern}' (found '{match.Name}').", $"no method matching '{namePattern}'", match.Name, [CandidateDescriptor.Describe(match)]);
     }
 }

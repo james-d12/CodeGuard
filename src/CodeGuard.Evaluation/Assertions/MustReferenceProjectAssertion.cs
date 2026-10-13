@@ -16,6 +16,6 @@ public sealed class MustReferenceProjectAssertion(string projectNamePattern) : I
 
         return project.ProjectReferences.Any(reference => GlobMatcher.IsMatch(reference, projectNamePattern))
             ? AssertionOutcome.Success()
-            : AssertionOutcome.Failure($"Project '{project.Name}' must reference a project matching '{projectNamePattern}'.");
+            : AssertionOutcome.Failure($"Project '{project.Name}' must reference a project matching '{projectNamePattern}'.", projectNamePattern, CandidateDescriptor.ListOrNone(project.ProjectReferences), [project.Name]);
     }
 }

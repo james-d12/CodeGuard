@@ -17,6 +17,6 @@ public sealed class MustNotHavePropertyAssertion(string namePattern) : IAssertio
         var match = type.Properties.FirstOrDefault(p => GlobMatcher.IsMatch(p.Name, namePattern));
         return match is null
             ? AssertionOutcome.Success()
-            : AssertionOutcome.Failure($"'{type.FullName}' must not have a property matching '{namePattern}' (found '{match.Name}').");
+            : AssertionOutcome.Failure($"'{type.FullName}' must not have a property matching '{namePattern}' (found '{match.Name}').", $"no property matching '{namePattern}'", match.Name, [CandidateDescriptor.Describe(match)]);
     }
 }

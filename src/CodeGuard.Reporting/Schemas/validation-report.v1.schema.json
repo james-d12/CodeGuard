@@ -133,6 +133,13 @@
           "additionalProperties": { "type": "string" },
           "description": "Free-form string key/value details attached by the producer. Omitted when there are none."
         },
+        "expected": { "type": "string", "description": "What the rule required, when the failing assertion has a structured expected value. Omitted otherwise." },
+        "actual": { "type": "string", "description": "What was found instead, when the failing assertion has a structured actual value. Omitted otherwise." },
+        "evidence": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Offending references that caused the failure (type, namespace, project, dependency or file names). Omitted when there are none."
+        },
         "symbol": { "type": "string" },
         "project": { "type": "string" },
         "remediation": { "type": "string" },

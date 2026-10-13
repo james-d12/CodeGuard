@@ -40,6 +40,6 @@ public sealed class MustNotHaveJsonFieldAssertion(string path, string? equals) :
             return AssertionOutcome.Success();
         }
 
-        return AssertionOutcome.Failure($"File '{file.RelativePath}' must not have JSON field '{path}'{(equals is null ? "" : $" equal to '{equals}'")}.");
+        return AssertionOutcome.Failure($"File '{file.RelativePath}' must not have JSON field '{path}'{(equals is null ? "" : $" equal to '{equals}'")}.", equals is null ? $"no JSON field '{path}'" : $"no JSON field '{path}' equal to '{equals}'", fieldValue.ToString(), [file.RelativePath]);
     }
 }

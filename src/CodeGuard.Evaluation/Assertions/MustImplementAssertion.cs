@@ -16,6 +16,6 @@ public sealed class MustImplementAssertion(string interfacePattern) : IAssertion
 
         return type.Interfaces.Any(i => GlobMatcher.IsMatch(i, interfacePattern))
             ? AssertionOutcome.Success()
-            : AssertionOutcome.Failure($"'{type.FullName}' must implement '{interfacePattern}'.");
+            : AssertionOutcome.Failure($"'{type.FullName}' must implement '{interfacePattern}'.", interfacePattern, CandidateDescriptor.ListOrNone(type.Interfaces), [type.FullName]);
     }
 }

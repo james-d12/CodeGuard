@@ -24,6 +24,21 @@ public sealed class ConsoleViolationReporter(bool useColor = false) : IViolation
 
             await writer.WriteLineAsync($"{severityTag} {violation.RuleId}: {violation.Message} ({location})");
 
+            if (violation.Expected is not null)
+            {
+                await writer.WriteLineAsync($"    expected: {violation.Expected}");
+            }
+
+            if (violation.Actual is not null)
+            {
+                await writer.WriteLineAsync($"    actual: {violation.Actual}");
+            }
+
+            if (violation.Evidence is { Count: > 0 } evidence)
+            {
+                await writer.WriteLineAsync($"    evidence: {string.Join(", ", evidence)}");
+            }
+
             if (violation.Remediation is not null)
             {
                 await writer.WriteLineAsync($"    remediation: {violation.Remediation.Trim()}");

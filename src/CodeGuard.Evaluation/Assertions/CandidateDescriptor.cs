@@ -25,4 +25,21 @@ internal static class CandidateDescriptor
         DirectoryModel directory => directory.RelativePath,
         _ => candidate.ToString() ?? candidate.GetType().Name
     };
+
+    /// <summary>Joins names for an Actual value, or "(none)" when empty.</summary>
+    public static string ListOrNone(IEnumerable<string> items)
+    {
+        var list = items.ToList();
+        return list.Count == 0 ? "(none)" : string.Join(", ", list);
+    }
+
+    /// <summary>
+    /// Aggregates nested outcome values for a quantifier: returns the value only when every nested
+    /// outcome agrees on it (including agreeing that it is null), otherwise null.
+    /// </summary>
+    public static string? CommonValue(IEnumerable<string?> values)
+    {
+        var distinct = values.Distinct().ToList();
+        return distinct.Count == 1 ? distinct[0] : null;
+    }
 }
