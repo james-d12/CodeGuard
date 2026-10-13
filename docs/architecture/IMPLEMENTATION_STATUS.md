@@ -652,7 +652,8 @@ on top of.
 - Every `Violation` carries `RuleVersion` (`CodeGuard.Core.Results.ValidationResult.cs`), stamped
   from `RuleDefinition.Version` at both construction sites in `RuleEvaluator`
   (`EvaluateAnalyzerRule`/`CreateViolation`). This is the concrete consumer `metadata.source`'s
-  rejected `status` field lacked: `JsonViolationReporter` gets it for free (record serialization),
+  rejected `status` field lacked: `JsonViolationReporter` carries it in the v1 contract (see the
+  "Versioned JSON result contract" section below),
   and `SarifViolationReporter` stamps it onto each rule's `ReportingDescriptor` via the SARIF SDK's
   `properties` bag (`SetProperty("version", ...)`) - **not** a native `ReportingDescriptor.Version`
   property, which does not exist in `Sarif.Sdk` 5.7.0 despite an early assumption otherwise (verified
@@ -715,6 +716,34 @@ README/CLAUDE.md prose and its own tests referenced it. Removed: `Cli/Commands/R
 rule by hand now uses `rules discover` (the engine's vocabulary) plus `rule.schema.json`, the same
 path the AI skill already follows - same precedent as the earlier `list-standards` removal (see
 "Things NOT done" below).
+
+### Post-v1 addition: versioned JSON result contract (#66)
+
+`--format json` no longer serialises `CodeGuard.Core.Results.ValidationResult` directly. It writes
+the explicit `ValidationReportV1` DTO (`CodeGuard.Reporting/Contracts/`), built by
+`ValidationReportMapper.ToV1`, which adds `schemaVersion`, `toolVersion`, `durationMs`, `status` and
+a `metrics` block. The JSON Schema is embedded from
+`CodeGuard.Reporting/Schemas/validation-report.v1.schema.json`, and tests validate real reporter
+output against it. This is a breaking change to the JSON output. Full contract: `docs/architecture/RESULT_CONTRACT.md`.
+
+Decisions and gotchas:
+
+- The DTO maps enums through explicit `switch` expressions, not `ToString()`, so renaming an
+  internal enum member cannot change the wire format. Status values stay `passed`, `failed` and
+  `partiallyEvaluated`, as before.
+- `toolVersion` cannot come from `typeof(...).Assembly` inside `CodeGuard.Reporting`, because MinVer
+  is referenced only by `CodeGuard.Cli`. `ValidateCommand` passes its own assembly's version into
+  `JsonViolationReporter`. The reporter's default falls back to its own assembly.
+- `durationMs` is measured by `ValidateCommand` from the start of the action until the report is
+  written. It is passed through the reporter constructor, not `IViolationReporter.WriteAsync`, so the
+  interface stays unchanged for the console, SARIF and HTML reporters.
+- The schema is embedded as a resource in `CodeGuard.Reporting` with an explicit `LogicalName`. It
+  is not in `examples/rules/`, so `scripts/verify-nupkg-contents.sh` needs no change. It only checks for
+  `rules/` paths and YAML files.
+- `line` and `column` can be `0` (for example `(lineSpan?.StartLinePosition.Line ?? -1) + 1` in
+  `RoslynTypeExtractor`), so the schema allows a minimum of `0`.
+- `JsonSchema.Net` is referenced by `CodeGuard.Core.Tests` only, to validate output. Each schema is
+  parsed once in a static `Lazy`, because `JsonSchema.FromText` throws on a duplicate `$id`.
 
 ## The 11 starter rules
 

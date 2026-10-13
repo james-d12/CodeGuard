@@ -16,6 +16,7 @@ Evergreen scope documents and living reference docs, updated in place and never 
 | [`CI.md`](CI.md) | CI integration: exit codes, `--fail-on`, output formats, and copy-paste recipes for GitHub Actions, Azure Pipelines, GitLab CI, Jenkins and Bitbucket Pipelines. |
 | [`architecture/CORE_RULES.md`](architecture/CORE_RULES.md) | Product scope: the six policy pillars, non-goals, enforcement levels and waivers. |
 | [`architecture/IMPLEMENTATION_STATUS.md`](architecture/IMPLEMENTATION_STATUS.md) | Build history, decisions and gotchas. Read before making non-trivial changes. |
+| [`architecture/RESULT_CONTRACT.md`](architecture/RESULT_CONTRACT.md) | The versioned JSON result contract (v1) for `validate --format json`: shape, field meanings, versioning policy. |
 
 ## Roadmap (outstanding)
 
@@ -23,7 +24,7 @@ Documents describing work that is at least partly not yet built.
 
 | Doc | What's left |
 |---|---|
-| [`roadmap/HIGH_LEVEL_ROADMAP.md`](roadmap/HIGH_LEVEL_ROADMAP.md) | Phase 2 (binaries, JSON/SARIF, exit codes) is mostly done. Still open: rule distribution ([#82](https://github.com/james-d12/CodeGuard/issues/82)), the result contract and CI governance (#66–#78), and server/portal/registry ([#83](https://github.com/james-d12/CodeGuard/issues/83)). |
+| [`roadmap/HIGH_LEVEL_ROADMAP.md`](roadmap/HIGH_LEVEL_ROADMAP.md) | Phase 2 (binaries, JSON/SARIF, exit codes) is mostly done. Still open: rule distribution ([#82](https://github.com/james-d12/CodeGuard/issues/82)), CI governance (#67–#78), and server/portal/registry ([#83](https://github.com/james-d12/CodeGuard/issues/83)). |
 | [`roadmap/HIGH_LEVEL_AI_ASSISTING.md`](roadmap/HIGH_LEVEL_AI_ASSISTING.md) | Phases 0–3 and 5 are done. Still open: the MCP server ([#62](https://github.com/james-d12/CodeGuard/issues/62)) and Phase 6 ([#86](https://github.com/james-d12/CodeGuard/issues/86)). |
 | [`roadmap/SUPPORTING_TOOLS.md`](roadmap/SUPPORTING_TOOLS.md) | validate/explain/test/lint shipped as `codeguard rules …`. Still open: `inspect` (#59) and `generate` (#60, #61). |
 | [`roadmap/REPORTING_API_PROMPT.md`](roadmap/REPORTING_API_PROMPT.md) | A prompt for the Reporting API MVP design. Nothing is built yet ([#83](https://github.com/james-d12/CodeGuard/issues/83)). |

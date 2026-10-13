@@ -8,6 +8,7 @@ using CodeGuard.Core.Evaluation;
 using CodeGuard.Core.Results;
 using CodeGuard.Reporting;
 using CodeGuard.Reporting.Console;
+using CodeGuard.Reporting.Contracts;
 using CodeGuard.Reporting.Html;
 using CodeGuard.Reporting.Json;
 using CodeGuard.Reporting.Sarif;
@@ -95,6 +96,7 @@ public static class ValidateCommand
 
         command.SetAction(async (parseResult, cancellationToken) =>
         {
+            var totalStopwatch = Stopwatch.StartNew();
             using var loggerFactory = CliLoggerFactory.Create(CliLoggerFactory.ParseVerbosity(parseResult.GetValue(verbosityOption)!));
             var logger = loggerFactory.CreateLogger(typeof(ValidateCommand));
 
@@ -206,7 +208,8 @@ public static class ValidateCommand
                     consoleOutputRedirected: Console.IsOutputRedirected,
                     noColorEnvVar: Environment.GetEnvironmentVariable("NO_COLOR"));
 
-                var reporter = CreateReporter(parseResult.GetValue(formatOption)!, useColor);
+                var reporter = CreateReporter(
+                    parseResult.GetValue(formatOption)!, useColor, totalStopwatch.Elapsed);
 
                 logger.LogDebug("Writing {Format} report to {Destination}", parseResult.GetValue(formatOption), outputPath ?? "stdout");
 
@@ -260,9 +263,11 @@ public static class ValidateCommand
         };
     }
 
-    private static IViolationReporter CreateReporter(string format, bool useColor) => format switch
+    // durationMs in the JSON report is measured up to this point, i.e. just before the report is written.
+    private static IViolationReporter CreateReporter(string format, bool useColor, TimeSpan duration) => format switch
     {
-        "json" => new JsonViolationReporter(),
+        "json" => new JsonViolationReporter(
+            ValidationReportMapper.ResolveToolVersion(typeof(ValidateCommand).Assembly), duration),
         "sarif" => new SarifViolationReporter(),
         "html" => new HtmlViolationReporter(),
         _ => new ConsoleViolationReporter(useColor)

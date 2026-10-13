@@ -42,7 +42,8 @@ public class JsonViolationReporterTests
         var root = document.RootElement;
 
         Assert.Equal("failed", root.GetProperty("status").GetString());
-        Assert.Equal(1, root.GetProperty("rulesEvaluated").GetInt32());
+        Assert.Equal(1, root.GetProperty("metrics").GetProperty("rulesEvaluated").GetInt32());
+        Assert.Equal("1.0", root.GetProperty("schemaVersion").GetString());
 
         var violation = root.GetProperty("violations")[0];
         Assert.Equal("DDD-ENTITY-001", violation.GetProperty("ruleId").GetString());
@@ -83,7 +84,7 @@ public class JsonViolationReporterTests
 
         using var document = JsonDocument.Parse(output);
         Assert.Equal("partiallyEvaluated", document.RootElement.GetProperty("status").GetString());
-        Assert.Equal(1, document.RootElement.GetProperty("rulesErrored").GetInt32());
+        Assert.Equal(1, document.RootElement.GetProperty("metrics").GetProperty("rulesErrored").GetInt32());
 
         var error = document.RootElement.GetProperty("evaluationErrors")[0];
         Assert.Equal("BROKEN-001", error.GetProperty("ruleId").GetString());
