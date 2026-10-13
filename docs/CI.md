@@ -120,7 +120,7 @@ jobs:
 
       - name: Upload SARIF
         if: always() && hashFiles('codeguard.sarif') != ''
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: codeguard.sarif
 ```
@@ -251,5 +251,5 @@ the report when violations fail the build.
 
 - The recipes were checked for valid YAML syntax. They were not run on the platforms themselves.
 - Image tags and action versions (`actions/checkout@v4`, `actions/setup-dotnet@v4`,
-  `github/codeql-action/upload-sarif@v3`, `UseDotNet@2`) should be checked against the platform's
+  `github/codeql-action/upload-sarif@v4`, `UseDotNet@2`) should be checked against the platform's
   current releases before use.
