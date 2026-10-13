@@ -144,6 +144,170 @@ public sealed class RuleSetAnalyzerTests : IDisposable
         Assert.Empty(report.UnreachableRules);
     }
 
+    [Theory]
+    [InlineData("must_all_match")]
+    [InlineData("must_any_match")]
+    [InlineData("must_none_match")]
+    public void Analyze_NestedAssertionThatCannotApplyToQuantifierSelector_IsReportedAsUnreachable(string quantifier)
+    {
+        // The nested selector yields Method candidates, but must_not_reference_project only accepts
+        // Project candidates - every method would fail it, so the nested assertion can never run.
+        WriteRuleFile("nested.yml", $$"""
+            id: DDD-ENTITY-001
+            name: Some rule
+            target:
+              kind: class
+              namespace: "Contoso.Domain.Entities"
+            assertions:
+              - {{quantifier}}:
+                  selector:
+                    kind: method
+                    name: "*"
+                  assertions:
+                    - must_not_reference_project:
+                        name: "*Infrastructure*"
+            """);
+
+        var report = Analyze();
+
+        var issue = Assert.Single(report.UnreachableRules);
+        Assert.Equal("DDD-ENTITY-001", issue.RuleId);
+        Assert.Equal("method", issue.TargetKind);
+        Assert.Equal("must_not_reference_project", issue.AssertionKind);
+        Assert.Equal("assertions[0].assertions[0]", issue.Location);
+        Assert.True(report.HasFindings);
+    }
+
+    [Theory]
+    [InlineData("must_all_match")]
+    [InlineData("must_any_match")]
+    [InlineData("must_none_match")]
+    public void Analyze_NestedAssertionThatAppliesToQuantifierSelector_IsNotReported(string quantifier)
+    {
+        WriteRuleFile("nested-match.yml", $$"""
+            id: DDD-ENTITY-001
+            name: Some rule
+            target:
+              kind: class
+              namespace: "Contoso.Domain.Entities"
+            assertions:
+              - {{quantifier}}:
+                  selector:
+                    kind: method
+                    name: "*"
+                  assertions:
+                    - must_have_modifier:
+                        modifier: static
+            """);
+
+        var report = Analyze();
+
+        Assert.Empty(report.UnreachableRules);
+    }
+
+    [Fact]
+    public void Analyze_QuantifierInsideQuantifier_ChecksInnerAssertionAgainstInnermostSelector()
+    {
+        // The outer quantifier's nested assertion is itself a quantifier, whose AppliesTo is empty and
+        // so isn't flagged - but its own nested assertion yields Method candidates, and is.
+        WriteRuleFile("nested-twice.yml", """
+            id: DDD-ENTITY-001
+            name: Some rule
+            target:
+              kind: class
+              namespace: "Contoso.Domain.Entities"
+            assertions:
+              - must_all_match:
+                  selector:
+                    kind: project
+                    name: "*"
+                  assertions:
+                    - must_all_match:
+                        selector:
+                          kind: method
+                          name: "*"
+                        assertions:
+                          - must_not_reference_project:
+                              name: "*Infrastructure*"
+            """);
+
+        var report = Analyze();
+
+        var issue = Assert.Single(report.UnreachableRules);
+        Assert.Equal("method", issue.TargetKind);
+        Assert.Equal("assertions[0].assertions[0].assertions[0]", issue.Location);
+    }
+
+    [Theory]
+    [InlineData("and", "when.and[1]")]
+    [InlineData("or", "when.or[1]")]
+    [InlineData("not", "when.not")]
+    public void Analyze_WhenLeafThatCannotApplyToTarget_IsReportedAsUnreachable(string combinator, string expectedLocation)
+    {
+        // The target is a class (Type candidates); must_not_reference_project only accepts Project.
+        var whenNode = combinator == "not"
+            ? """
+              not:
+                must_not_reference_project:
+                  name: "*Infrastructure*"
+              """
+            : $"""
+              {combinator}:
+                - must_inherit_from:
+                    type: "Contoso.Domain.Entity<TId>"
+                - must_not_reference_project:
+                    name: "*Infrastructure*"
+              """;
+        WriteRuleFile("when-mismatch.yml", $"""
+            id: DDD-ENTITY-001
+            name: Some rule
+            target:
+              kind: class
+              namespace: "Contoso.Domain.Entities"
+            when:
+            {Indent(whenNode, 2)}
+            assertions:
+              - must_inherit_from:
+                  type: "Contoso.Domain.Entity<TId>"
+            """);
+
+        var report = Analyze();
+
+        var issue = Assert.Single(report.UnreachableRules);
+        Assert.Equal("class", issue.TargetKind);
+        Assert.Equal("must_not_reference_project", issue.AssertionKind);
+        Assert.Equal(expectedLocation, issue.Location);
+    }
+
+    private static string Indent(string text, int spaces) =>
+        string.Join("\n", text.Split('\n').Select(line => new string(' ', spaces) + line));
+
+    [Fact]
+    public void Analyze_WhenLeafThatAppliesToTarget_IsNotReported()
+    {
+        WriteRuleFile("when-match.yml", """
+            id: DDD-ENTITY-001
+            name: Some rule
+            target:
+              kind: class
+              namespace: "Contoso.Domain.Entities"
+            when:
+              and:
+                - must_inherit_from:
+                    type: "Contoso.Domain.Entity<TId>"
+                - not:
+                    must_have_modifier:
+                      modifier: static
+            assertions:
+              - must_inherit_from:
+                  type: "Contoso.Domain.Entity<TId>"
+            """);
+
+        var report = Analyze();
+
+        Assert.Empty(report.UnreachableRules);
+    }
+
     [Fact]
     public void Analyze_TwoRulesWithIdenticalTargetAndAssertions_AreGroupedAsExactDuplicates()
     {

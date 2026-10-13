@@ -38,7 +38,7 @@ public static class RuleAnalysisReportWriter
             writer.WriteLine("Unreachable assertions:");
             foreach (var issue in report.UnreachableRules)
             {
-                writer.WriteLine($"  - {issue.RuleId}: '{issue.AssertionKind}' cannot apply to a '{issue.TargetKind}' target ({issue.SourceFile})");
+                writer.WriteLine($"  - {issue.RuleId}: '{issue.AssertionKind}' cannot apply to a '{issue.TargetKind}' target at {issue.Location} ({issue.SourceFile})");
             }
         }
 

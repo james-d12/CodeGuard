@@ -2,11 +2,22 @@ using CodeGuard.Configuration.Capabilities;
 using CodeGuard.Configuration.Loading;
 using CodeGuard.Configuration.Validation;
 using CodeGuard.RuleModel.Rules;
+using System.Text.Json.Nodes;
 
 namespace CodeGuard.Configuration.Analysis;
 
-/// <summary>One rule whose only known assertion can never fire against its target's candidate kind.</summary>
-public sealed record UnreachableAssertionIssue(string RuleId, string SourceFile, string TargetKind, string AssertionKind);
+/// <summary>
+/// One assertion that can never fire against the candidate kind it is checked on. <paramref name="TargetKind"/>
+/// is the selector kind whose candidates it was checked against (the rule's `target`, or the `selector` of
+/// the quantifier it is nested in). <paramref name="Location"/> is the path to the assertion inside the rule
+/// document, e.g. <c>assertions[0]</c>, <c>assertions[0].assertions[1]</c> or <c>when.and[1]</c>.
+/// </summary>
+public sealed record UnreachableAssertionIssue(
+    string RuleId,
+    string SourceFile,
+    string TargetKind,
+    string AssertionKind,
+    string Location);
 
 /// <summary>A set of rules whose <c>target</c>+<c>assertions</c> (or <c>analyzer</c>) body is structurally identical.</summary>
 public sealed record ExactDuplicateGroup(IReadOnlyList<string> RuleIds, IReadOnlyList<string> SourceFiles);
@@ -105,13 +116,17 @@ public static class RuleSetAnalyzer
         rule.Tests.Any(t => t.Expect == TestExpectation.Pass) && rule.Tests.Any(t => t.Expect == TestExpectation.Fail);
 
     /// <summary>
-    /// Flags a top-level assertion that the target selector's candidate kind can never satisfy, using
-    /// the same <see cref="CapabilityDescriptor.Produces"/>/<see cref="CapabilityDescriptor.AppliesTo"/>
-    /// metadata `rules discover` reports. Deliberately doesn't recurse into nested selectors/
-    /// assertions (inside `must_all_match`/`must_any_match`/`must_none_match`/`must_have_count`) -
-    /// those aren't exposed by the parsed model (only `IAssertion.Kind` survives parsing; nested
-    /// selector/assertion objects stay in private constructor fields, the same limitation
-    /// `rules explain --format json` works around by reading the source document instead). An
+    /// Flags an assertion that the candidate kind it is checked against can never satisfy, using the
+    /// same <see cref="CapabilityDescriptor.Produces"/>/<see cref="CapabilityDescriptor.AppliesTo"/>
+    /// metadata `rules discover` reports. Three places are checked:
+    /// <list type="bullet">
+    /// <item>top-level assertions, against the target selector (from the parsed model);</item>
+    /// <item>assertions nested in a quantifier's `assertions:`, against that quantifier's `selector:`;</item>
+    /// <item>`when:` leaves, against the target selector.</item>
+    /// </list>
+    /// The last two need the raw document (<see cref="NestedAssertionScanner"/>): only `IAssertion.Kind`
+    /// survives parsing, so nested selector/assertion objects are otherwise unrecoverable - the same
+    /// reason `rules explain --format json` and the exact-duplicate check read the source document. An
     /// assertion with an empty `AppliesTo` (the quantifier/existence kinds, which evaluate a nested
     /// selector rather than the outer candidate) is never flagged - see that field's own doc comment.
     /// </summary>
@@ -129,28 +144,127 @@ public static class RuleSetAnalyzer
                 continue; // analyzer-shaped rule - has no selector-driven target to check against.
             }
 
-            if (!selectorsByKind.TryGetValue(rule.Target.Kind, out var selectorDescriptor)
-                || selectorDescriptor.Produces is not { } produces)
-            {
-                continue;
-            }
+            var document = RuleFileLoader.ReadDocument(sourceFile).AsObject();
+            var produces = selectorsByKind.TryGetValue(rule.Target.Kind, out var selectorDescriptor)
+                ? selectorDescriptor.Produces
+                : null;
+            var scanner = new NestedAssertionScanner(
+                rule.Id, sourceFile, selectorsByKind, assertionsByKind, issues);
 
-            foreach (var assertion in rule.Assertions)
+            for (var index = 0; index < rule.Assertions.Count; index++)
             {
-                if (!assertionsByKind.TryGetValue(assertion.Kind, out var assertionDescriptor)
-                    || assertionDescriptor.AppliesTo.Count == 0)
+                var assertion = rule.Assertions[index];
+                var location = $"assertions[{index}]";
+                if (produces is { } candidate
+                    && assertionsByKind.TryGetValue(assertion.Kind, out var assertionDescriptor)
+                    && assertionDescriptor.AppliesTo.Count > 0
+                    && !assertionDescriptor.AppliesTo.Contains(candidate))
                 {
-                    continue;
+                    issues.Add(new UnreachableAssertionIssue(
+                        rule.Id, sourceFile, rule.Target.Kind, assertion.Kind, location));
                 }
 
-                if (!assertionDescriptor.AppliesTo.Contains(produces))
-                {
-                    issues.Add(new UnreachableAssertionIssue(rule.Id, sourceFile, rule.Target.Kind, assertion.Kind));
-                }
+                scanner.ScanNested(document["assertions"]?[index], location);
             }
+
+            scanner.ScanCondition(document["when"], "when", rule.Target.Kind, produces);
         }
 
         return issues;
+    }
+
+    /// <summary>
+    /// Walks one rule's raw document for the assertions the parsed model can't expose: those nested in a
+    /// quantifier's `assertions:` list, and `when:` leaves. Kinds missing from the catalog are skipped
+    /// silently - unknown kinds are rejected by schema validation and `rules validate`, not by this check.
+    /// </summary>
+    private sealed class NestedAssertionScanner(
+        string ruleId,
+        string sourceFile,
+        IReadOnlyDictionary<string, CapabilityDescriptor> selectorsByKind,
+        IReadOnlyDictionary<string, CapabilityDescriptor> assertionsByKind,
+        List<UnreachableAssertionIssue> issues)
+    {
+        /// <summary>Descends into a top-level assertion's nested selector/assertions, without re-checking the assertion itself.</summary>
+        public void ScanNested(JsonNode? assertionNode, string location) =>
+            ScanAssertion(assertionNode, location, candidateKind: null, produces: null);
+
+        /// <summary>Walks a `when:` tree - `and`/`or`/`not` combinators down to assertion leaves, each checked against the target.</summary>
+        public void ScanCondition(JsonNode? conditionNode, string location, string targetKind, CandidateKind? produces)
+        {
+            if (conditionNode is not JsonObject { Count: 1 } node)
+            {
+                return;
+            }
+
+            var (key, value) = node.Single();
+            switch (key)
+            {
+                case "and" or "or":
+                    var children = value?.AsArray();
+                    for (var index = 0; children is not null && index < children.Count; index++)
+                    {
+                        ScanCondition(children[index], $"{location}.{key}[{index}]", targetKind, produces);
+                    }
+
+                    break;
+                case "not":
+                    ScanCondition(value, $"{location}.not", targetKind, produces);
+                    break;
+                default:
+                    ScanAssertion(node, location, targetKind, produces);
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// Checks one `{ kind: params }` assertion against <paramref name="produces"/> when given (a `when:`
+        /// leaf, or an assertion nested in a quantifier), then recurses into its own nested `selector:` and
+        /// `assertions:` if its descriptor declares an <see cref="ParameterType.AssertionList"/> parameter.
+        /// </summary>
+        private void ScanAssertion(JsonNode? assertionNode, string location, string? candidateKind, CandidateKind? produces)
+        {
+            if (assertionNode is not JsonObject { Count: 1 } node)
+            {
+                return;
+            }
+
+            var (kind, parameters) = node.Single();
+            if (!assertionsByKind.TryGetValue(kind, out var descriptor))
+            {
+                return;
+            }
+
+            if (produces is { } candidate
+                && candidateKind is not null
+                && descriptor.AppliesTo.Count > 0
+                && !descriptor.AppliesTo.Contains(candidate))
+            {
+                issues.Add(new UnreachableAssertionIssue(ruleId, sourceFile, candidateKind, kind, location));
+            }
+
+            if (parameters is not JsonObject parameterObject
+                || !descriptor.Parameters.Any(p => p.Type == ParameterType.AssertionList))
+            {
+                return;
+            }
+
+            var nestedSelectorKind = parameterObject["selector"]?["kind"]?.GetValue<string>();
+            var nestedProduces = nestedSelectorKind is not null
+                && selectorsByKind.TryGetValue(nestedSelectorKind, out var selectorDescriptor)
+                    ? selectorDescriptor.Produces
+                    : null;
+
+            var nested = parameterObject["assertions"]?.AsArray();
+            for (var index = 0; nested is not null && index < nested.Count; index++)
+            {
+                ScanAssertion(
+                    nested[index],
+                    $"{location}.assertions[{index}]",
+                    nestedSelectorKind,
+                    nestedProduces);
+            }
+        }
     }
 
     /// <summary>
