@@ -203,4 +203,100 @@ public class AssertionEvidenceTests
         Assert.Equal("1 offending match(es)", outcome.Actual);
         Assert.Equal(["A.One"], outcome.Evidence);
     }
+
+    [Fact]
+    public void MustAnyMatch_EvaluatesEachMatchAssertionPairOnce_OnFailure()
+    {
+        var calls = new List<string>();
+        var first = new StubAssertion(c =>
+        {
+            calls.Add($"first:{((TypeModel)c).Name}");
+            return AssertionOutcome.Success();
+        });
+        var second = new StubAssertion(c =>
+        {
+            calls.Add($"second:{((TypeModel)c).Name}");
+            return AssertionOutcome.Failure("nope");
+        });
+        var matches = new object[] { TestModels.Type("A.One"), TestModels.Type("A.Two"), TestModels.Type("A.Three") };
+        var assertion = new MustAnyMatchAssertion(Template, _ => new StubSelector(matches), [first, second]);
+
+        var outcome = assertion.Evaluate(TestModels.Type("Outer"), EmptyModel);
+
+        Assert.False(outcome.Passed);
+        Assert.Equal(calls.Distinct().Count(), calls.Count);
+        Assert.Equal(["first:One", "second:One", "first:Two", "second:Two", "first:Three", "second:Three"], calls);
+        Assert.Equal(["A.One", "A.Two", "A.Three"], outcome.Evidence);
+    }
+
+    [Fact]
+    public void MustAnyMatch_StopsAtFirstSatisfyingMatch()
+    {
+        var calls = new List<string>();
+        var passing = new StubAssertion(c =>
+        {
+            calls.Add(((TypeModel)c).Name);
+            return AssertionOutcome.Success();
+        });
+        var matches = new object[] { TestModels.Type("A.One"), TestModels.Type("A.Two"), TestModels.Type("A.Three") };
+        var assertion = new MustAnyMatchAssertion(Template, _ => new StubSelector(matches), [passing]);
+
+        var outcome = assertion.Evaluate(TestModels.Type("Outer"), EmptyModel);
+
+        Assert.True(outcome.Passed);
+        Assert.Equal(["One"], calls);
+    }
+
+    [Fact]
+    public void MustNoneMatch_CapsEvidenceAt50_WithTrailingMoreEntry()
+    {
+        var passing = new StubAssertion(_ => AssertionOutcome.Success());
+        var matches = Enumerable.Range(1, 120).Select(i => (object)TestModels.Type($"A.T{i}")).ToArray();
+        var assertion = new MustNoneMatchAssertion(Template, _ => new StubSelector(matches), [passing]);
+
+        var outcome = assertion.Evaluate(TestModels.Type("Outer"), EmptyModel);
+
+        Assert.False(outcome.Passed);
+        Assert.Equal("120 offending match(es)", outcome.Actual);
+        Assert.Equal(51, outcome.Evidence!.Count);
+        Assert.Equal("A.T1", outcome.Evidence[0]);
+        Assert.Equal("A.T50", outcome.Evidence[49]);
+        Assert.Equal("...and 70 more", outcome.Evidence[50]);
+    }
+
+    [Fact]
+    public void MustNoneMatch_LeavesEvidenceUncapped_AtExactlyTheCap()
+    {
+        var passing = new StubAssertion(_ => AssertionOutcome.Success());
+        var matches = Enumerable.Range(1, 50).Select(i => (object)TestModels.Type($"A.T{i}")).ToArray();
+        var assertion = new MustNoneMatchAssertion(Template, _ => new StubSelector(matches), [passing]);
+
+        var outcome = assertion.Evaluate(TestModels.Type("Outer"), EmptyModel);
+
+        Assert.Equal(50, outcome.Evidence!.Count);
+        Assert.DoesNotContain(outcome.Evidence, entry => entry.StartsWith("...and", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void MustNotExist_FailureEvidence_IsBoundedAndSampleStopsEarly()
+    {
+        var yielded = 0;
+        IEnumerable<object> Candidates()
+        {
+            for (var i = 1; i <= 500; i++)
+            {
+                yielded++;
+                yield return TestModels.Type($"A.T{i}");
+            }
+        }
+
+        var outcome = new MustNotExistAssertion(Template, _ => new StubSelector(Candidates()))
+            .Evaluate(TestModels.Type("Outer"), EmptyModel);
+
+        Assert.False(outcome.Passed);
+        Assert.Equal(51, yielded);
+        Assert.Equal("more than 50 match(es)", outcome.Actual);
+        Assert.Equal(51, outcome.Evidence!.Count);
+        Assert.Equal("...and more", outcome.Evidence[50]);
+    }
 }

@@ -22,22 +22,42 @@ public sealed class MustAnyMatchAssertion(
     {
         var selector = selectorFactory(SelectorTemplateResolver.Resolve(selectorTemplate, candidate));
         var matches = selector.SelectCandidates(model).ToList();
-        var satisfied = matches.Any(match => assertions.All(assertion => assertion.Evaluate(match, model).Passed));
 
-        if (satisfied)
+        // Single pass: each (match, assertion) pair is evaluated at most once. Within a match, evaluation
+        // stops at the first failing assertion (as assertions.All does), and the search stops at the first
+        // fully satisfying match, since no failure data is needed then. The failure outcomes collected here
+        // are the ones reported, so nothing is re-evaluated to build the failure message or evidence.
+        var nestedFailures = new List<AssertionOutcome>(matches.Count);
+        foreach (var match in matches)
         {
-            return AssertionOutcome.Success();
-        }
+            var failure = FirstFailure(match, model);
+            if (failure is null)
+            {
+                return AssertionOutcome.Success();
+            }
 
-        var nestedFailures = matches
-            .SelectMany(match => assertions.Select(assertion => assertion.Evaluate(match, model)))
-            .Where(outcome => !outcome.Passed)
-            .ToList();
+            nestedFailures.Add(failure);
+        }
 
         return AssertionOutcome.Failure(
             $"Expected at least one match for a '{selector.Kind}' selector to satisfy every nested assertion, but none of the {matches.Count} match(es) did.",
             CandidateDescriptor.CommonValue(nestedFailures.Select(outcome => outcome.Expected)),
             $"0 of {matches.Count} match(es) satisfied every nested assertion",
-            matches.Count == 0 ? null : matches.Select(CandidateDescriptor.Describe).ToList());
+            matches.Count == 0 ? null : CandidateDescriptor.CapEvidence(matches.Select(CandidateDescriptor.Describe)));
+    }
+
+    /// <summary>Returns the first nested outcome that fails for <paramref name="match"/>, or null when all pass.</summary>
+    private AssertionOutcome? FirstFailure(object match, RepositoryModel model)
+    {
+        foreach (var assertion in assertions)
+        {
+            var outcome = assertion.Evaluate(match, model);
+            if (!outcome.Passed)
+            {
+                return outcome;
+            }
+        }
+
+        return null;
     }
 }

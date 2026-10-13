@@ -81,6 +81,10 @@ has a natural value for them, and `message` is unchanged either way:
   `must_any_match`, `must_none_match`), each entry is qualified by the match it came from
   (`<match>: <item>`).
 
+`evidence` is capped at 50 entries. When a failure has more, the list holds the first 50 followed by a
+final entry `...and N more`, where N is the number omitted. The cap also bounds the evidence-like parts of
+`actual` for list-valued assertions. `expected` and `actual` are not otherwise limited.
+
 The fields are additive; `schemaVersion` stays `1.0`.
 
 ## Top-level fields

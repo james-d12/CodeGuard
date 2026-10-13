@@ -34,7 +34,7 @@ public sealed class MustNotDependOnAssertion(string forbiddenTypePattern) : IAss
         return AssertionOutcome.Failure(
             $"Project '{project.Name}' must not depend on '{forbiddenTypePattern}' (via: {string.Join(", ", offendingTypes)}).",
             $"no dependency on '{forbiddenTypePattern}'",
-            string.Join(", ", matchedNames),
-            offendingTypes);
+            string.Join(", ", CandidateDescriptor.CapEvidence(matchedNames)),
+            CandidateDescriptor.CapEvidence(offendingTypes));
     }
 }

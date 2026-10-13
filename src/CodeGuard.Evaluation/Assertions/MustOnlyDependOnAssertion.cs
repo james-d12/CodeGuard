@@ -36,6 +36,6 @@ public sealed class MustOnlyDependOnAssertion(IReadOnlyList<string> allowedTypeP
             ? AssertionOutcome.Success()
             : AssertionOutcome.Failure(
                 $"Project '{project.Name}' must only depend on types matching [{string.Join(", ", allowedTypePatterns)}] " +
-                $"(disallowed: {string.Join(", ", offendingTypeNames)}).", string.Join(", ", allowedTypePatterns), null, offendingTypeNames);
+                $"(disallowed: {string.Join(", ", offendingTypeNames)}).", string.Join(", ", allowedTypePatterns), null, CandidateDescriptor.CapEvidence(offendingTypeNames));
     }
 }

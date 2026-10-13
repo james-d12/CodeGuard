@@ -65,6 +65,6 @@ public sealed class MustAllMatchAssertion(
             $"Not every match for a '{selector.Kind}' selector satisfied every nested assertion: {string.Join("; ", failures)}",
             CandidateDescriptor.CommonValue(nestedFailures.Select(outcome => outcome.Expected)),
             $"{failedMatches.Count} match(es) failed a nested assertion",
-            evidence);
+            CandidateDescriptor.CapEvidence(evidence));
     }
 }

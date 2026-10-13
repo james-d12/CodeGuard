@@ -32,6 +32,6 @@ public sealed class MustNoneMatchAssertion(
                 $"Expected no match for a '{selector.Kind}' selector to satisfy every nested assertion, but {offenders.Count} did: {string.Join(", ", offenders)}.",
                 "no match satisfies every nested assertion",
                 $"{offenders.Count} offending match(es)",
-                offenders);
+                CandidateDescriptor.CapEvidence(offenders));
     }
 }

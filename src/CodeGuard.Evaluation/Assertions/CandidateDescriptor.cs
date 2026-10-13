@@ -26,10 +26,33 @@ internal static class CandidateDescriptor
         _ => candidate.ToString() ?? candidate.GetType().Name
     };
 
-    /// <summary>Joins names for an Actual value, or "(none)" when empty.</summary>
+    /// <summary>
+    /// Upper bound on the number of entries in any Evidence (or evidence-like Actual) list, so a
+    /// failure over thousands of matches stays a bounded payload for reporters and agents.
+    /// </summary>
+    public const int MaxEvidenceEntries = 50;
+
+    /// <summary>
+    /// Returns at most <paramref name="max"/> items. When there are more, the final entry is
+    /// "...and N more", where N is the number of items omitted.
+    /// </summary>
+    public static List<string> CapEvidence(IEnumerable<string> items, int max = MaxEvidenceEntries)
+    {
+        var all = items.ToList();
+        if (all.Count <= max)
+        {
+            return all;
+        }
+
+        var capped = all.Take(max).ToList();
+        capped.Add($"...and {all.Count - max} more");
+        return capped;
+    }
+
+    /// <summary>Joins names for an Actual value, or "(none)" when empty. Bounded like evidence.</summary>
     public static string ListOrNone(IEnumerable<string> items)
     {
-        var list = items.ToList();
+        var list = CapEvidence(items);
         return list.Count == 0 ? "(none)" : string.Join(", ", list);
     }
 

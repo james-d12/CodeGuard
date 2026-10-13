@@ -1076,6 +1076,12 @@ from the outcome. Existing constructors and call sites still compile, and `Messa
   and actual counts, with the matched candidates as evidence.
 - Quantifiers aggregate nested outcomes. `expected` is kept only when every nested failure agrees on it.
   `evidence` is the failing matches, each qualified by its nested evidence (`<match>: <item>`).
+- Evidence is capped at 50 entries (`CandidateDescriptor.MaxEvidenceEntries`, `CandidateDescriptor.CapEvidence`).
+  When truncated, the last entry is `...and N more`. The same cap applies to the list-valued `actual` values
+  (`ListOrNone`, `must_not_depend_on`'s matched names). `must_not_exist` materialises at most 51 candidates,
+  so its failure reports `more than 50 match(es)` and ends the evidence with `...and more`, since the total
+  is not counted. `must_any_match` makes one pass over its matches, evaluating each nested assertion at most
+  once per match. It stops at the first satisfying match, and within a match at the first failing assertion.
 - Helpers `CandidateDescriptor.ListOrNone` and `CandidateDescriptor.CommonValue` are internal to the
   evaluation assembly. Assertions with no sensible structured value leave the fields `null`. These are
   file/directory existence

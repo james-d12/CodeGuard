@@ -27,7 +27,7 @@ public sealed class MustHaveCountAssertion(
         var selector = selectorFactory(SelectorTemplateResolver.Resolve(selectorTemplate, candidate));
         var matches = selector.SelectCandidates(model).ToList();
         var count = matches.Count;
-        var evidence = matches.Count == 0 ? null : matches.Select(CandidateDescriptor.Describe).ToList();
+        var evidence = matches.Count == 0 ? null : CandidateDescriptor.CapEvidence(matches.Select(CandidateDescriptor.Describe));
 
         if (exactly is not null && count != exactly)
         {
