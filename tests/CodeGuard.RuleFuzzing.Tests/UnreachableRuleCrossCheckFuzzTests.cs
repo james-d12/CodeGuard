@@ -13,9 +13,8 @@ namespace CodeGuard.RuleFuzzing.Tests;
 /// mismatch its selector (<see cref="RuleDocumentGenerator.IncompatibleRule"/>) must be flagged by
 /// <c>RuleSetAnalyzer.UnreachableRules</c>, and must dynamically violate on every applicable candidate.
 /// A rule whose mismatch is nested inside a quantifier assertion
-/// (<see cref="RuleDocumentGenerator.NestedIncompatibleRule"/>) exercises the documented gap where
-/// <c>RuleSetAnalyzer.FindUnreachableAssertions</c> does not recurse into nested selectors - asserted
-/// here as an explicit, monitored limitation rather than left an unmonitored blind spot.
+/// (<see cref="RuleDocumentGenerator.NestedIncompatibleRule"/>) must be flagged too, since
+/// <c>RuleSetAnalyzer.FindUnreachableAssertions</c> checks nested assertions against their nested selector.
 /// </summary>
 public sealed class UnreachableRuleCrossCheckFuzzTests(ITestOutputHelper output)
 {
@@ -69,7 +68,7 @@ public sealed class UnreachableRuleCrossCheckFuzzTests(ITestOutputHelper output)
     }
 
     [Fact]
-    public void NestedMismatch_IsNotFlaggedByAnalyzer_AndNeverCrashesEvaluation()
+    public void NestedMismatch_IsFlaggedByAnalyzer_AndNeverCrashesEvaluation()
     {
         var gen = RuleDocumentGenerator.NestedIncompatibleRule(Harness.Catalog);
         var iterations = RuleFuzzOptions.Iterations("RULEFUZZ_ITERATIONS_NESTED_UNREACHABLE", 3000);
@@ -87,11 +86,9 @@ public sealed class UnreachableRuleCrossCheckFuzzTests(ITestOutputHelper output)
             }
 
             var report = Harness.AnalyzeSingleRule(rule, document);
-
-            // Documented limitation, not a bug: FindUnreachableAssertions doesn't recurse into nested
-            // selectors inside must_all_match/must_any_match/must_none_match. If this ever starts
-            // failing, RuleSetAnalyzer has been taught to recurse and this test needs updating to match.
-            Assert.DoesNotContain(report.UnreachableRules, issue => issue.RuleId == rule.Id);
+            Assert.True(
+                report.UnreachableRules.Any(issue => issue.RuleId == rule.Id && issue.Location.StartsWith("assertions[0].assertions[", StringComparison.Ordinal)),
+                $"Expected '{rule.Id}' to have its nested mismatch flagged by RuleSetAnalyzer.\nDocument: {document.ToJsonString()}");
 
             foreach (var (name, model) in RepositoryModelFixtures.All)
             {

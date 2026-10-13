@@ -28,14 +28,15 @@ internal static class RuleDocumentGenerator
     /// <summary>
     /// Selector + a single <c>must_all_match</c> assertion whose *nested* selector/assertion pairing is
     /// guaranteed mismatched. The outer target/assertion pairing is never itself unreachable (quantifier
-    /// kinds have empty <c>AppliesTo</c>), so this exercises the documented gap where
-    /// <c>RuleSetAnalyzer.FindUnreachableAssertions</c> does not recurse into nested selectors.
+    /// kinds have empty <c>AppliesTo</c>), so this exercises that <c>RuleSetAnalyzer.FindUnreachableAssertions</c>
+    /// recurses into nested selectors and flags the mismatch.
     /// </summary>
     public static Gen<JsonObject> NestedIncompatibleRule(CapabilityCatalog catalog) =>
         SelectorGenerator.Any(catalog).SelectMany(outer =>
             SelectorGenerator.Any(catalog).SelectMany(inner =>
                 (AssertionGenerator.GuaranteedMismatch(catalog, inner.Produces, 1)
-                    ?? AssertionGenerator.Any(catalog, inner.Produces, PairingMode.Incompatible, 1))
+                    ?? throw new InvalidOperationException(
+                        $"Catalog has no assertion that is guaranteed to mismatch '{inner.Produces}'."))
                     .Select(nestedAssertion =>
                     {
                         var mustAllMatch = new JsonObject
