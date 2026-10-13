@@ -1,5 +1,6 @@
 using System.Reflection;
 using CodeGuard.Core.Results;
+using CodeGuard.Reporting.Provenance;
 using CodeGuard.RuleModel.Rules;
 
 namespace CodeGuard.Reporting.Contracts;
@@ -9,7 +10,9 @@ public static class ValidationReportMapper
 {
     public const string SchemaVersion = "1.0";
 
-    public static ValidationReportV1 ToV1(ValidationResult result, TimeSpan duration, string toolVersion)
+    /// <param name="provenance">Repository and rule-source provenance, when the caller gathered it. Null leaves those fields out.</param>
+    public static ValidationReportV1 ToV1(
+        ValidationResult result, TimeSpan duration, string toolVersion, ValidationProvenance? provenance = null)
     {
         var violations = result.Violations.Select(MapViolation).ToList();
 
@@ -34,6 +37,12 @@ public static class ValidationReportMapper
                 .ToList(),
             AnalysisWarnings: result.AnalysisWarnings
                 .Select(w => new AnalysisWarningV1(w.Code, w.Message, w.Project, w.FilePath))
+                .ToList(),
+            Repository: provenance?.Repository,
+            Commit: provenance?.Commit,
+            Branch: provenance?.Branch,
+            RuleSources: provenance?.RuleSources
+                .Select(r => new RuleSetSourceV1(r.Kind, r.Location, r.Commit))
                 .ToList());
     }
 

@@ -33,6 +33,9 @@ public sealed class CliRepositoryContext
     public GlobalSettings? GlobalSettings { get; init; }
     public ILoggerFactory? LoggerFactory { get; init; }
 
+    /// <summary>The rules locations the run is evaluated against, for result provenance.</summary>
+    public IReadOnlyList<RuleSourceReference> RuleSources { get; init; } = [];
+
     /// <param name="globalSettingsRoot">
     /// Overrides where tier 4 looks for a prior `setup` run's <c>settings.yml</c> and git cache
     /// (default: the real OS app-data root, <see cref="GlobalSettingsPaths.ResolveRoot"/>). Exists
@@ -61,12 +64,14 @@ public sealed class CliRepositoryContext
                 ? RulesSourceProvenance.RepositoryConfig
                 : RulesSourceProvenance.Default;
 
+        RuleSourceReference? explicitSource = null;
         if (rulesSource is not null)
         {
             logger.LogDebug("Using ad-hoc --rules-source override: {RulesSource} (branch {Branch})", rulesSource, branch ?? "(default)");
             var overridePath = RuleSourceResolver.ResolveToLocalPath(
                 rulesSource, branch, cacheRootOverride: globalSettingsRoot, logger: loggerFactory?.CreateLogger(typeof(RuleSourceResolver)));
             config = WithRules(config, [overridePath]);
+            explicitSource = new RuleSourceReference(RuleSourceResolver.DetectKind(rulesSource), rulesSource, overridePath);
         }
 
         var layout = new RepositoryDiscovery().Resolve(repoRoot, config);
@@ -85,12 +90,18 @@ public sealed class CliRepositoryContext
                 config = WithRules(config, [globalPath]);
                 layout = new RepositoryDiscovery().Resolve(repoRoot, config);
                 provenance = RulesSourceProvenance.GlobalSettings;
+                explicitSource = new RuleSourceReference(globalSettings.Kind, globalSettings.Location, globalPath);
             }
         }
 
         logger.LogInformation(
             "Resolved rules source: provenance={Provenance}, repoRoot={RepoRoot}, rulesPaths={RulesPathCount}",
             provenance, repoRoot, layout.RulesPaths.Count);
+
+        // Repo-config and default rules are plain local directories; an explicit source is the one entry above.
+        IReadOnlyList<RuleSourceReference> ruleSources = explicitSource is not null
+            ? [explicitSource]
+            : layout.RulesPaths.Select(p => new RuleSourceReference(RuleSourceKind.Directory, p, p)).ToList();
 
         return new CliRepositoryContext
         {
@@ -99,7 +110,8 @@ public sealed class CliRepositoryContext
             RulesProvenance = provenance,
             ConfigFilePath = configFilePath,
             GlobalSettings = globalSettings,
-            LoggerFactory = loggerFactory
+            LoggerFactory = loggerFactory,
+            RuleSources = ruleSources
         };
     }
 

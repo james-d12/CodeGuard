@@ -1,11 +1,27 @@
 using Microsoft.CodeAnalysis.Sarif;
 using CodeGuard.Core.Results;
+using CodeGuard.Reporting.Contracts;
+using CodeGuard.Reporting.Provenance;
 using CodeGuard.RuleModel.Rules;
 
 namespace CodeGuard.Reporting.Sarif;
 
 public sealed class SarifViolationReporter : IViolationReporter
 {
+    private readonly ValidationProvenance? _provenance;
+    private readonly string _toolVersion;
+
+    /// <param name="provenance">
+    /// Populates <c>run.versionControlProvenance</c> (when a repository URI is known) and the run property
+    /// bag's <c>ruleSources</c>. Null leaves both out.
+    /// </param>
+    /// <param name="toolVersion">Reported as <c>tool.driver.version</c>. Defaults to this assembly's version.</param>
+    public SarifViolationReporter(ValidationProvenance? provenance = null, string? toolVersion = null)
+    {
+        _provenance = provenance;
+        _toolVersion = toolVersion ?? ValidationReportMapper.ResolveToolVersion(typeof(SarifViolationReporter).Assembly);
+    }
+
     public string Format => "sarif";
 
     public async Task WriteAsync(ValidationResult result, TextWriter writer, CancellationToken ct = default)
@@ -35,6 +51,7 @@ public sealed class SarifViolationReporter : IViolationReporter
                 Driver = new ToolComponent
                 {
                     Name = "codeguard",
+                    Version = _toolVersion,
                     Rules = rules
                 }
             },
@@ -51,6 +68,8 @@ public sealed class SarifViolationReporter : IViolationReporter
             ]
         };
 
+        AddProvenance(run, _provenance);
+
         var log = new SarifLog
         {
             Version = SarifVersion.Current,
@@ -65,6 +84,41 @@ public sealed class SarifViolationReporter : IViolationReporter
         using var reader = new StreamReader(memoryStream);
         var json = await reader.ReadToEndAsync(ct);
         await writer.WriteLineAsync(json.AsMemory(), ct);
+    }
+
+    /// <summary>
+    /// Repository identity goes in <c>versionControlProvenance</c>, which SARIF requires to carry a
+    /// <c>repositoryUri</c>, so it is only written when the repository is known and parses as a URI.
+    /// Rule-set provenance has no SARIF home, so it goes in the run property bag.
+    /// </summary>
+    private static void AddProvenance(Run run, ValidationProvenance? provenance)
+    {
+        if (provenance is null)
+        {
+            return;
+        }
+
+        if (provenance.Repository is not null && Uri.TryCreate(provenance.Repository, UriKind.Absolute, out var repositoryUri))
+        {
+            run.VersionControlProvenance =
+            [
+                new VersionControlDetails
+                {
+                    RepositoryUri = repositoryUri,
+                    RevisionId = provenance.Commit,
+                    Branch = provenance.Branch
+                }
+            ];
+        }
+
+        run.SetProperty("ruleSources", provenance.RuleSources
+            .Select(r => new Dictionary<string, string?>
+            {
+                ["kind"] = r.Kind,
+                ["location"] = r.Location,
+                ["commit"] = r.Commit
+            })
+            .ToList());
     }
 
     private static Result ToSarifResult(Violation violation)

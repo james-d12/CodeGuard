@@ -11,6 +11,7 @@ using CodeGuard.Reporting.Console;
 using CodeGuard.Reporting.Contracts;
 using CodeGuard.Reporting.Html;
 using CodeGuard.Reporting.Json;
+using CodeGuard.Reporting.Provenance;
 using CodeGuard.Reporting.Sarif;
 using CodeGuard.RuleModel.Rules;
 using Microsoft.Extensions.Logging;
@@ -208,8 +209,10 @@ public static class ValidateCommand
                     consoleOutputRedirected: Console.IsOutputRedirected,
                     noColorEnvVar: Environment.GetEnvironmentVariable("NO_COLOR"));
 
+                var provenance = ValidationProvenanceGatherer.Default.Gather(context.RepoRoot, context.RuleSources);
+
                 var reporter = CreateReporter(
-                    parseResult.GetValue(formatOption)!, useColor, totalStopwatch.Elapsed);
+                    parseResult.GetValue(formatOption)!, useColor, totalStopwatch.Elapsed, provenance);
 
                 logger.LogDebug("Writing {Format} report to {Destination}", parseResult.GetValue(formatOption), outputPath ?? "stdout");
 
@@ -264,14 +267,18 @@ public static class ValidateCommand
     }
 
     // durationMs in the JSON report is measured up to this point, i.e. just before the report is written.
-    private static IViolationReporter CreateReporter(string format, bool useColor, TimeSpan duration) => format switch
+    private static IViolationReporter CreateReporter(
+        string format, bool useColor, TimeSpan duration, ValidationProvenance provenance)
     {
-        "json" => new JsonViolationReporter(
-            ValidationReportMapper.ResolveToolVersion(typeof(ValidateCommand).Assembly), duration),
-        "sarif" => new SarifViolationReporter(),
-        "html" => new HtmlViolationReporter(),
-        _ => new ConsoleViolationReporter(useColor)
-    };
+        var toolVersion = ValidationReportMapper.ResolveToolVersion(typeof(ValidateCommand).Assembly);
+        return format switch
+        {
+            "json" => new JsonViolationReporter(toolVersion, duration, provenance),
+            "sarif" => new SarifViolationReporter(provenance, toolVersion),
+            "html" => new HtmlViolationReporter(),
+            _ => new ConsoleViolationReporter(useColor)
+        };
+    }
 
     private static Severity ParseSeverity(string value) => value switch
     {
