@@ -638,10 +638,10 @@ them being treated as one piece of work. They split into three tiers:
   the target selector's `Produces` kind. Assertions with an empty `AppliesTo` (the quantifier/
   existence kinds — `must_all_match`/`must_any_match`/`must_none_match`/`must_have_count`/
   `must_exist`/`must_not_exist`, which evaluate a nested selector rather than the outer candidate)
-  are never flagged, by design. **Known limitation, not fixed**: this only checks the rule's
-  top-level assertions — it doesn't recurse into those quantifier assertions' own nested
-  `assertions:`, because the nested selector/assertion objects aren't recoverable from the parsed
-  model (only `Kind` survives parsing, the same limitation §13 works around for parameter values).
+  are never flagged, by design. Assertions nested in a quantifier's `assertions:` are checked
+  against that quantifier's `selector:`, and `when:` leaves against the target, via the raw source
+  document (the parsed model keeps only `Kind`, the same limitation §13 works around for parameter
+  values). Resolved — previously a known limitation.
 * Exact-duplicate rules (identical `target`+`assertions`, or identical `analyzer`) — reads the raw
   source document via `RuleFileLoader.ReadDocument` rather than the parsed model, for the same
   reason, and canonicalizes (recursively key-sorts) it first so two rules that differ only in

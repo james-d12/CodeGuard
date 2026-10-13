@@ -476,11 +476,13 @@ without needing Phase 2's rule `metadata` first.
     containing them (like this repo's own `examples/rules/`, all illustrative) isn't itself a
     problem. Missing provenance is correctly not implemented - still blocked on §6/§19's
     unimplemented `metadata` field.
-  - Tier 2 "unreachable rules": a top-level assertion whose `CapabilityDescriptor.AppliesTo` doesn't
-    include the target selector's `Produces` kind. Doesn't recurse into `must_all_match`/
-    `must_any_match`/`must_none_match`'s nested `assertions:` - those objects aren't recoverable from
-    the parsed model (only `Kind` survives parsing), only from the raw document, and this check
-    works from the parsed model since `Kind` is all it needs for the top level.
+  - Tier 2 "unreachable rules": an assertion whose `CapabilityDescriptor.AppliesTo` doesn't include
+    the candidate kind it is checked against - the target selector's `Produces` for top-level
+    assertions and `when:` leaves, and the nested `selector:`'s `Produces` for assertions inside
+    `must_all_match`/`must_any_match`/`must_none_match`'s `assertions:` (recursively). Top-level
+    uses the parsed model; nested and `when:` use the raw document (`RuleSetAnalyzer`'s
+    `NestedAssertionScanner`), since only `Kind` survives parsing. Findings carry a `Location` path
+    (e.g. `assertions[0].assertions[1]`, `when.and[1]`).
   - Tier 2 "exact-duplicate rules": needs the raw source document instead (`RuleFileLoader.ReadDocument`),
     for the reason above once parameter values matter - a `Canonicalize` helper recursively
     key-sorts each rule's `target`+`assertions` (or `analyzer`) before grouping, so two rules
