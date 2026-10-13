@@ -107,7 +107,7 @@ public static class GitRuleSourceSync
         }
     }
 
-    private static (int ExitCode, string Stdout, string Stderr) RunCore(IReadOnlyList<string> args, string? workingDirectory)
+    internal static (int ExitCode, string Stdout, string Stderr) RunCore(IReadOnlyList<string> args, string? workingDirectory)
     {
         var startInfo = new ProcessStartInfo("git")
         {

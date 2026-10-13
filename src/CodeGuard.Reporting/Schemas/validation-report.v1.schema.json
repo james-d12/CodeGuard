@@ -53,6 +53,26 @@
     "analysisWarnings": {
       "type": "array",
       "items": { "$ref": "#/$defs/analysisWarning" }
+    },
+    "repository": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Normalised remote URL of the analysed repository, with any credentials or userinfo removed. Omitted when unknown."
+    },
+    "commit": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Commit SHA of the analysed checkout. Omitted when unknown."
+    },
+    "branch": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Branch of the analysed checkout. Omitted when unknown (for example a detached HEAD outside CI)."
+    },
+    "ruleSources": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/ruleSetSource" },
+      "description": "Rule sets the run was evaluated against. Omitted when the producer did not record rule-source provenance."
     }
   },
   "$defs": {
@@ -135,6 +155,16 @@
         "message": { "type": "string" },
         "project": { "type": "string" },
         "filePath": { "type": "string" }
+      }
+    },
+    "ruleSetSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "location"],
+      "properties": {
+        "kind": { "type": "string", "enum": ["git", "directory"] },
+        "location": { "type": "string", "minLength": 1, "description": "Normalised git URL (credentials removed) or local directory path." },
+        "commit": { "type": "string", "minLength": 1, "description": "HEAD of the rules cache for git sources. Omitted for directories and when unknown." }
       }
     }
   }

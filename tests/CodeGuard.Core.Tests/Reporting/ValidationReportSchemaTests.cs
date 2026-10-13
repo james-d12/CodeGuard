@@ -1,6 +1,7 @@
 using System.Text.Json;
 using CodeGuard.Core.Results;
 using CodeGuard.Reporting.Json;
+using CodeGuard.Reporting.Provenance;
 using CodeGuard.RuleModel.Rules;
 using Json.Schema;
 
@@ -94,6 +95,82 @@ public class ValidationReportSchemaTests
               },
               "violations": [], "evaluationErrors": [], "analysisWarnings": [],
               "rulesEvaluated": 0
+            }
+            """;
+
+        using var parsed = JsonDocument.Parse(document);
+        var results = ReportSchema.Value.Evaluate(parsed.RootElement, new EvaluationOptions { OutputFormat = OutputFormat.List });
+
+        Assert.False(results.IsValid);
+    }
+
+    [Fact]
+    public async Task Output_WithProvenance_ConformsToSchemaAndCarriesFields()
+    {
+        var result = new ValidationResult(
+            ValidationStatus.Passed, RulesEvaluated: 1, RulesPassed: 1, RulesFailed: 0, RulesErrored: 0,
+            Violations: [], EvaluationErrors: [], EvaluatedAtUtc: DateTimeOffset.UtcNow);
+        var provenance = new ValidationProvenance(
+            Repository: "https://github.com/acme/app",
+            Commit: "abc123",
+            Branch: "main",
+            RuleSources:
+            [
+                new RuleSetSource("git", "https://rules.example.com/acme/rules", "rules-sha"),
+                new RuleSetSource("directory", "/repo/rules", null)
+            ]);
+
+        var writer = new StringWriter();
+        await new JsonViolationReporter("1.2.3", TimeSpan.Zero, provenance).WriteAsync(result, writer);
+        var output = writer.ToString();
+
+        AssertConforms(output);
+        using var document = JsonDocument.Parse(output);
+        var root = document.RootElement;
+        Assert.Equal("https://github.com/acme/app", root.GetProperty("repository").GetString());
+        Assert.Equal("abc123", root.GetProperty("commit").GetString());
+        Assert.Equal("main", root.GetProperty("branch").GetString());
+        var sources = root.GetProperty("ruleSources");
+        Assert.Equal("git", sources[0].GetProperty("kind").GetString());
+        Assert.Equal("rules-sha", sources[0].GetProperty("commit").GetString());
+        Assert.False(sources[1].TryGetProperty("commit", out _));
+    }
+
+    [Fact]
+    public async Task Output_WithUnknownProvenance_OmitsFields()
+    {
+        var result = new ValidationResult(
+            ValidationStatus.Passed, RulesEvaluated: 0, RulesPassed: 0, RulesFailed: 0, RulesErrored: 0,
+            Violations: [], EvaluationErrors: [], EvaluatedAtUtc: DateTimeOffset.UtcNow);
+        var provenance = new ValidationProvenance(null, null, null, []);
+
+        var writer = new StringWriter();
+        await new JsonViolationReporter("1.2.3", TimeSpan.Zero, provenance).WriteAsync(result, writer);
+        var output = writer.ToString();
+
+        AssertConforms(output);
+        using var document = JsonDocument.Parse(output);
+        Assert.False(document.RootElement.TryGetProperty("repository", out _));
+        Assert.False(document.RootElement.TryGetProperty("commit", out _));
+        Assert.False(document.RootElement.TryGetProperty("branch", out _));
+        Assert.Empty(document.RootElement.GetProperty("ruleSources").EnumerateArray());
+    }
+
+    [Fact]
+    public void Schema_RejectsCredentialFieldsInRuleSource()
+    {
+        const string document = """
+            {
+              "schemaVersion": "1.0", "toolVersion": "1.0.0", "status": "passed",
+              "evaluatedAtUtc": "2026-01-01T00:00:00+00:00", "durationMs": 0,
+              "metrics": {
+                "rulesEvaluated": 0, "rulesPassed": 0, "rulesFailed": 0, "rulesErrored": 0,
+                "violationCount": 0,
+                "violationsBySeverity": { "info": 0, "warning": 0, "error": 0, "critical": 0 },
+                "evaluationErrorCount": 0, "analysisWarningCount": 0
+              },
+              "violations": [], "evaluationErrors": [], "analysisWarnings": [],
+              "ruleSources": [ { "kind": "git", "location": "https://u:p@host/x", "token": "p" } ]
             }
             """;
 

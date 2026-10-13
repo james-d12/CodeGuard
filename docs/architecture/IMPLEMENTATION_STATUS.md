@@ -745,6 +745,30 @@ Decisions and gotchas:
 - `JsonSchema.Net` is referenced by `CodeGuard.Core.Tests` only, to validate output. Each schema is
   parsed once in a static `Lazy`, because `JsonSchema.FromText` throws on a duplicate `$id`.
 
+### Post-v1 addition: repository, commit and rule-source provenance (#67)
+
+The JSON result (`validation-report.v1`) gained optional `repository`, `commit`, `branch` and
+`ruleSources`. SARIF gained `tool.driver.version`, `run.versionControlProvenance` (when the repository
+URI is known) and the rule sources in the run property bag `ruleSources`. Full field list:
+`docs/architecture/RESULT_CONTRACT.md`.
+
+Decisions and gotchas:
+
+- Reporting never shells out. `CodeGuard.Cli.Support.ValidationProvenanceGatherer` gathers the
+  values and passes a `CodeGuard.Reporting.Provenance.ValidationProvenance` into the JSON and SARIF
+  reporter constructors. Repository access and environment lookup are injected (`IGitCommandRunner`,
+  an env lookup function) so precedence is unit-tested.
+- Precedence is per field: a CI variable wins, and the repository fills in what CI does not provide.
+  GitHub uses `GITHUB_HEAD_REF` before `GITHUB_REF_NAME`, so a PR reports its source branch rather
+  than `N/merge`. `GITHUB_SHA` on a PR is the merge commit, not the PR head.
+- Remotes are always normalised by `RepositoryUrlNormalizer`, including CI-provided URLs, because
+  Azure and GitLab can embed credentials. No raw remote reaches a report.
+- SARIF `versionControlProvenance` requires `repositoryUri`, so a commit with no known remote is not
+  written there. The commit still appears in the JSON output.
+- The process helper is `GitRuleSourceSync.RunCore`, now `internal`, so provenance and rule-cache
+  sync share one process runner. A missing git binary or a non-repository directory yields nulls and
+  never fails validation.
+
 ## The 11 starter rules
 
 All under `rules/`, all illustrative (`Contoso.*` namespace, `illustrative: true`), matching the

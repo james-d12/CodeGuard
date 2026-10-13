@@ -50,7 +50,13 @@ object has `additionalProperties: false`, so a consumer can rely on the set of k
     }
   ],
   "evaluationErrors": [],
-  "analysisWarnings": []
+  "analysisWarnings": [],
+  "repository": "https://github.com/acme/app",
+  "commit": "9f1c2e4b7a0d3c5e6f8a1b2c3d4e5f6a7b8c9d0e",
+  "branch": "main",
+  "ruleSources": [
+    { "kind": "git", "location": "https://github.com/acme/codeguard-rules", "commit": "8f31c7a0e1d2c3b4a5f6e7d8c9b0a1f2e3d4c5b6" }
+  ]
 }
 ```
 
@@ -121,6 +127,22 @@ The earlier output was the internal `ValidationResult` serialised directly. Cons
 
 ## Not yet in the contract
 
-Planned by the roadmap but not part of v1: `rulesVersion`, `repository`, `commit`, `branch`, a
-`timestamp` separate from `evaluatedAtUtc`, and per-run size metrics such as projects and types
-analysed. These need the run context to be passed into the reporter.
+Planned by the roadmap but not part of v1: `rulesVersion`, a `timestamp` separate from
+`evaluatedAtUtc`, and per-run size metrics such as projects and types analysed. These need the run
+context to be passed into the reporter.
+
+## Provenance (optional fields)
+
+These were added to v1 as optional fields, so `schemaVersion` stays `1.0`. They are omitted when
+unknown, and omitted entirely when the caller supplies no provenance (for example a library caller).
+
+| Field | Type | Meaning |
+|---|---|---|
+| `repository` | string | Normalised remote URL of the analysed repository. Userinfo (`user:token@`), query and fragment are removed, and a trailing `.git` is dropped. scp-style remotes become `ssh://host/path`. |
+| `commit` | string | Commit SHA of the analysed checkout. |
+| `branch` | string | Branch of the analysed checkout. Omitted for a detached HEAD outside CI. |
+| `ruleSources` | array | One entry per rules location the run used: `kind` (`git` or `directory`), `location` (git URL with credentials removed, or a directory path), and `commit` (HEAD of the rules cache, git only). |
+
+Values come from the CI environment when a known variable is set (GitHub Actions, GitLab CI, Azure
+Pipelines), and otherwise from `git` in the repository root, field by field. Rule-source `commit`
+is read from the rules cache clone, so it identifies the exact rules used.

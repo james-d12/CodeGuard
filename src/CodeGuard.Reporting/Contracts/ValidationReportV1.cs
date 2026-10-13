@@ -14,7 +14,11 @@ public sealed record ValidationReportV1(
     ValidationReportMetricsV1 Metrics,
     IReadOnlyList<ViolationV1> Violations,
     IReadOnlyList<EvaluationErrorV1> EvaluationErrors,
-    IReadOnlyList<AnalysisWarningV1> AnalysisWarnings);
+    IReadOnlyList<AnalysisWarningV1> AnalysisWarnings,
+    string? Repository = null,
+    string? Commit = null,
+    string? Branch = null,
+    IReadOnlyList<RuleSetSourceV1>? RuleSources = null);
 
 public sealed record ValidationReportMetricsV1(
     int RulesEvaluated,
@@ -52,3 +56,5 @@ public sealed record AnalysisWarningV1(
     string Message,
     string? Project,
     string? FilePath);
+
+public sealed record RuleSetSourceV1(string Kind, string Location, string? Commit);

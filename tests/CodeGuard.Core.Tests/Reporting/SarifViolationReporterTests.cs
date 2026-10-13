@@ -1,5 +1,6 @@
 using System.Text.Json;
 using CodeGuard.Core.Results;
+using CodeGuard.Reporting.Provenance;
 using CodeGuard.Reporting.Sarif;
 using CodeGuard.RuleModel.Rules;
 
@@ -7,6 +8,70 @@ namespace CodeGuard.Core.Tests.Reporting;
 
 public class SarifViolationReporterTests
 {
+    private static ValidationResult EmptyPassingResult() => new(
+        ValidationStatus.Passed, RulesEvaluated: 0, RulesPassed: 0, RulesFailed: 0, RulesErrored: 0,
+        Violations: [], EvaluationErrors: [], EvaluatedAtUtc: DateTimeOffset.UtcNow);
+
+    [Fact]
+    public async Task WriteAsync_WithProvenance_WritesVersionControlDetailsAndRuleSources()
+    {
+        var provenance = new ValidationProvenance(
+            Repository: "https://github.com/acme/app",
+            Commit: "abc123",
+            Branch: "main",
+            RuleSources: [new RuleSetSource("git", "https://rules.example.com/acme/rules", "rules-sha")]);
+
+        var writer = new StringWriter();
+        await new SarifViolationReporter(provenance, "1.2.3").WriteAsync(EmptyPassingResult(), writer);
+
+        using var document = JsonDocument.Parse(writer.ToString());
+        var run = document.RootElement.GetProperty("runs")[0];
+
+        var driver = run.GetProperty("tool").GetProperty("driver");
+        Assert.Equal("1.2.3", driver.GetProperty("version").GetString());
+
+        var vcs = run.GetProperty("versionControlProvenance")[0];
+        Assert.Equal("https://github.com/acme/app", vcs.GetProperty("repositoryUri").GetString());
+        Assert.Equal("abc123", vcs.GetProperty("revisionId").GetString());
+        Assert.Equal("main", vcs.GetProperty("branch").GetString());
+
+        var ruleSource = run.GetProperty("properties").GetProperty("ruleSources")[0];
+        Assert.Equal("git", ruleSource.GetProperty("kind").GetString());
+        Assert.Equal("https://rules.example.com/acme/rules", ruleSource.GetProperty("location").GetString());
+        Assert.Equal("rules-sha", ruleSource.GetProperty("commit").GetString());
+    }
+
+    [Fact]
+    public async Task WriteAsync_WithoutProvenance_OmitsVersionControlDetails()
+    {
+        var writer = new StringWriter();
+        await new SarifViolationReporter().WriteAsync(EmptyPassingResult(), writer);
+
+        using var document = JsonDocument.Parse(writer.ToString());
+        var run = document.RootElement.GetProperty("runs")[0];
+
+        Assert.False(run.TryGetProperty("versionControlProvenance", out _));
+        Assert.False(run.TryGetProperty("properties", out _));
+        Assert.False(string.IsNullOrEmpty(run.GetProperty("tool").GetProperty("driver").GetProperty("version").GetString()));
+    }
+
+    [Fact]
+    public async Task WriteAsync_WithoutRepositoryUri_OmitsVersionControlDetailsButKeepsRuleSources()
+    {
+        var provenance = new ValidationProvenance(
+            Repository: null, Commit: "abc123", Branch: null,
+            RuleSources: [new RuleSetSource("directory", "/repo/rules", null)]);
+
+        var writer = new StringWriter();
+        await new SarifViolationReporter(provenance, "1.2.3").WriteAsync(EmptyPassingResult(), writer);
+
+        using var document = JsonDocument.Parse(writer.ToString());
+        var run = document.RootElement.GetProperty("runs")[0];
+
+        Assert.False(run.TryGetProperty("versionControlProvenance", out _));
+        Assert.Equal("/repo/rules", run.GetProperty("properties").GetProperty("ruleSources")[0].GetProperty("location").GetString());
+    }
+
     [Fact]
     public async Task WriteAsync_ProducesValidSarifLog()
     {
