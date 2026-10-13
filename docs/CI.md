@@ -32,7 +32,7 @@ starting point. Two details matter:
 | `--format` | Use |
 |---|---|
 | `console` (default) | Human-readable output on stdout, for build logs |
-| `json` | Structured results for scripts and other tools |
+| `json` | Structured results for scripts and other tools (versioned contract, see [RESULT_CONTRACT.md](architecture/RESULT_CONTRACT.md)) |
 | `sarif` | SARIF 2.1.0 for code-scanning platforms |
 | `html` | A standalone report page for humans |
 
