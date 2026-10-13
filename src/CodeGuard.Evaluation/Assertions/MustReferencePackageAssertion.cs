@@ -16,6 +16,6 @@ public sealed class MustReferencePackageAssertion(string packageIdPattern) : IAs
 
         return project.PackageReferences.Any(p => GlobMatcher.IsMatch(p.Id, packageIdPattern))
             ? AssertionOutcome.Success()
-            : AssertionOutcome.Failure($"Project '{project.Name}' must reference package matching '{packageIdPattern}'.");
+            : AssertionOutcome.Failure($"Project '{project.Name}' must reference package matching '{packageIdPattern}'.", packageIdPattern, CandidateDescriptor.ListOrNone(project.PackageReferences.Select(p => p.Id)), [project.Name]);
     }
 }

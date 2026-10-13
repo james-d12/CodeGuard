@@ -16,6 +16,6 @@ public sealed class MustInheritFromAssertion(string baseTypePattern) : IAssertio
 
         return type.BaseType is not null && GlobMatcher.IsMatch(type.BaseType, baseTypePattern)
             ? AssertionOutcome.Success()
-            : AssertionOutcome.Failure($"'{type.FullName}' must inherit from '{baseTypePattern}'.");
+            : AssertionOutcome.Failure($"'{type.FullName}' must inherit from '{baseTypePattern}'.", baseTypePattern, type.BaseType ?? "(none)", [type.FullName]);
     }
 }

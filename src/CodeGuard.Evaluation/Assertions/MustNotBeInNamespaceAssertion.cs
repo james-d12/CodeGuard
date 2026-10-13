@@ -15,7 +15,7 @@ public sealed class MustNotBeInNamespaceAssertion(string namespacePattern) : IAs
         }
 
         return GlobMatcher.IsMatch(type.Namespace, namespacePattern)
-            ? AssertionOutcome.Failure($"'{type.FullName}' must not be in a namespace matching '{namespacePattern}'.")
+            ? AssertionOutcome.Failure($"'{type.FullName}' must not be in a namespace matching '{namespacePattern}'.", $"namespace not matching '{namespacePattern}'", type.Namespace, [type.FullName])
             : AssertionOutcome.Success();
     }
 }

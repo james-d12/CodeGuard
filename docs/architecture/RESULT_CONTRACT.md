@@ -60,14 +60,32 @@ object has `additionalProperties: false`, so a consumer can rely on the set of k
 }
 ```
 
-Optional fields (`file`, `line`, `column`, `endLine`, `endColumn`, `metadata`, `symbol`, `project`,
-`remediation`, and the optional fields of `evaluationErrors` and `analysisWarnings`) are omitted when
-unknown, not written as `null`.
+Optional fields (`file`, `line`, `column`, `endLine`, `endColumn`, `metadata`, `expected`, `actual`,
+`evidence`, `symbol`, `project`, `remediation`, and the optional fields of `evaluationErrors` and
+`analysisWarnings`) are omitted when unknown, not written as `null`.
 
 Per violation, `endLine` and `endColumn` give the end of the source span when the producer knows it
 (currently Roslyn-backed rules). `endColumn` is 1-based and exclusive, i.e. the column just past the last
 character, matching SARIF `region.endColumn`. `metadata` is an optional string-to-string bag for
 producer-specific details; no built-in rule populates it yet.
+
+Per violation, `expected`, `actual` and `evidence` are optional structured evidence (issue #69), so an
+agent can act on a failure without parsing `message`. They are present only when the failing assertion
+has a natural value for them, and `message` is unchanged either way:
+
+- `expected` (string): what the rule required, such as the required base type pattern or name regex.
+- `actual` (string): what was found instead, such as the actual base type or name. `(none)` when a
+  required member or relationship is absent.
+- `evidence` (array of strings): the offending references that caused the failure, such as type
+  full names, dependency names, file paths or project names. For quantifiers (`must_all_match`,
+  `must_any_match`, `must_none_match`), each entry is qualified by the match it came from
+  (`<match>: <item>`).
+
+`evidence` is capped at 50 entries. When a failure has more, the list holds the first 50 followed by a
+final entry `...and N more`, where N is the number omitted. The cap also bounds the evidence-like parts of
+`actual` for list-valued assertions. `expected` and `actual` are not otherwise limited.
+
+The fields are additive; `schemaVersion` stays `1.0`.
 
 ## Top-level fields
 

@@ -14,6 +14,6 @@ public sealed class MustExistAssertion(JsonObject selectorTemplate, Func<JsonObj
         var selector = selectorFactory(SelectorTemplateResolver.Resolve(selectorTemplate, candidate));
         return selector.SelectCandidates(model).Any()
             ? AssertionOutcome.Success()
-            : AssertionOutcome.Failure($"Expected at least one match for a '{selector.Kind}' selector, but found none.");
+            : AssertionOutcome.Failure($"Expected at least one match for a '{selector.Kind}' selector, but found none.", "at least one match", "0 matches", null);
     }
 }

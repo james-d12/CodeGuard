@@ -16,6 +16,6 @@ public sealed class MustHaveFieldAssertion(string namePattern) : IAssertion
 
         return type.Fields.Any(f => GlobMatcher.IsMatch(f.Name, namePattern))
             ? AssertionOutcome.Success()
-            : AssertionOutcome.Failure($"'{type.FullName}' must have a field matching '{namePattern}'.");
+            : AssertionOutcome.Failure($"'{type.FullName}' must have a field matching '{namePattern}'.", namePattern, CandidateDescriptor.ListOrNone(type.Fields.Select(f => f.Name)), [type.FullName]);
     }
 }

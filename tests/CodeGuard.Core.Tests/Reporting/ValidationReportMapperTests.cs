@@ -148,4 +148,42 @@ public class ValidationReportMapperTests
         Assert.Equal(4, mapped.EndColumn);
         Assert.Equal("v", mapped.Metadata!["k"]);
     }
+
+    [Fact]
+    public void ToV1_MapsExpectedActualAndEvidence()
+    {
+        var violation = new Violation(
+            RuleId: "R-1", RuleVersion: 1, Severity: Severity.Error, Message: "msg",
+            File: "F.cs", Line: 1, Column: 2, Symbol: null, Project: null, Remediation: null,
+            DocumentationReferences: [],
+            Expected: "Contoso.Domain.Entity<*>", Actual: "Contoso.Other.Base",
+            Evidence: ["Contoso.Domain.Entities.LegacyThing"]);
+        var result = new ValidationResult(
+            Status: ValidationStatus.Failed, RulesEvaluated: 1, RulesPassed: 0, RulesFailed: 1, RulesErrored: 0,
+            Violations: [violation], EvaluationErrors: [], EvaluatedAtUtc: DateTimeOffset.UtcNow);
+
+        var mapped = ValidationReportMapper.ToV1(result, TimeSpan.Zero, "1.0.0").Violations.Single();
+
+        Assert.Equal("Contoso.Domain.Entity<*>", mapped.Expected);
+        Assert.Equal("Contoso.Other.Base", mapped.Actual);
+        Assert.Equal(["Contoso.Domain.Entities.LegacyThing"], mapped.Evidence);
+    }
+
+    [Fact]
+    public void ToV1_LeavesEvidenceFieldsNull_WhenNotProduced()
+    {
+        var violation = new Violation(
+            RuleId: "R-1", RuleVersion: 1, Severity: Severity.Error, Message: "msg",
+            File: null, Line: null, Column: null, Symbol: null, Project: null, Remediation: null,
+            DocumentationReferences: []);
+        var result = new ValidationResult(
+            Status: ValidationStatus.Failed, RulesEvaluated: 1, RulesPassed: 0, RulesFailed: 1, RulesErrored: 0,
+            Violations: [violation], EvaluationErrors: [], EvaluatedAtUtc: DateTimeOffset.UtcNow);
+
+        var mapped = ValidationReportMapper.ToV1(result, TimeSpan.Zero, "1.0.0").Violations.Single();
+
+        Assert.Null(mapped.Expected);
+        Assert.Null(mapped.Actual);
+        Assert.Null(mapped.Evidence);
+    }
 }

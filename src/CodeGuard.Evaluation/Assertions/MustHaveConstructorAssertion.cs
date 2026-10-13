@@ -17,6 +17,6 @@ public sealed class MustHaveConstructorAssertion(IReadOnlyList<Accessibility> al
         return type.Constructors.Any(c => allowedAccessibilities.Contains(c.Accessibility))
             ? AssertionOutcome.Success()
             : AssertionOutcome.Failure(
-                $"'{type.FullName}' must have a constructor with accessibility {string.Join(" or ", allowedAccessibilities)}.");
+                $"'{type.FullName}' must have a constructor with accessibility {string.Join(" or ", allowedAccessibilities)}.", string.Join(" or ", allowedAccessibilities), CandidateDescriptor.ListOrNone(type.Constructors.Select(c => c.Accessibility.ToString())), [type.FullName]);
     }
 }

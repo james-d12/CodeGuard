@@ -16,6 +16,6 @@ public sealed class MustBeInProjectAssertion(string projectNamePattern) : IAsser
 
         return GlobMatcher.IsMatch(type.ProjectName, projectNamePattern)
             ? AssertionOutcome.Success()
-            : AssertionOutcome.Failure($"'{type.FullName}' must be in a project matching '{projectNamePattern}'.");
+            : AssertionOutcome.Failure($"'{type.FullName}' must be in a project matching '{projectNamePattern}'.", projectNamePattern, type.ProjectName, [type.FullName]);
     }
 }

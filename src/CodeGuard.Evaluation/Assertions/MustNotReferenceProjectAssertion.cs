@@ -17,6 +17,6 @@ public sealed class MustNotReferenceProjectAssertion(string projectNamePattern) 
         var match = project.ProjectReferences.FirstOrDefault(reference => GlobMatcher.IsMatch(reference, projectNamePattern));
         return match is null
             ? AssertionOutcome.Success()
-            : AssertionOutcome.Failure($"Project '{project.Name}' must not reference project '{match}'.");
+            : AssertionOutcome.Failure($"Project '{project.Name}' must not reference project '{match}'.", $"no reference to project matching '{projectNamePattern}'", match, [match]);
     }
 }

@@ -211,6 +211,31 @@ public class ValidationReportSchemaTests
     }
 
     [Fact]
+    public async Task Output_WithExpectedActualAndEvidence_ConformsToSchema()
+    {
+        var result = new ValidationResult(
+            Status: ValidationStatus.Failed, RulesEvaluated: 1, RulesPassed: 0, RulesFailed: 1, RulesErrored: 0,
+            Violations:
+            [
+                new Violation(
+                    RuleId: "DDD-ENTITY-001", RuleVersion: 1, Severity: Severity.Error,
+                    Message: "msg", File: "LegacyThing.cs", Line: 5, Column: 14,
+                    Symbol: null, Project: null, Remediation: null, DocumentationReferences: [],
+                    Expected: "Contoso.Domain.Entity", Actual: "Contoso.Other.Base",
+                    Evidence: ["Contoso.Domain.Entities.LegacyThing"])
+            ],
+            EvaluationErrors: [],
+            EvaluatedAtUtc: DateTimeOffset.UtcNow);
+
+        var output = await WriteAsync(result, TimeSpan.Zero);
+
+        AssertConforms(output);
+        Assert.Contains("\"expected\": \"Contoso.Domain.Entity\"", output);
+        Assert.Contains("\"actual\": \"Contoso.Other.Base\"", output);
+        Assert.Contains("\"evidence\"", output);
+    }
+
+    [Fact]
     public async Task Output_WithEndPositionAndMetadata_ConformsToSchema()
     {
         var result = new ValidationResult(

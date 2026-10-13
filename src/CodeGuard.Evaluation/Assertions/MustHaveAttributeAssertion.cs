@@ -20,6 +20,6 @@ public sealed class MustHaveAttributeAssertion(string typePattern, string? argum
 
         return match is not null
             ? AssertionOutcome.Success()
-            : AssertionOutcome.Failure($"Candidate must have attribute matching '{typePattern}'{(argument is null ? "" : $" with argument '{argument}'")}.");
+            : AssertionOutcome.Failure($"Candidate must have attribute matching '{typePattern}'{(argument is null ? "" : $" with argument '{argument}'")}.", argument is null ? typePattern : $"{typePattern} with argument '{argument}'", CandidateDescriptor.ListOrNone(attributes.Select(a => a.TypeName)), [CandidateDescriptor.Describe(candidate)]);
     }
 }

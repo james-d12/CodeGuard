@@ -17,6 +17,6 @@ public sealed class MustMatchContentAssertion(string pattern) : IAssertion
         var content = file.Content ?? File.ReadAllText(file.Path);
         return AssertionRegex.IsMatch(content, pattern, Kind)
             ? AssertionOutcome.Success()
-            : AssertionOutcome.Failure($"File '{file.RelativePath}' must contain content matching '{pattern}'.");
+            : AssertionOutcome.Failure($"File '{file.RelativePath}' must contain content matching '{pattern}'.", pattern, null, [file.RelativePath]);
     }
 }

@@ -14,7 +14,7 @@ public sealed class MustHaveModifierAssertion(string modifier) : IAssertion
         {
             null => AssertionOutcome.Failure($"Modifier '{modifier}' is not applicable to this candidate."),
             true => AssertionOutcome.Success(),
-            false => AssertionOutcome.Failure($"Candidate must have modifier '{modifier}'.")
+            false => AssertionOutcome.Failure($"Candidate must have modifier '{modifier}'.", modifier, null, [CandidateDescriptor.Describe(candidate)])
         };
     }
 }

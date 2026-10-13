@@ -19,9 +19,22 @@ public sealed class MustNotDependOnAssertion(string forbiddenTypePattern) : IAss
             .Select(type => type.FullName)
             .ToList();
 
-        return offendingTypes.Count == 0
-            ? AssertionOutcome.Success()
-            : AssertionOutcome.Failure(
-                $"Project '{project.Name}' must not depend on '{forbiddenTypePattern}' (via: {string.Join(", ", offendingTypes)}).");
+        if (offendingTypes.Count == 0)
+        {
+            return AssertionOutcome.Success();
+        }
+
+        var matchedNames = project.Types
+            .SelectMany(DependencyTraversal.ReferencedTypeNames)
+            .Where(name => GlobMatcher.IsMatch(name, forbiddenTypePattern))
+            .Distinct()
+            .OrderBy(name => name, StringComparer.Ordinal)
+            .ToList();
+
+        return AssertionOutcome.Failure(
+            $"Project '{project.Name}' must not depend on '{forbiddenTypePattern}' (via: {string.Join(", ", offendingTypes)}).",
+            $"no dependency on '{forbiddenTypePattern}'",
+            string.Join(", ", CandidateDescriptor.CapEvidence(matchedNames)),
+            CandidateDescriptor.CapEvidence(offendingTypes));
     }
 }

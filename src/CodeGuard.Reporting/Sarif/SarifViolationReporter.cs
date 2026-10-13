@@ -144,6 +144,24 @@ public sealed class SarifViolationReporter : IViolationReporter
             }
         }
 
+        // Structured evidence uses the reserved keys "expected"/"actual"/"evidence". A producer-supplied
+        // Metadata key with the same name takes precedence, so existing metadata is never overwritten.
+        var metadataKeys = violation.Metadata?.Keys.ToHashSet(StringComparer.Ordinal) ?? [];
+        if (violation.Expected is not null && !metadataKeys.Contains("expected"))
+        {
+            result.SetProperty("expected", violation.Expected);
+        }
+
+        if (violation.Actual is not null && !metadataKeys.Contains("actual"))
+        {
+            result.SetProperty("actual", violation.Actual);
+        }
+
+        if (violation.Evidence is { Count: > 0 } evidence && !metadataKeys.Contains("evidence"))
+        {
+            result.SetProperty("evidence", evidence.ToArray());
+        }
+
         return result;
     }
 

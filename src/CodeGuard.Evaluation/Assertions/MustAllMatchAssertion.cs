@@ -25,16 +25,46 @@ public sealed class MustAllMatchAssertion(
     public AssertionOutcome Evaluate(object candidate, RepositoryModel model)
     {
         var selector = selectorFactory(SelectorTemplateResolver.Resolve(selectorTemplate, candidate));
-        var failures = selector.SelectCandidates(model)
-            .SelectMany(match => assertions
+        var failedMatches = selector.SelectCandidates(model)
+            .Select(match => (Match: match, Failures: assertions
                 .Select(assertion => assertion.Evaluate(match, model))
                 .Where(outcome => !outcome.Passed)
-                .Select(outcome => $"{CandidateDescriptor.Describe(match)}: {outcome.Message}"))
+                .ToList()))
+            .Where(entry => entry.Failures.Count > 0)
             .ToList();
 
-        return failures.Count == 0
-            ? AssertionOutcome.Success()
-            : AssertionOutcome.Failure(
-                $"Not every match for a '{selector.Kind}' selector satisfied every nested assertion: {string.Join("; ", failures)}");
+        if (failedMatches.Count == 0)
+        {
+            return AssertionOutcome.Success();
+        }
+
+        var failures = failedMatches
+            .SelectMany(entry => entry.Failures.Select(outcome => $"{CandidateDescriptor.Describe(entry.Match)}: {outcome.Message}"))
+            .ToList();
+
+        // Evidence is per failing match: the match's description, qualified by each nested outcome's
+        // own evidence when it has any, so the offending references stay traceable to their match.
+        var evidence = new List<string>();
+        foreach (var entry in failedMatches)
+        {
+            var description = CandidateDescriptor.Describe(entry.Match);
+            var nested = entry.Failures.SelectMany(outcome => outcome.Evidence ?? []).ToList();
+            if (nested.Count == 0)
+            {
+                evidence.Add(description);
+            }
+            else
+            {
+                evidence.AddRange(nested.Select(item => $"{description}: {item}"));
+            }
+        }
+
+        var nestedFailures = failedMatches.SelectMany(entry => entry.Failures).ToList();
+
+        return AssertionOutcome.Failure(
+            $"Not every match for a '{selector.Kind}' selector satisfied every nested assertion: {string.Join("; ", failures)}",
+            CandidateDescriptor.CommonValue(nestedFailures.Select(outcome => outcome.Expected)),
+            $"{failedMatches.Count} match(es) failed a nested assertion",
+            CandidateDescriptor.CapEvidence(evidence));
     }
 }

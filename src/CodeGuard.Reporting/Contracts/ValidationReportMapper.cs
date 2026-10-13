@@ -94,7 +94,10 @@ public static class ValidationReportMapper
         DocumentationReferences: v.DocumentationReferences,
         EndLine: v.EndLine,
         EndColumn: v.EndColumn,
-        Metadata: v.Metadata);
+        Metadata: v.Metadata,
+        Expected: v.Expected,
+        Actual: v.Actual,
+        Evidence: v.Evidence);
 
     private static SeverityCountsV1 CountBySeverity(IReadOnlyList<Violation> violations)
     {

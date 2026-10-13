@@ -17,11 +17,11 @@ public sealed class MustMatchArgumentAssertion(int index, string pattern) : IAss
         var argument = callSite.Arguments.FirstOrDefault(a => a.Index == index);
         if (argument is null || !argument.IsLiteral || argument.LiteralValue is null)
         {
-            return AssertionOutcome.Failure($"Call site '{callSite.InvokedMember}' must have a literal argument at index {index}.");
+            return AssertionOutcome.Failure($"Call site '{callSite.InvokedMember}' must have a literal argument at index {index}.", $"literal argument at index {index}", argument is null ? "(none)" : "(non-literal)", [callSite.InvokedMember]);
         }
 
         return AssertionRegex.IsMatch(argument.LiteralValue, pattern, Kind)
             ? AssertionOutcome.Success()
-            : AssertionOutcome.Failure($"Argument {index} of call site '{callSite.InvokedMember}' must match '{pattern}' (found '{argument.LiteralValue}').");
+            : AssertionOutcome.Failure($"Argument {index} of call site '{callSite.InvokedMember}' must match '{pattern}' (found '{argument.LiteralValue}').", pattern, argument.LiteralValue, [callSite.InvokedMember]);
     }
 }

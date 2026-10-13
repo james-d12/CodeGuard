@@ -145,6 +145,21 @@ public sealed class HtmlViolationReporter : IViolationReporter
                 sb.Append($"<div class=\"remediation\">remediation: {Esc(violation.Remediation.Trim())}</div>");
             }
 
+            if (violation.Expected is not null)
+            {
+                sb.Append($"<div class=\"evidence\">expected: {Esc(violation.Expected)}</div>");
+            }
+
+            if (violation.Actual is not null)
+            {
+                sb.Append($"<div class=\"evidence\">actual: {Esc(violation.Actual)}</div>");
+            }
+
+            if (violation.Evidence is { Count: > 0 } evidence)
+            {
+                sb.Append($"<div class=\"evidence\">evidence: {Esc(string.Join(", ", evidence))}</div>");
+            }
+
             sb.Append("</td>\n");
             sb.Append($"<td>{Esc(location)}</td>\n");
             sb.Append($"<td>{Esc(project)}</td>\n");

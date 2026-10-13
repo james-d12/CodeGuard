@@ -124,6 +124,56 @@ public class RuleEvaluatorTests
         return new RepositoryModel(".", [solution], [], [], [], [], [], [], [], []);
     }
 
+    [Fact]
+    public void Evaluate_CopiesExpectedActualAndEvidenceFromAssertionOutcome_ToViolation()
+    {
+        var model = BuildModel(CreateEntityType("LegacyThing", "Contoso.Other.Base"));
+
+        var result = new RuleEvaluator().Evaluate([CreateEntityInheritsRule()], model);
+
+        var violation = Assert.Single(result.Violations);
+        Assert.Equal("Contoso.Domain.Entity<TId>", violation.Expected);
+        Assert.Equal("Contoso.Other.Base", violation.Actual);
+        Assert.Equal(["Contoso.Domain.Entities.LegacyThing"], violation.Evidence);
+    }
+
+    [Fact]
+    public void Evaluate_LeavesEvidenceNull_WhenAssertionProducesNone()
+    {
+        var model = BuildModel(CreateEntityType("Order", "Contoso.Domain.Entity<int>"));
+        var rule = new RuleDefinition
+        {
+            Id = "TEST-001",
+            Name = "Always fails without evidence",
+            Severity = Severity.Error,
+            Target = new ClassInNamespaceSelector("Contoso.Domain.Entities"),
+            Assertions = [new AlwaysFailsAssertion()]
+        };
+
+        var result = new RuleEvaluator().Evaluate([rule], model);
+
+        var violation = Assert.Single(result.Violations);
+        Assert.Null(violation.Expected);
+        Assert.Null(violation.Actual);
+        Assert.Null(violation.Evidence);
+    }
+
+    [Fact]
+    public void Evaluate_AnalyzerRule_CopiesExpectedActualAndEvidence()
+    {
+        var model = new RepositoryModel(".", [], [], [], [], [], [], [], [], []);
+        var analyzer = new StubAnalyzer("stub-analyzer", new AnalyzerViolation(
+            "bad shape", "Foo.cs", 3, 1, Expected: "shape A", Actual: "shape B", Evidence: ["Foo.Bar"]));
+        var rule = new RuleDefinition { Id = "ANALYZER-001", Name = "Analyzer rule", Analyzer = analyzer };
+
+        var result = new RuleEvaluator().Evaluate([rule], model);
+
+        var violation = Assert.Single(result.Violations);
+        Assert.Equal("shape A", violation.Expected);
+        Assert.Equal("shape B", violation.Actual);
+        Assert.Equal(["Foo.Bar"], violation.Evidence);
+    }
+
     private sealed class AlwaysFailsAssertion : IAssertion
     {
         public string Kind => "always_fails";

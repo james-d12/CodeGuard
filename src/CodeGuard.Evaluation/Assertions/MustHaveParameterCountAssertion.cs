@@ -23,12 +23,12 @@ public sealed class MustHaveParameterCountAssertion(int? min, int? max) : IAsser
 
         if (min is not null && count < min)
         {
-            return AssertionOutcome.Failure($"Must have at least {min} parameter(s), found {count}.");
+            return AssertionOutcome.Failure($"Must have at least {min} parameter(s), found {count}.", $"at least {min} parameter(s)", count.ToString(), null);
         }
 
         if (max is not null && count > max)
         {
-            return AssertionOutcome.Failure($"Must have at most {max} parameter(s), found {count}.");
+            return AssertionOutcome.Failure($"Must have at most {max} parameter(s), found {count}.", $"at most {max} parameter(s)", count.ToString(), null);
         }
 
         return AssertionOutcome.Success();

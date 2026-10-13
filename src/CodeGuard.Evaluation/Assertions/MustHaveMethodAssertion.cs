@@ -16,6 +16,6 @@ public sealed class MustHaveMethodAssertion(string namePattern) : IAssertion
 
         return type.Methods.Any(m => GlobMatcher.IsMatch(m.Name, namePattern))
             ? AssertionOutcome.Success()
-            : AssertionOutcome.Failure($"'{type.FullName}' must have a method matching '{namePattern}'.");
+            : AssertionOutcome.Failure($"'{type.FullName}' must have a method matching '{namePattern}'.", namePattern, CandidateDescriptor.ListOrNone(type.Methods.Select(m => m.Name)), [type.FullName]);
     }
 }

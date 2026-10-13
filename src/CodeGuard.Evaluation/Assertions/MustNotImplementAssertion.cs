@@ -17,6 +17,6 @@ public sealed class MustNotImplementAssertion(string interfacePattern) : IAssert
         var match = type.Interfaces.FirstOrDefault(i => GlobMatcher.IsMatch(i, interfacePattern));
         return match is null
             ? AssertionOutcome.Success()
-            : AssertionOutcome.Failure($"'{type.FullName}' must not implement '{match}'.");
+            : AssertionOutcome.Failure($"'{type.FullName}' must not implement '{match}'.", $"no interface matching '{interfacePattern}'", match, [type.FullName]);
     }
 }
