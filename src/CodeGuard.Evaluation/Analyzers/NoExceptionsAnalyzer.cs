@@ -27,5 +27,7 @@ public sealed class NoExceptionsAnalyzer(string namespacePattern, bool allowGuar
                     : $"Throw in {t.ContainingType}.{t.ContainingMethod} is not allowed in this scope.",
                 FilePath: t.FilePath,
                 Line: t.Line,
+                EndLine: t.EndLine,
+                EndColumn: t.EndColumn,
                 ProjectName: t.ProjectName));
 }

@@ -7,7 +7,9 @@ public sealed record SwitchModel(
     IReadOnlyList<string> ArmLabels,
     bool HasDefaultOrDiscardArm,
     string FilePath,
-    int Line);
+    int Line,
+    int? EndLine = null,
+    int? EndColumn = null);
 
 public sealed record ThrowSiteModel(
     string ContainingMethod,
@@ -16,7 +18,9 @@ public sealed record ThrowSiteModel(
     string? ExceptionTypeName,
     bool IsFirstStatementInMethod,
     string FilePath,
-    int Line);
+    int Line,
+    int? EndLine = null,
+    int? EndColumn = null);
 
 public sealed record MutationSiteModel(
     string ContainingMethod,
@@ -25,7 +29,9 @@ public sealed record MutationSiteModel(
     string ProjectName,
     string FilePath,
     int Line,
-    string ProjectPath = "");
+    string ProjectPath = "",
+    int? EndLine = null,
+    int? EndColumn = null);
 
 public sealed record TryBlockModel(
     string ContainingMethod,
@@ -34,7 +40,9 @@ public sealed record TryBlockModel(
     int CatchClauseCount,
     IReadOnlyList<string> CatchTypeNames,
     string FilePath,
-    int Line);
+    int Line,
+    int? EndLine = null,
+    int? EndColumn = null);
 
 public sealed record MethodBodyShapeModel(
     string ContainingMethod,
@@ -44,4 +52,6 @@ public sealed record MethodBodyShapeModel(
     bool IsSingleBaseCallDelegation,
     string FilePath,
     int Line,
-    string ProjectPath = "");
+    string ProjectPath = "",
+    int? EndLine = null,
+    int? EndColumn = null);

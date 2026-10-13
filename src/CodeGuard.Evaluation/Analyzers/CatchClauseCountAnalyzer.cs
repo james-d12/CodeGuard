@@ -25,5 +25,7 @@ public sealed class CatchClauseCountAnalyzer(string namespacePattern, int minCat
                 Message: $"Try block in {t.ContainingType}.{t.ContainingMethod} has {t.CatchClauseCount} catch clauses; try blocks in this scope must have between {minCatches} and {maxCatches}.",
                 FilePath: t.FilePath,
                 Line: t.Line,
+                EndLine: t.EndLine,
+                EndColumn: t.EndColumn,
                 ProjectName: t.ProjectName));
 }

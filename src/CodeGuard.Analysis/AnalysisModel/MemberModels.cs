@@ -11,7 +11,9 @@ public sealed record MethodModel(
     string ProjectName,
     string FilePath,
     int Line,
-    int Column);
+    int Column,
+    int? EndLine = null,
+    int? EndColumn = null);
 
 public sealed record PropertyModel(
     string Name,
@@ -28,7 +30,9 @@ public sealed record PropertyModel(
     string ProjectName,
     string FilePath,
     int Line,
-    int Column);
+    int Column,
+    int? EndLine = null,
+    int? EndColumn = null);
 
 public sealed record ConstructorModel(
     Accessibility Accessibility,
@@ -38,7 +42,9 @@ public sealed record ConstructorModel(
     string ProjectName,
     string FilePath,
     int Line,
-    int Column);
+    int Column,
+    int? EndLine = null,
+    int? EndColumn = null);
 
 public sealed record FieldModel(
     string Name,
@@ -51,7 +57,9 @@ public sealed record FieldModel(
     string FilePath,
     int Line,
     int Column,
-    string? ConstantValue = null);
+    string? ConstantValue = null,
+    int? EndLine = null,
+    int? EndColumn = null);
 
 public sealed record ParameterModel(
     string Name,

@@ -165,7 +165,9 @@ public sealed class RuleEvaluator(ILogger<RuleEvaluator>? logger = null) : IRule
                 analyzerViolation.Symbol,
                 analyzerViolation.ProjectName,
                 rule.Remediation,
-                rule.Documentation));
+                rule.Documentation,
+                EndLine: analyzerViolation.EndLine,
+                EndColumn: analyzerViolation.EndColumn));
         }
     }
 
@@ -200,7 +202,7 @@ public sealed class RuleEvaluator(ILogger<RuleEvaluator>? logger = null) : IRule
 
     private static Violation CreateViolation(RuleDefinition rule, object candidate, AssertionOutcome outcome)
     {
-        var (file, line, column, symbol, project) = ExtractLocation(candidate);
+        var (file, line, column, endLine, endColumn, symbol, project) = ExtractLocation(candidate);
 
         return new Violation(
             rule.Id,
@@ -213,21 +215,23 @@ public sealed class RuleEvaluator(ILogger<RuleEvaluator>? logger = null) : IRule
             symbol,
             project,
             rule.Remediation,
-            rule.Documentation);
+            rule.Documentation,
+            EndLine: endLine,
+            EndColumn: endColumn);
     }
 
-    private static (string? File, int? Line, int? Column, string? Symbol, string? Project) ExtractLocation(object candidate) =>
+    private static (string? File, int? Line, int? Column, int? EndLine, int? EndColumn, string? Symbol, string? Project) ExtractLocation(object candidate) =>
         candidate switch
         {
-            TypeModel type => (type.FilePath, type.Line, type.Column, type.FullName, type.ProjectName),
-            ProjectModel project => (project.Path, null, null, project.Name, project.Name),
-            FileModel file => (file.Path, null, null, file.RelativePath, null),
-            RepositoryModel repository => (repository.RootPath, null, null, null, null),
-            MethodModel method => (method.FilePath, method.Line, method.Column, $"{method.DeclaringType}.{method.Name}", method.ProjectName),
-            PropertyModel property => (property.FilePath, property.Line, property.Column, $"{property.DeclaringType}.{property.Name}", property.ProjectName),
-            ConstructorModel constructor => (constructor.FilePath, constructor.Line, constructor.Column, constructor.DeclaringType, constructor.ProjectName),
-            FieldModel field => (field.FilePath, field.Line, field.Column, $"{field.DeclaringType}.{field.Name}", field.ProjectName),
-            CallSiteModel callSite => (callSite.FilePath, callSite.Line, callSite.Column, callSite.InvokedMember, callSite.ProjectName),
-            _ => (null, null, null, null, null)
+            TypeModel type => (type.FilePath, type.Line, type.Column, type.EndLine, type.EndColumn, type.FullName, type.ProjectName),
+            ProjectModel project => (project.Path, null, null, null, null, project.Name, project.Name),
+            FileModel file => (file.Path, null, null, null, null, file.RelativePath, null),
+            RepositoryModel repository => (repository.RootPath, null, null, null, null, null, null),
+            MethodModel method => (method.FilePath, method.Line, method.Column, method.EndLine, method.EndColumn, $"{method.DeclaringType}.{method.Name}", method.ProjectName),
+            PropertyModel property => (property.FilePath, property.Line, property.Column, property.EndLine, property.EndColumn, $"{property.DeclaringType}.{property.Name}", property.ProjectName),
+            ConstructorModel constructor => (constructor.FilePath, constructor.Line, constructor.Column, constructor.EndLine, constructor.EndColumn, constructor.DeclaringType, constructor.ProjectName),
+            FieldModel field => (field.FilePath, field.Line, field.Column, field.EndLine, field.EndColumn, $"{field.DeclaringType}.{field.Name}", field.ProjectName),
+            CallSiteModel callSite => (callSite.FilePath, callSite.Line, callSite.Column, callSite.EndLine, callSite.EndColumn, callSite.InvokedMember, callSite.ProjectName),
+            _ => (null, null, null, null, null, null, null)
         };
 }

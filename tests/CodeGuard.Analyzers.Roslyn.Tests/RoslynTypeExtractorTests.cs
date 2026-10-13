@@ -419,4 +419,29 @@ public class RoslynTypeExtractorTests
         var name = method.Parameters.Single(p => p.Name == "name");
         Assert.False(name.HasDefaultValue);
     }
+
+    [Fact]
+    public void ExtractTypes_PopulatesEndPositionsFromSourceSpan()
+    {
+        var compilation = CompilationFactory.Create("""
+            namespace Contoso.Domain;
+            public class Order
+            {
+                public void Ship() { }
+            }
+            """);
+        var types = RoslynTypeExtractor.ExtractTypes(compilation, "Contoso.Domain");
+        var order = types.Single(t => t.FullName == "Contoso.Domain.Order");
+        var ship = order.Methods.Single(m => m.Name == "Ship");
+
+        // Type and method locations are their identifier tokens; End is the 1-based column just past the last character.
+        Assert.Equal(2, order.Line);
+        Assert.Equal(14, order.Column);
+        Assert.Equal(2, order.EndLine);
+        Assert.Equal(19, order.EndColumn);
+        Assert.Equal(4, ship.Line);
+        Assert.Equal(17, ship.Column);
+        Assert.Equal(4, ship.EndLine);
+        Assert.Equal(21, ship.EndColumn);
+    }
 }

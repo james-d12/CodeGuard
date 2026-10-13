@@ -22,4 +22,6 @@ public sealed record CallSiteModel(
     int Column,
     string? EnclosingComparisonOperator = null,
     string? EnclosingComparisonValue = null,
-    string ProjectPath = "");
+    string ProjectPath = "",
+    int? EndLine = null,
+    int? EndColumn = null);

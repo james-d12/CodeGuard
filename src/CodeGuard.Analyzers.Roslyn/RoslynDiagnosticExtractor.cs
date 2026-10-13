@@ -25,7 +25,9 @@ public static class RoslynDiagnosticExtractor
                     projectName,
                     lineSpan.Path,
                     lineSpan.StartLinePosition.Line + 1,
-                    lineSpan.StartLinePosition.Character + 1);
+                    lineSpan.StartLinePosition.Character + 1,
+                    lineSpan.EndLinePosition.Line + 1,
+                    lineSpan.EndLinePosition.Character + 1);
             })
             .ToList();
 }

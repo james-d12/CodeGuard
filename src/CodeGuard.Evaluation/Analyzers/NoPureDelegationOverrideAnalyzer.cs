@@ -36,6 +36,8 @@ public sealed class NoPureDelegationOverrideAnalyzer(string baseTypePattern) : I
                 Message: $"{m.ContainingType}.{m.ContainingMethod} is a pure delegation override of its base class; remove it instead of overriding.",
                 FilePath: m.FilePath,
                 Line: m.Line,
+                EndLine: m.EndLine,
+                EndColumn: m.EndColumn,
                 ProjectName: m.ProjectName));
     }
 }
