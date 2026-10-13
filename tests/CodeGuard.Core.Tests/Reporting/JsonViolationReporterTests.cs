@@ -133,4 +133,55 @@ public class JsonViolationReporterTests
         using var document = JsonDocument.Parse(output);
         Assert.Empty(document.RootElement.GetProperty("analysisWarnings").EnumerateArray());
     }
+
+    [Fact]
+    public async Task WriteAsync_IncludesEndPositionAndMetadata_WhenPresent()
+    {
+        var result = new ValidationResult(
+            Status: ValidationStatus.Failed, RulesEvaluated: 1, RulesPassed: 0, RulesFailed: 1, RulesErrored: 0,
+            Violations:
+            [
+                new Violation(
+                    RuleId: "DDD-ENTITY-001", RuleVersion: 1, Severity: Severity.Error, Message: "msg",
+                    File: "LegacyThing.cs", Line: 5, Column: 14, Symbol: null, Project: null, Remediation: null,
+                    DocumentationReferences: [], EndLine: 7, EndColumn: 2,
+                    Metadata: new Dictionary<string, string> { ["expectedBase"] = "Entity<TId>" })
+            ],
+            EvaluationErrors: [],
+            EvaluatedAtUtc: DateTimeOffset.UtcNow);
+
+        var writer = new StringWriter();
+        await new JsonViolationReporter().WriteAsync(result, writer);
+        using var document = JsonDocument.Parse(writer.ToString());
+        var violation = document.RootElement.GetProperty("violations")[0];
+
+        Assert.Equal(7, violation.GetProperty("endLine").GetInt32());
+        Assert.Equal(2, violation.GetProperty("endColumn").GetInt32());
+        Assert.Equal("Entity<TId>", violation.GetProperty("metadata").GetProperty("expectedBase").GetString());
+    }
+
+    [Fact]
+    public async Task WriteAsync_OmitsEndPositionAndMetadata_WhenAbsent()
+    {
+        var result = new ValidationResult(
+            Status: ValidationStatus.Failed, RulesEvaluated: 1, RulesPassed: 0, RulesFailed: 1, RulesErrored: 0,
+            Violations:
+            [
+                new Violation(
+                    RuleId: "DDD-ENTITY-001", RuleVersion: 1, Severity: Severity.Error, Message: "msg",
+                    File: "LegacyThing.cs", Line: 5, Column: 14, Symbol: null, Project: null, Remediation: null,
+                    DocumentationReferences: [])
+            ],
+            EvaluationErrors: [],
+            EvaluatedAtUtc: DateTimeOffset.UtcNow);
+
+        var writer = new StringWriter();
+        await new JsonViolationReporter().WriteAsync(result, writer);
+        using var document = JsonDocument.Parse(writer.ToString());
+        var violation = document.RootElement.GetProperty("violations")[0];
+
+        Assert.False(violation.TryGetProperty("endLine", out _));
+        Assert.False(violation.TryGetProperty("endColumn", out _));
+        Assert.False(violation.TryGetProperty("metadata", out _));
+    }
 }

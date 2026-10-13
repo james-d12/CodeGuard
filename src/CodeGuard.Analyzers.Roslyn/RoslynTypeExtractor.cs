@@ -69,7 +69,9 @@ public static class RoslynTypeExtractor
             FilePath: location?.SourceTree?.FilePath ?? string.Empty,
             Line: (lineSpan?.StartLinePosition.Line ?? -1) + 1,
             Column: (lineSpan?.StartLinePosition.Character ?? -1) + 1,
-            ProjectPath: projectPath);
+            ProjectPath: projectPath,
+            EndLine: lineSpan?.EndLinePosition.Line + 1,
+            EndColumn: lineSpan?.EndLinePosition.Character + 1);
     }
 
     private static TypeKind MapTypeKind(INamedTypeSymbol symbol) => symbol.TypeKind switch
@@ -131,19 +133,23 @@ public static class RoslynTypeExtractor
         _ => constant.Value?.ToString() ?? "null"
     };
 
-    private static (string FilePath, int Line, int Column) GetLocation(ISymbol symbol)
+    // End positions use the same 1-based convention as the start: Roslyn's EndLinePosition is the
+    // exclusive end of the span, so +1 yields the column just past the last character (SARIF endColumn semantics).
+    private static (string FilePath, int Line, int Column, int? EndLine, int? EndColumn) GetLocation(ISymbol symbol)
     {
         var location = symbol.Locations.FirstOrDefault(l => l.IsInSource);
         var lineSpan = location?.GetLineSpan();
         return (
             location?.SourceTree?.FilePath ?? string.Empty,
             (lineSpan?.StartLinePosition.Line ?? -1) + 1,
-            (lineSpan?.StartLinePosition.Character ?? -1) + 1);
+            (lineSpan?.StartLinePosition.Character ?? -1) + 1,
+            lineSpan?.EndLinePosition.Line + 1,
+            lineSpan?.EndLinePosition.Character + 1);
     }
 
     private static MethodModel ToMethodModel(IMethodSymbol method, string declaringType, string projectName)
     {
-        var (filePath, line, column) = GetLocation(method);
+        var (filePath, line, column, endLine, endColumn) = GetLocation(method);
         return new MethodModel(
             Name: method.Name,
             ReturnType: method.ReturnType.ToDisplayString(),
@@ -155,7 +161,9 @@ public static class RoslynTypeExtractor
             ProjectName: projectName,
             FilePath: filePath,
             Line: line,
-            Column: column);
+            Column: column,
+            EndLine: endLine,
+            EndColumn: endColumn);
     }
 
     private static MethodModifiers MapMethodModifiers(IMethodSymbol method)
@@ -171,7 +179,7 @@ public static class RoslynTypeExtractor
 
     private static PropertyModel ToPropertyModel(IPropertySymbol property, string declaringType, string projectName)
     {
-        var (filePath, line, column) = GetLocation(property);
+        var (filePath, line, column, endLine, endColumn) = GetLocation(property);
         return new PropertyModel(
             Name: property.Name,
             Type: property.Type.ToDisplayString(),
@@ -187,12 +195,14 @@ public static class RoslynTypeExtractor
             ProjectName: projectName,
             FilePath: filePath,
             Line: line,
-            Column: column);
+            Column: column,
+            EndLine: endLine,
+            EndColumn: endColumn);
     }
 
     private static ConstructorModel ToConstructorModel(IMethodSymbol constructor, string declaringType, string projectName)
     {
-        var (filePath, line, column) = GetLocation(constructor);
+        var (filePath, line, column, endLine, endColumn) = GetLocation(constructor);
         return new ConstructorModel(
             Accessibility: MapAccessibility(constructor.DeclaredAccessibility),
             Parameters: constructor.Parameters.Select(ToParameterModel).ToList(),
@@ -201,12 +211,14 @@ public static class RoslynTypeExtractor
             ProjectName: projectName,
             FilePath: filePath,
             Line: line,
-            Column: column);
+            Column: column,
+            EndLine: endLine,
+            EndColumn: endColumn);
     }
 
     private static FieldModel ToFieldModel(IFieldSymbol field, string declaringType, string projectName)
     {
-        var (filePath, line, column) = GetLocation(field);
+        var (filePath, line, column, endLine, endColumn) = GetLocation(field);
         return new FieldModel(
             Name: field.Name,
             Type: field.Type.ToDisplayString(),
@@ -218,6 +230,8 @@ public static class RoslynTypeExtractor
             FilePath: filePath,
             Line: line,
             Column: column,
+            EndLine: endLine,
+            EndColumn: endColumn,
             ConstantValue: field.HasConstantValue ? field.ConstantValue?.ToString() : null);
     }
 

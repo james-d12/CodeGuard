@@ -119,7 +119,7 @@ internal sealed class SyntaxFactWalker(SemanticModel semanticModel, string proje
             })
             .ToList();
 
-        var (containingMethod, containingType, filePath, line, column) = DescribeLocation(node);
+        var (containingMethod, containingType, filePath, line, column, endLine, endColumn) = DescribeLocation(node);
         var (comparisonOperator, comparisonValue) = kind == CallSiteKind.Invocation
             ? TryGetEnclosingComparison(node)
             : (null, null);
@@ -135,6 +135,8 @@ internal sealed class SyntaxFactWalker(SemanticModel semanticModel, string proje
             FilePath: filePath,
             Line: line,
             Column: column,
+            EndLine: endLine,
+            EndColumn: endColumn,
             EnclosingComparisonOperator: comparisonOperator,
             EnclosingComparisonValue: comparisonValue,
             ProjectPath: projectPath));
@@ -156,28 +158,28 @@ internal sealed class SyntaxFactWalker(SemanticModel semanticModel, string proje
 
     private void RecordSwitch(SyntaxNode node, IReadOnlyList<string> armLabels, bool hasDefaultOrDiscard)
     {
-        var (containingMethod, containingType, filePath, line, _) = DescribeLocation(node);
-        sink.AddSwitch(new SwitchModel(containingMethod, containingType, projectName, armLabels, hasDefaultOrDiscard, filePath, line));
+        var (containingMethod, containingType, filePath, line, _, endLine, endColumn) = DescribeLocation(node);
+        sink.AddSwitch(new SwitchModel(containingMethod, containingType, projectName, armLabels, hasDefaultOrDiscard, filePath, line, endLine, endColumn));
     }
 
     private void RecordThrowSite(SyntaxNode node, ExpressionSyntax? expression)
     {
         var exceptionTypeName = expression is not null ? semanticModel.GetTypeInfo(expression).Type?.ToDisplayString() : null;
         var isFirst = IsFirstStatementInEnclosingBlock(node);
-        var (containingMethod, containingType, filePath, line, _) = DescribeLocation(node);
-        sink.AddThrowSite(new ThrowSiteModel(containingMethod, containingType, projectName, exceptionTypeName, isFirst, filePath, line));
+        var (containingMethod, containingType, filePath, line, _, endLine, endColumn) = DescribeLocation(node);
+        sink.AddThrowSite(new ThrowSiteModel(containingMethod, containingType, projectName, exceptionTypeName, isFirst, filePath, line, endLine, endColumn));
     }
 
     private void RecordMutationSite(SyntaxNode node, string targetMemberName)
     {
-        var (containingMethod, containingType, filePath, line, _) = DescribeLocation(node);
-        sink.AddMutationSite(new MutationSiteModel(containingMethod, containingType, targetMemberName, projectName, filePath, line, projectPath));
+        var (containingMethod, containingType, filePath, line, _, endLine, endColumn) = DescribeLocation(node);
+        sink.AddMutationSite(new MutationSiteModel(containingMethod, containingType, targetMemberName, projectName, filePath, line, projectPath, endLine, endColumn));
     }
 
     private void RecordTryBlock(SyntaxNode node, int catchClauseCount, IReadOnlyList<string> catchTypeNames)
     {
-        var (containingMethod, containingType, filePath, line, _) = DescribeLocation(node);
-        sink.AddTryBlock(new TryBlockModel(containingMethod, containingType, projectName, catchClauseCount, catchTypeNames, filePath, line));
+        var (containingMethod, containingType, filePath, line, _, endLine, endColumn) = DescribeLocation(node);
+        sink.AddTryBlock(new TryBlockModel(containingMethod, containingType, projectName, catchClauseCount, catchTypeNames, filePath, line, endLine, endColumn));
     }
 
     private void RecordMethodBodyShape(MethodDeclarationSyntax node)
@@ -208,7 +210,8 @@ internal sealed class SyntaxFactWalker(SemanticModel semanticModel, string proje
 
         sink.AddMethodBodyShape(new MethodBodyShapeModel(
             node.Identifier.Text, containingType, projectName, statementCount, isSingleBaseCallDelegation,
-            location.SourceTree?.FilePath ?? string.Empty, lineSpan.StartLinePosition.Line + 1, projectPath));
+            location.SourceTree?.FilePath ?? string.Empty, lineSpan.StartLinePosition.Line + 1, projectPath,
+            lineSpan.EndLinePosition.Line + 1, lineSpan.EndLinePosition.Character + 1));
     }
 
     private static bool IsBaseDelegationStatement(StatementSyntax statement, string methodName) => statement switch
@@ -234,7 +237,7 @@ internal sealed class SyntaxFactWalker(SemanticModel semanticModel, string proje
         return statement?.Parent is not BlockSyntax block || block.Statements.FirstOrDefault() == statement;
     }
 
-    private (string ContainingMethod, string ContainingType, string FilePath, int Line, int Column) DescribeLocation(SyntaxNode node)
+    private (string ContainingMethod, string ContainingType, string FilePath, int Line, int Column, int? EndLine, int? EndColumn) DescribeLocation(SyntaxNode node)
     {
         var enclosingSymbol = semanticModel.GetEnclosingSymbol(node.SpanStart);
         var containingMethod = (enclosingSymbol as IMethodSymbol)?.Name ?? enclosingSymbol?.Name ?? "<unknown>";
@@ -248,7 +251,9 @@ internal sealed class SyntaxFactWalker(SemanticModel semanticModel, string proje
             containingType,
             location.SourceTree?.FilePath ?? string.Empty,
             lineSpan.StartLinePosition.Line + 1,
-            lineSpan.StartLinePosition.Character + 1);
+            lineSpan.StartLinePosition.Character + 1,
+            lineSpan.EndLinePosition.Line + 1,
+            lineSpan.EndLinePosition.Character + 1);
     }
 
     private static string DescribeLabel(SwitchLabelSyntax label) => label switch

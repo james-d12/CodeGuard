@@ -39,6 +39,8 @@ public sealed class CompanionTypeCardinalityAnalyzer(
                     Message: $"{markerType.FullName} has {matchingCompanions} type(s) named '{expectedCompanionName}'; expected exactly one.",
                     FilePath: markerType.FilePath,
                     Line: markerType.Line,
+                    EndLine: markerType.EndLine,
+                    EndColumn: markerType.EndColumn,
                     ProjectName: markerType.ProjectName);
             }
         }

@@ -32,10 +32,10 @@ public sealed class MemberOrderingAnalyzer : ICustomAnalyzer
         foreach (var type in types)
         {
             var members = type.Fields
-                .Select(f => new MemberEntry(RankOf("fields"), f.Line, f.FilePath, f.ProjectName, $"{type.FullName}.{f.Name}"))
-                .Concat(type.Constructors.Select(c => new MemberEntry(RankOf("constructors"), c.Line, c.FilePath, c.ProjectName, $"{type.FullName}..ctor")))
-                .Concat(type.Properties.Select(p => new MemberEntry(RankOf("properties"), p.Line, p.FilePath, p.ProjectName, $"{type.FullName}.{p.Name}")))
-                .Concat(type.Methods.Select(m => new MemberEntry(RankOf("methods"), m.Line, m.FilePath, m.ProjectName, $"{type.FullName}.{m.Name}")))
+                .Select(f => new MemberEntry(RankOf("fields"), f.Line, f.FilePath, f.ProjectName, $"{type.FullName}.{f.Name}", f.EndLine, f.EndColumn))
+                .Concat(type.Constructors.Select(c => new MemberEntry(RankOf("constructors"), c.Line, c.FilePath, c.ProjectName, $"{type.FullName}..ctor", c.EndLine, c.EndColumn)))
+                .Concat(type.Properties.Select(p => new MemberEntry(RankOf("properties"), p.Line, p.FilePath, p.ProjectName, $"{type.FullName}.{p.Name}", p.EndLine, p.EndColumn)))
+                .Concat(type.Methods.Select(m => new MemberEntry(RankOf("methods"), m.Line, m.FilePath, m.ProjectName, $"{type.FullName}.{m.Name}", m.EndLine, m.EndColumn)))
                 .OrderBy(m => m.Line)
                 .ToList();
 
@@ -48,6 +48,8 @@ public sealed class MemberOrderingAnalyzer : ICustomAnalyzer
                         Message: $"{member.Symbol} is declared out of the configured member order.",
                         FilePath: member.FilePath,
                         Line: member.Line,
+                        EndLine: member.EndLine,
+                        EndColumn: member.EndColumn,
                         ProjectName: member.ProjectName);
                     break;
                 }
@@ -59,5 +61,5 @@ public sealed class MemberOrderingAnalyzer : ICustomAnalyzer
 
     private int RankOf(string group) => _rankByGroup.TryGetValue(group, out var rank) ? rank : int.MaxValue;
 
-    private readonly record struct MemberEntry(int Rank, int Line, string FilePath, string ProjectName, string Symbol);
+    private readonly record struct MemberEntry(int Rank, int Line, string FilePath, string ProjectName, string Symbol, int? EndLine, int? EndColumn);
 }

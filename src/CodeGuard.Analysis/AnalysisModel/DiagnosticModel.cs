@@ -6,4 +6,6 @@ public sealed record DiagnosticModel(
     string ProjectName,
     string FilePath,
     int Line,
-    int Column);
+    int Column,
+    int? EndLine = null,
+    int? EndColumn = null);

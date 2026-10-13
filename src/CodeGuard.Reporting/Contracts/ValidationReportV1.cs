@@ -39,7 +39,10 @@ public sealed record ViolationV1(
     string? Symbol,
     string? Project,
     string? Remediation,
-    IReadOnlyList<string> DocumentationReferences);
+    IReadOnlyList<string> DocumentationReferences,
+    int? EndLine = null,
+    int? EndColumn = null,
+    IReadOnlyDictionary<string, string>? Metadata = null);
 
 public sealed record EvaluationErrorV1(
     string RuleId,

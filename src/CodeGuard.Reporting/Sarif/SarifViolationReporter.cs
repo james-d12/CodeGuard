@@ -81,6 +81,15 @@ public sealed class SarifViolationReporter : IViolationReporter
             result.Locations = [ToLocation(violation)];
         }
 
+        // Violation metadata has no fixed SARIF home, so it goes into the result's property bag as-is.
+        if (violation.Metadata is not null)
+        {
+            foreach (var (key, value) in violation.Metadata)
+            {
+                result.SetProperty(key, value);
+            }
+        }
+
         return result;
     }
 
@@ -103,11 +112,27 @@ public sealed class SarifViolationReporter : IViolationReporter
         PhysicalLocation = new PhysicalLocation
         {
             ArtifactLocation = new ArtifactLocation { Uri = new Uri(violation.File!, UriKind.RelativeOrAbsolute) },
-            Region = violation.Line is null
-                ? null
-                : new Region { StartLine = violation.Line.Value, StartColumn = violation.Column ?? 1 }
+            Region = violation.Line is null ? null : ToRegion(violation)
         }
     };
+
+    // SARIF's Region.EndLine/EndColumn are non-nullable ints, so they are only set when the violation carries an end span.
+    // Without one the region has just the start, which is still valid SARIF.
+    private static Region ToRegion(Violation violation)
+    {
+        var region = new Region { StartLine = violation.Line!.Value, StartColumn = violation.Column ?? 1 };
+        if (violation.EndLine is { } endLine)
+        {
+            region.EndLine = endLine;
+        }
+
+        if (violation.EndColumn is { } endColumn)
+        {
+            region.EndColumn = endColumn;
+        }
+
+        return region;
+    }
 
     private static FailureLevel ToFailureLevel(Severity severity) => severity switch
     {

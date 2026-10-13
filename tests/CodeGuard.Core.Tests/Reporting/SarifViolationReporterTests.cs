@@ -132,4 +132,53 @@ public class SarifViolationReporterTests
         Assert.Equal("MSBUILD-WORKSPACE", notification.GetProperty("descriptor").GetProperty("id").GetString());
         Assert.Equal("Unable to find fallback package folder 'X'.", notification.GetProperty("message").GetProperty("text").GetString());
     }
+
+    [Fact]
+    public async Task WriteAsync_MapsEndPositionsAndMetadata()
+    {
+        var result = CreateResult(new Violation(
+            RuleId: "DDD-ENTITY-001", RuleVersion: 1, Severity: Severity.Error, Message: "msg",
+            File: "LegacyThing.cs", Line: 5, Column: 14, Symbol: null, Project: null, Remediation: null,
+            DocumentationReferences: [], EndLine: 5, EndColumn: 22,
+            Metadata: new Dictionary<string, string> { ["expectedBase"] = "Entity<TId>" }));
+
+        var sarifResult = await WriteSingleResultAsync(result);
+
+        var region = sarifResult.GetProperty("locations")[0].GetProperty("physicalLocation").GetProperty("region");
+        Assert.Equal(5, region.GetProperty("startLine").GetInt32());
+        Assert.Equal(14, region.GetProperty("startColumn").GetInt32());
+        Assert.Equal(5, region.GetProperty("endLine").GetInt32());
+        Assert.Equal(22, region.GetProperty("endColumn").GetInt32());
+        Assert.Equal("Entity<TId>", sarifResult.GetProperty("properties").GetProperty("expectedBase").GetString());
+    }
+
+    [Fact]
+    public async Task WriteAsync_WithoutEndSpan_EmitsStartOnlyRegion()
+    {
+        var result = CreateResult(new Violation(
+            RuleId: "DDD-ENTITY-001", RuleVersion: 1, Severity: Severity.Error, Message: "msg",
+            File: "LegacyThing.cs", Line: 5, Column: 14, Symbol: null, Project: null, Remediation: null,
+            DocumentationReferences: []));
+
+        var sarifResult = await WriteSingleResultAsync(result);
+
+        var region = sarifResult.GetProperty("locations")[0].GetProperty("physicalLocation").GetProperty("region");
+        Assert.Equal(5, region.GetProperty("startLine").GetInt32());
+        Assert.Equal(14, region.GetProperty("startColumn").GetInt32());
+        Assert.False(region.TryGetProperty("endLine", out _));
+        Assert.False(region.TryGetProperty("endColumn", out _));
+        Assert.False(sarifResult.TryGetProperty("properties", out _));
+    }
+
+    private static ValidationResult CreateResult(Violation violation) => new(
+        Status: ValidationStatus.Failed, RulesEvaluated: 1, RulesPassed: 0, RulesFailed: 1, RulesErrored: 0,
+        Violations: [violation], EvaluationErrors: [], EvaluatedAtUtc: DateTimeOffset.UtcNow);
+
+    private static async Task<JsonElement> WriteSingleResultAsync(ValidationResult result)
+    {
+        var writer = new StringWriter();
+        await new SarifViolationReporter().WriteAsync(result, writer);
+        using var document = JsonDocument.Parse(writer.ToString());
+        return document.RootElement.GetProperty("runs")[0].GetProperty("results")[0].Clone();
+    }
 }

@@ -132,4 +132,26 @@ public class ValidationReportSchemaTests
         using var reader = new StreamReader(stream);
         return reader.ReadToEnd();
     }
+
+    [Fact]
+    public async Task Output_WithEndPositionAndMetadata_ConformsToSchema()
+    {
+        var result = new ValidationResult(
+            Status: ValidationStatus.Failed, RulesEvaluated: 1, RulesPassed: 0, RulesFailed: 1, RulesErrored: 0,
+            Violations:
+            [
+                new Violation(
+                    RuleId: "DDD-ENTITY-001", RuleVersion: 1, Severity: Severity.Error,
+                    Message: "msg", File: "LegacyThing.cs", Line: 5, Column: 14,
+                    Symbol: null, Project: null, Remediation: null, DocumentationReferences: [],
+                    EndLine: 5, EndColumn: 22,
+                    Metadata: new Dictionary<string, string> { ["expectedBase"] = "Entity<TId>" })
+            ],
+            EvaluationErrors: [],
+            EvaluatedAtUtc: DateTimeOffset.UtcNow);
+
+        var output = await WriteAsync(result, TimeSpan.Zero);
+
+        AssertConforms(output);
+    }
 }
