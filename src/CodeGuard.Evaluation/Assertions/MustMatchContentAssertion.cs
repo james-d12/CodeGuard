@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 using CodeGuard.Analysis.AnalysisModel;
 using CodeGuard.RuleModel.Assertions;
 
@@ -16,7 +15,7 @@ public sealed class MustMatchContentAssertion(string pattern) : IAssertion
         }
 
         var content = file.Content ?? File.ReadAllText(file.Path);
-        return Regex.IsMatch(content, pattern)
+        return AssertionRegex.IsMatch(content, pattern, Kind)
             ? AssertionOutcome.Success()
             : AssertionOutcome.Failure($"File '{file.RelativePath}' must contain content matching '{pattern}'.");
     }

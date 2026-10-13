@@ -5,7 +5,7 @@ using CodeGuard.Analysis.AnalysisModel;
 
 namespace CodeGuard.Analyzers.Roslyn;
 
-internal sealed class SyntaxFactWalker(SemanticModel semanticModel, string projectName, SyntaxFactSink sink)
+internal sealed class SyntaxFactWalker(SemanticModel semanticModel, string projectName, string projectPath, SyntaxFactSink sink)
     : CSharpSyntaxWalker
 {
     public override void VisitInvocationExpression(InvocationExpressionSyntax node)
@@ -136,7 +136,8 @@ internal sealed class SyntaxFactWalker(SemanticModel semanticModel, string proje
             Line: line,
             Column: column,
             EnclosingComparisonOperator: comparisonOperator,
-            EnclosingComparisonValue: comparisonValue));
+            EnclosingComparisonValue: comparisonValue,
+            ProjectPath: projectPath));
     }
 
     private (string? Operator, string? Value) TryGetEnclosingComparison(SyntaxNode node)
@@ -170,7 +171,7 @@ internal sealed class SyntaxFactWalker(SemanticModel semanticModel, string proje
     private void RecordMutationSite(SyntaxNode node, string targetMemberName)
     {
         var (containingMethod, containingType, filePath, line, _) = DescribeLocation(node);
-        sink.AddMutationSite(new MutationSiteModel(containingMethod, containingType, targetMemberName, projectName, filePath, line));
+        sink.AddMutationSite(new MutationSiteModel(containingMethod, containingType, targetMemberName, projectName, filePath, line, projectPath));
     }
 
     private void RecordTryBlock(SyntaxNode node, int catchClauseCount, IReadOnlyList<string> catchTypeNames)
@@ -207,7 +208,7 @@ internal sealed class SyntaxFactWalker(SemanticModel semanticModel, string proje
 
         sink.AddMethodBodyShape(new MethodBodyShapeModel(
             node.Identifier.Text, containingType, projectName, statementCount, isSingleBaseCallDelegation,
-            location.SourceTree?.FilePath ?? string.Empty, lineSpan.StartLinePosition.Line + 1));
+            location.SourceTree?.FilePath ?? string.Empty, lineSpan.StartLinePosition.Line + 1, projectPath));
     }
 
     private static bool IsBaseDelegationStatement(StatementSyntax statement, string methodName) => statement switch

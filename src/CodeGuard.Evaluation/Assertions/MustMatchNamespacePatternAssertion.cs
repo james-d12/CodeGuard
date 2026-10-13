@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 using CodeGuard.Analysis.AnalysisModel;
 using CodeGuard.RuleModel.Assertions;
 
@@ -20,7 +19,7 @@ public sealed class MustMatchNamespacePatternAssertion(string regex) : IAssertio
             return AssertionOutcome.Failure($"'{Kind}' can only be evaluated against types.");
         }
 
-        return Regex.IsMatch(type.Namespace, regex)
+        return AssertionRegex.IsMatch(type.Namespace, regex, Kind)
             ? AssertionOutcome.Success()
             : AssertionOutcome.Failure($"'{type.Namespace}' must match namespace pattern '{regex}'.");
     }

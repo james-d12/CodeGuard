@@ -328,6 +328,30 @@ public class RuleEvaluatorTests
     }
 
     [Fact]
+    public void Evaluate_CapturesEvaluationError_WhenAssertionRegexTimesOut_AndContinuesWithNextRule()
+    {
+        // "^(a+)+$" backtracks exponentially on a run of 'a's followed by a non-matching character.
+        // Without a match timeout this rule would hang evaluation forever.
+        var model = BuildModel(CreateEntityType(new string('a', 40) + "_", baseType: null));
+        var backtrackingRule = new RuleDefinition
+        {
+            Id = "BACKTRACK-001",
+            Name = "Catastrophically backtracking name rule",
+            Target = new ClassInNamespaceSelector("Contoso.Domain.Entities"),
+            Assertions = [new MustMatchNameAssertion("^(a+)+$")]
+        };
+
+        var result = new RuleEvaluator().Evaluate([backtrackingRule, CreateEntityInheritsRule()], model);
+
+        var error = Assert.Single(result.EvaluationErrors);
+        Assert.Equal("BACKTRACK-001", error.RuleId);
+        Assert.Equal(typeof(RegexAssertionTimeoutException).FullName, error.ExceptionType);
+        Assert.Contains("must_match_name", error.Message);
+        Assert.Equal(ValidationStatus.PartiallyEvaluated, result.Status);
+        Assert.Equal("DDD-ENTITY-001", Assert.Single(result.Violations).RuleId);
+    }
+
+    [Fact]
     public void Evaluate_CapturesEvaluationError_WhenSelectorThrowsLazily_AndDiscardsPartialViolations()
     {
         var model = BuildModel(CreateEntityType("Order", EntityBaseType));

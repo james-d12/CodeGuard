@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 using CodeGuard.Analysis.AnalysisModel;
 using CodeGuard.RuleModel.Assertions;
 
@@ -21,7 +20,7 @@ public sealed class MustMatchArgumentAssertion(int index, string pattern) : IAss
             return AssertionOutcome.Failure($"Call site '{callSite.InvokedMember}' must have a literal argument at index {index}.");
         }
 
-        return Regex.IsMatch(argument.LiteralValue, pattern)
+        return AssertionRegex.IsMatch(argument.LiteralValue, pattern, Kind)
             ? AssertionOutcome.Success()
             : AssertionOutcome.Failure($"Argument {index} of call site '{callSite.InvokedMember}' must match '{pattern}' (found '{argument.LiteralValue}').");
     }

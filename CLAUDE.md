@@ -183,11 +183,13 @@ discovering that nested duplicate of this same repo as a second solution and re-
 `(ProjectName, FullName)`-uniqueness assumption one level up, across (not within) solutions. `.claude`
 is now in the skip list alongside `bin`/`obj`/`.git`/etc.
 
-Residual caveat, not yet hit in practice: `(ProjectName, FullName)` is unique within one solution
-and, empirically, across this repo's own solutions, but nothing guarantees it across an arbitrary
-multi-solution repo where the same project name legitimately appears in two different `.sln` files
-on disk (not a duplicate worktree — a real repo layout). Not a known failure, just an unproven edge
-case worth keeping in mind if a similar collision resurfaces elsewhere.
+`(ProjectName, FullName)` still wasn't unique in a multi-solution repo where two `.sln` files each
+contain a *different* project with the same name. Types and the syntax facts that analyzers join
+back to them (`MutationSiteModel`, `MethodBodyShapeModel`, `CallSiteModel`) now carry an optional
+`ProjectPath`, and those joins key by `(ProjectPath, ProjectName, FullName)` — `ProjectName` stays in
+the key because virtual `rules test` models leave `ProjectPath` empty. Regression-tested against a
+real two-solution fixture (`MultiSolutionSameProjectNameTests`). Any new analyzer that joins facts
+to types/projects must key the same way, never by name alone.
 
 ### Package version pins
 

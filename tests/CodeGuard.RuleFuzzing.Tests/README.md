@@ -80,6 +80,13 @@ without a concurrent-access data race in shared fixture state as a confound.
 
 ## Bugs found and fixed while building this suite
 
+- Assertion-level regex parameters (`must_match_content`, `must_not_match_content`, `must_match_name`,
+  `must_match_argument`, `must_match_namespace_pattern`) called `Regex.IsMatch` with no match timeout,
+  so a catastrophic-backtracking pattern could hang evaluation forever. They now all go through
+  `AssertionRegex` (1s timeout), which throws `RegexAssertionTimeoutException` - surfaced as a
+  `RuleEvaluationError` and tolerated by the oracles - and `AdversarialCorpus.Regexes` includes
+  backtracking shapes again.
+
 - `MustHaveJsonFieldAssertion`/`MustNotHaveJsonFieldAssertion` crashed with an uncaught
   `JsonReaderException` when the target file's content wasn't valid JSON (a realistic case: the target
   selector doesn't have to be scoped to only `*.json` files). Fixed to treat unparseable content the
@@ -101,10 +108,3 @@ without a concurrent-access data race in shared fixture state as a confound.
   and only surfaces as a `RuleEvaluationError` the first time evaluation reaches it. Fixing this
   properly means detecting "no `${...}` placeholders present" and eagerly validating just that case - a
   real, separate design change, not something this suite attempts.
-- Assertion-level regex parameters (`must_match_content`, `must_match_argument`,
-  `must_match_namespace_pattern`) call `Regex.IsMatch(value, pattern)` with **no match timeout**, unlike
-  `GlobMatcher` (100ms). A catastrophic-backtracking pattern here could hang evaluation indefinitely
-  with no way to interrupt it, rather than throwing cleanly. Deliberately not exercised by this suite's
-  live-evaluation fuzz loop (see `AdversarialCorpus`'s doc comment) since doing so risks hanging the test
-  run itself rather than failing it. Worth a follow-up: give those call sites the same timeout treatment
-  as `GlobMatcher`.

@@ -17,7 +17,8 @@ public sealed record TypeModel(
     string ProjectName,
     string FilePath,
     int Line,
-    int Column);
+    int Column,
+    string ProjectPath = "");
 
 public enum TypeKind
 {

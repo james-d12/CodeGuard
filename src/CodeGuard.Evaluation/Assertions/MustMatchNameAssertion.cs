@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 using CodeGuard.Analysis.AnalysisModel;
 using CodeGuard.RuleModel.Assertions;
 
@@ -28,7 +27,7 @@ public sealed class MustMatchNameAssertion(string regex) : IAssertion
             return AssertionOutcome.Failure($"'{Kind}' cannot be evaluated against this candidate type.");
         }
 
-        return Regex.IsMatch(name, regex)
+        return AssertionRegex.IsMatch(name, regex, Kind)
             ? AssertionOutcome.Success()
             : AssertionOutcome.Failure($"'{name}' must match name pattern '{regex}'.");
     }

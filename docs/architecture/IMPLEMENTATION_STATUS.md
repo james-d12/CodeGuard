@@ -823,12 +823,18 @@ All under `rules/`, all illustrative (`Contoso.*` namespace, `illustrative: true
      skipping it, `validate` discovered *two* solutions and re-tripped the same
      `(ProjectName, FullName)`-uniqueness assumption one level up, across solutions rather than
      within one. `.claude` is now in the skip list alongside `bin`/`obj`/`.git`/etc.
-   - **Residual caveat, not yet hit in practice:** `(ProjectName, FullName)` is unique within one
-     solution and, empirically, across this repo's own solutions, but nothing *guarantees* it across
-     an arbitrary multi-solution repo where the same project name legitimately appears in two
-     different `.sln` files on disk (a real repo layout, not a duplicate worktree checkout). Not a
-     known failure, just an unproven edge case worth keeping in mind if a similar collision
-     resurfaces.
+   - **Multi-solution repos (fixed, #45):** `(ProjectName, FullName)` wasn't unique across a repo
+     where two `.sln` files each contain a *different* project file with the same name (shared
+     project files were already deduped by path in `MsBuildAnalysisProvider`). `TypeModel`,
+     `MutationSiteModel`, `MethodBodyShapeModel` and `CallSiteModel` now carry an optional
+     `ProjectPath` (populated by the Roslyn extractors, empty in virtual `rules test` models), and
+     both analyzers key by `(ProjectPath, ProjectName, FullName)`. The audit for the same assumption
+     found one more join: `ProjectConventionAnalyzer` matched call sites to projects by
+     `ProjectName ==`, so a same-named project elsewhere could satisfy another's convention — it now
+     also requires a matching `ProjectPath` when one is present. Regression fixture:
+     `CodeGuard.IntegrationTests/Fixtures/MultiSolutionSameProjectName` +
+     `MultiSolutionSameProjectNameTests` (reproduces both the old `ToDictionary` crash and the
+     mutation misattribution against real MSBuild-loaded solutions).
    - Still does **not** affect validating any other repository without a same-name collision —
      proven by `CodeGuard.IntegrationTests` (a real, separate 3-project solution analyzed
      correctly, real violations detected).

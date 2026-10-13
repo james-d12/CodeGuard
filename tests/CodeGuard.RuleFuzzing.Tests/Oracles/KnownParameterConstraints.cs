@@ -1,5 +1,6 @@
 using CodeGuard.Configuration.Parsing;
 using CodeGuard.Configuration.Validation;
+using CodeGuard.Evaluation.Assertions;
 
 namespace CodeGuard.RuleFuzzing.Tests.Oracles;
 
@@ -48,6 +49,12 @@ internal static class KnownParameterConstraints
     /// <see cref="IsTolerable"/>: the generator deliberately manufactures near-miss enum values, and a
     /// nested selector is just as legitimate a place for one to land as a top-level one.
     /// </summary>
+    /// <para>
+    /// A <see cref="RegexAssertionTimeoutException"/> is also tolerated: <see cref="Generation.AdversarialCorpus"/>
+    /// deliberately feeds catastrophic-backtracking patterns, and timing out cleanly is the designed
+    /// outcome for those - a hang would be the bug.
+    /// </para>
     public static bool IsTolerableEvaluationError(string exceptionTypeFullName) =>
-        exceptionTypeFullName == typeof(RuleParsingException).FullName;
+        exceptionTypeFullName == typeof(RuleParsingException).FullName
+        || exceptionTypeFullName == typeof(RegexAssertionTimeoutException).FullName;
 }

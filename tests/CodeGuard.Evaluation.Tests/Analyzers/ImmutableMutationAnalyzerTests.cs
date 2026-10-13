@@ -90,7 +90,7 @@ public class ImmutableMutationAnalyzerTests
         // record type in one project and an identically-named non-record (or out-of-pattern) type
         // in another project could collide - not a crash (HashSet tolerates duplicates), but a
         // silent misattribution, since Contains() ignored which project a mutation site belonged
-        // to. It's now keyed by (ProjectName, FullName).
+        // to. It's now keyed by (ProjectPath, ProjectName, FullName).
         const string sharedFullName = "Contoso.Domain.Money";
         var recordType = TestModels.Type(sharedFullName, kind: TypeKind.Record, projectName: "Contoso.Domain");
         var classType = TestModels.Type(sharedFullName, kind: TypeKind.Class, projectName: "Contoso.Other");
