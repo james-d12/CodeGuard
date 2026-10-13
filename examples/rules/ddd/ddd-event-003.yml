@@ -1,0 +1,65 @@
+id: DDD-EVENT-003
+name: Every domain event must have at least one handler
+description: >
+  Every type implementing IDomainEvent must have at least one type implementing
+  `Contoso.Application.IDomainEventHandler<TEvent>` for it. Same cross-entity
+  `must_have_count` pattern as DDD-CQRS-001, but matched on the handler
+  interface (via `${FullName}`, the event's own fully-qualified name) rather
+  than a naming convention, so an event may have any number of handlers
+  named however they like.
+severity: warning
+enforcement:
+  classification: deterministic
+tags:
+  - ddd
+  - event
+remediation: >
+  Add a handler implementing IDomainEventHandler<TEvent> for the event, or
+  remove the unused event.
+illustrative: true
+
+metadata:
+  source:
+    document: DDD Standards
+    section: Domain Events
+    statement: Every domain event must have at least one handler implementing IDomainEventHandler<TEvent>.
+    file: examples/docs/ddd-standards.md
+    fingerprint: sha256:189b1043980096d7f8b5bf75ab414f52b00a394522e7902ddd6c485a4286b4d3
+
+target:
+  kind: implements
+  interface: "Contoso.Domain.IDomainEvent"
+
+assertions:
+  - must_have_count:
+      selector:
+        kind: implements
+        interface: "Contoso.Application.IDomainEventHandler<${FullName}>"
+      min: 1
+
+tests:
+  - name: Domain event with a handler
+    setup:
+      types:
+        - name: OrderPlaced
+          namespace: Contoso.Domain.Events
+          interfaces: ["Contoso.Domain.IDomainEvent"]
+        - name: SendOrderConfirmation
+          namespace: Contoso.Application.EventHandlers
+          interfaces: ["Contoso.Application.IDomainEventHandler<Contoso.Domain.Events.OrderPlaced>"]
+    expect: pass
+
+  - name: Domain event whose only handler is for a different event
+    setup:
+      types:
+        - name: OrderPlaced
+          namespace: Contoso.Domain.Events
+          interfaces: ["Contoso.Domain.IDomainEvent"]
+        - name: OrderCancelled
+          namespace: Contoso.Domain.Events
+          interfaces: ["Contoso.Domain.IDomainEvent"]
+        - name: RefundOrder
+          namespace: Contoso.Application.EventHandlers
+          interfaces: ["Contoso.Application.IDomainEventHandler<Contoso.Domain.Events.OrderCancelled>"]
+    expect: fail
+versionFingerprint: sha256:a013a7b38ec4cc4150b3a0c8749c8bd0ee62ba507c9cd6ecfafbb06ade6575c9

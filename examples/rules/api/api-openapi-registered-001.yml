@@ -1,0 +1,60 @@
+id: API-OPENAPI-REGISTERED-001
+name: API projects must register OpenAPI document generation
+description: >
+  Every `*.Api` project must call `AddOpenApi` so it publishes an OpenAPI
+  specification. Checks the registration call rather than the
+  Microsoft.AspNetCore.OpenApi package reference, since the package alone
+  generates nothing. The nested selector is scoped to the project under test
+  via `${Name}`, so one API project's registration can't satisfy another's.
+severity: error
+enforcement:
+  classification: deterministic
+tags:
+  - api
+  - governance
+remediation: >
+  Call `builder.Services.AddOpenApi()` (and map the document with
+  `app.MapOpenApi()`) in the API project's startup.
+illustrative: true
+
+metadata:
+  source:
+    document: Engineering Governance
+    section: API Documentation
+    statement: Every API project registers OpenAPI document generation.
+    file: examples/docs/engineering-governance.md
+    fingerprint: sha256:d3318f1ea52dfc083ddff99897a65403e33b978a22d10716f953d2f81bcff47b
+
+target:
+  kind: project
+  name: "*.Api"
+
+assertions:
+  - must_exist:
+      selector:
+        kind: call_site
+        invoked_member: "AddOpenApi"
+        project: "${Name}"
+
+tests:
+  - name: API project registering OpenAPI
+    setup:
+      projects:
+        - name: Contoso.Api
+      callSites:
+        - invokedMember: AddOpenApi
+          targetTypeName: Microsoft.Extensions.DependencyInjection.OpenApiServiceCollectionExtensions
+          project: Contoso.Api
+    expect: pass
+
+  - name: Only a different API project registers OpenAPI
+    setup:
+      projects:
+        - name: Contoso.Api
+        - name: Contoso.Admin.Api
+      callSites:
+        - invokedMember: AddOpenApi
+          targetTypeName: Microsoft.Extensions.DependencyInjection.OpenApiServiceCollectionExtensions
+          project: Contoso.Admin.Api
+    expect: fail
+versionFingerprint: sha256:d5384707699317b78ce8d277dc51d8c405e2e4d9d30139773446cf36e33906b1

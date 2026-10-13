@@ -1,0 +1,47 @@
+id: ARCH-DEPENDENCY-006
+name: API projects must not reference Persistence projects
+description: >
+  API projects must not take a project reference on a Persistence project -
+  data access goes through the Application layer, never around it.
+severity: critical
+enforcement:
+  classification: deterministic
+tags:
+  - architecture
+  - layering
+remediation: >
+  Remove the project reference and reach the data through an Application-layer
+  command or query instead.
+illustrative: true
+
+metadata:
+  source:
+    document: Architecture Standards
+    section: API Layer
+    statement: API projects must not take a project reference on a Persistence project.
+    file: examples/docs/architecture-standards.md
+    fingerprint: sha256:f374e9abe342651680d4c6bfcdcda3e244a86fa6ce63f42a81814f058e5d7ed4
+
+target:
+  kind: project
+  name: "*.Api"
+
+assertions:
+  - must_not_reference_project:
+      name: "*.Persistence"
+
+tests:
+  - name: API project referencing only Application
+    setup:
+      projects:
+        - name: Contoso.Api
+          projectReferences: ["Contoso.Application"]
+    expect: pass
+
+  - name: API project referencing Persistence directly
+    setup:
+      projects:
+        - name: Contoso.Api
+          projectReferences: ["Contoso.Application", "Contoso.Persistence"]
+    expect: fail
+versionFingerprint: sha256:aba98b723c30a7504f8eff9e34cf674f2c0df643c75a6a8dccc974ade811e8ae

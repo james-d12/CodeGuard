@@ -1,0 +1,83 @@
+id: ARCH-DEPENDENCY-007
+name: Application projects must only depend on approved layers
+description: >
+  An `*.Application` project may only reference its own `Contoso.Application.*`
+  types, `Contoso.Domain.*`, the base class library and the
+  `Microsoft.Extensions.*` abstractions. The Application-layer counterpart of
+  ARCH-DEPENDENCY-004's Domain allow-list - like that rule, primitives must be
+  listed explicitly because Roslyn renders them by their C# keyword alias.
+severity: error
+enforcement:
+  classification: deterministic
+tags:
+  - architecture
+  - layering
+remediation: >
+  Remove the disallowed reference (most commonly an Infrastructure, Persistence
+  or Api type), or add its pattern to the allow-list if it's a legitimate
+  dependency every application project should permit.
+illustrative: true
+
+metadata:
+  source:
+    document: Architecture Standards
+    section: Application Layer
+    statement: >
+      An Application project may only depend on its own Contoso.Application.* types,
+      Contoso.Domain.*, the base class library, and the Microsoft.Extensions.* abstractions.
+    file: examples/docs/architecture-standards.md
+    fingerprint: sha256:9b4ef606af4c20987c4a889057e4fdde6f7875ce2870a04184c507322d8782e8
+
+target:
+  kind: project
+  name: "*.Application"
+
+assertions:
+  - must_only_depend_on:
+      types:
+        - "Contoso.Application.*"
+        - "Contoso.Domain.*"
+        - "Microsoft.Extensions.*"
+        - "System.*"
+        - "string"
+        - "int"
+        - "long"
+        - "bool"
+        - "void"
+        - "object"
+        - "decimal"
+
+tests:
+  - name: Handler depending on Domain, its own layer and logging
+    setup:
+      projects:
+        - name: Contoso.Application
+          types:
+            - name: PlaceOrderHandler
+              namespace: Contoso.Application.Handlers
+              interfaces: ["Contoso.Application.ICommandHandler<Contoso.Application.Commands.PlaceOrder>"]
+              methods:
+                - name: Handle
+                  returnType: "System.Threading.Tasks.Task<Contoso.Domain.Order>"
+                  parameters:
+                    - name: command
+                      type: "Contoso.Application.Commands.PlaceOrder"
+                    - name: logger
+                      type: "Microsoft.Extensions.Logging.ILogger"
+    expect: pass
+
+  - name: Handler depending on an Infrastructure type
+    setup:
+      projects:
+        - name: Contoso.Application
+          types:
+            - name: PlaceOrderHandler
+              namespace: Contoso.Application.Handlers
+              methods:
+                - name: Handle
+                  returnType: "void"
+                  parameters:
+                    - name: context
+                      type: "Contoso.Infrastructure.OrdersDbContext"
+    expect: fail
+versionFingerprint: sha256:62b6c2d851980297bf1ba2455e8f612e99e56b08f067544273260614b9b6a79f
