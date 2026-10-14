@@ -1,7 +1,7 @@
 ---
 name: task-worker
 description: Generic implementer for a single, well-scoped engineering task handed down by the orchestrator (or the user). Reads the brief, makes the change in its own worktree, verifies it, commits on its branch and returns a structured report. Use for any concrete coding, testing, refactoring or documentation task with a clear definition of done.
-model: sonnet
+model: haiku
 color: blue
 disallowedTools: Agent
 ---
