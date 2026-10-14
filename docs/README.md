@@ -1,6 +1,6 @@
 # CodeGuard documentation index
 
-Every document under `docs/` falls into one of three groups. Outstanding work from these docs is
+Every document under `docs/` falls into one of three groups, plus the orchestration run logs. Outstanding work from these docs is
 tracked as GitHub issues; the larger initiatives are tracked as epics, listed below. The
 classification and issues come from a full docs-vs-code audit on 2026-10-04 (against `main` @ `2905358`).
 
@@ -44,6 +44,14 @@ Single-initiative plans that have fully shipped. They are kept because code comm
 | [`done/RULE_VERSIONING_PLAN.md`](done/RULE_VERSIONING_PLAN.md) | PR #38: mandatory rule versioning. The body describes the superseded opt-in design; see its status banner. |
 | [`done/INSTALL_SCRIPTS_PLAN.md`](done/INSTALL_SCRIPTS_PLAN.md) | PR #39: one-liner installers |
 | [`done/RULE_FUZZING_PLAN.md`](done/RULE_FUZZING_PLAN.md) | PR #40: rule-engine fuzz testing |
+
+## Orchestration run logs
+
+[`orchestration/`](orchestration/) holds one chronological markdown log per run of the
+`orchestrator` agent (`.claude/agents/orchestrator.md`): when it ran, what it was asked, what it
+accomplished, and notes for the next run. Format and naming are in
+[`orchestration/README.md`](orchestration/README.md). These are append-only records, not design
+docs, and are never moved to `done/`.
 
 ## Epics
 

@@ -217,6 +217,46 @@ package+version it names; don't guess in advance.
 - The SARIF NuGet package is `Sarif.Sdk`, not `Microsoft.CodeAnalysis.Sarif` (that's just the C#
   namespace it exposes).
 
+## Claude Code agents, hooks and sandbox (`.claude/`)
+
+`.claude/agents/` defines three project subagents: `orchestrator` (plans, delegates, integrates,
+writes a run log to `docs/orchestration/`), `task-worker` (single well-scoped task in its own
+worktree, `haiku` by default, model chosen per task by the orchestrator) and
+`merge-conflict-resolver`. `.claude/hooks/` enforces their boundaries: `orchestrator-write-guard.sh`
+limits the orchestrator's `Write`/`Edit` to `docs/orchestration/*.md`, and `no-remote-writes.py`
+(run on every worker/resolver Bash call) blocks `git push`, remote/alias config changes and
+non-read-only `gh` commands, and disables the push URL of any linked worktree the agent runs in
+(`git config --worktree remote.*.pushurl`, so the primary checkout is never affected).
+`python3 -I .claude/hooks/no-remote-writes.py --self-test` runs its cases.
+
+`.claude/settings.json` turns on the Bash sandbox in strict mode (no unsandboxed retry, fail if
+unavailable) with network limited to `api.anthropic.com`, `github.com`, `api.github.com` and
+`*.nuget.org`, write access to the dotnet/NuGet home directories (`DOTNET_ROOT` is `~/.dotnet`
+here), and private SSH keys read-denied. On Linux it needs `bubblewrap` and `socat`. Several
+settings in that file were found empirically and are easy to break:
+
+- `network.allowAllUnixSockets: true` plus `filesystem.allowWrite: ["/tmp"]`: MSBuild's
+  out-of-process worker nodes talk over .NET named pipes, which are Unix domain sockets at the
+  hard-coded path `/tmp/MSBuild<pid>` (not `$TMPDIR`). The sandbox's seccomp filter blocks Unix
+  sockets by default and `/tmp` itself is read-only, so every node crashed at startup and
+  `dotnet build` of the solution sat for 5 minutes before reporting "Build FAILED" with 0 errors
+  (`-m:1` hid the problem). `allowUnixSockets` with a path has no effect on Linux. To keep the
+  socket escape routes closed, `filesystem.denyRead` hides the D-Bus buses (`/run/user`,
+  `/run/dbus`), the SSH agent, X11 and Docker/Podman sockets; verified: `systemd-run --user`,
+  `busctl` and `ssh-add -l` all fail inside the sandbox while `dotnet build`/`test` work.
+
+- `excludedCommands` runs `git fetch/pull/push/ls-remote` and read-only `gh` commands *outside*
+  the sandbox. Inside it, the SSH agent and the keyring (where `gh` keeps its token) are
+  unreachable, so SSH remotes and `gh` fail with auth errors. Workers still can't push: their hook
+  blocks the command before it runs. Note `cd x && git push` or `git -C x push` stay sandboxed.
+- `env.EnableSourceControlManagerQueries=false`: inside the sandbox SourceLink's
+  `LocateRepository` task fails with "Access to the path '.gitmodules' is denied" and the whole
+  solution build reports FAILED with 0 errors. MSBuild reads env vars as properties, so this
+  skips that target for builds run under Claude Code only; CI is unaffected.
+
+Credential `mask` entries (e.g. the `gh` token in `~/.config/gh/hosts.yml`) are ignored in
+project settings and belong in `~/.claude/settings.json`.
+
 ## Documentation lifecycle (docs/ layout)
 
 `docs/README.md` is the index — it classifies every doc and links the GitHub epics that track
@@ -231,6 +271,11 @@ outstanding work. Layout:
 - `docs/done/` — narrow, single-initiative plans, once genuinely finished (`RULE_COVERAGE_PLAN.md`,
   `RULES_TEST_DESIGN.md`, `RULE_VERSIONING_PLAN.md`, etc.). They stay cross-referenced from
   code/README after moving, so "done" means "archived design record," not "deleted."
+- `docs/orchestration/` — one chronological run log per `orchestrator` agent run
+  (`.claude/agents/orchestrator.md`): start time, requirement, tasks, outcome, and notes for the
+  next run. The orchestrator reads the latest logs before planning and is the only agent that
+  writes here (enforced by `.claude/hooks/orchestrator-write-guard.sh`). Format in
+  `docs/orchestration/README.md`. Never moved to `docs/done/`.
 - `docs/PRIMITIVES.md` and `docs/REFACTORING.md` stay at the `docs/` root (see below).
 
 New single-initiative plans start at the `docs/` root and move to `docs/done/` when shipped.
