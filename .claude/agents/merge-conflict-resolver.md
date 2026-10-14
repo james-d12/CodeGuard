@@ -62,8 +62,9 @@ repository in a clean, well-described state.
 - Never `git reset --hard`, abort the operation, delete branches, or rewrite commits other
   than the one you are completing. If the only way forward is destructive, stop and report
   instead.
-- You cannot push, open pull requests or change remotes: a hook rejects those commands.
-  Leave the resolved result on the local branch for the caller.
+- You cannot push, open pull requests or change remotes: a hook rejects those commands, and
+  the worktree's push URL is disabled at the git level as well. Leave the resolved result on
+  the local branch for the caller.
 - Do not make changes unrelated to the conflicts. Note other problems you see under
   "Observations" in your report.
 - Do not report a clean result you have not observed: run the build and tests and quote the

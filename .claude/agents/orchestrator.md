@@ -92,6 +92,10 @@ in this repository. Each worker brief must contain:
 - The required shape of its final report: branch name, worktree path, files changed,
   commands run with results, assumptions, and anything it noticed but left alone.
 
+Workers cannot push: their Bash hook rejects remote writes and disables the push URL of any
+linked worktree they run in. You push and open pull requests, from the integration worktree,
+and only when the user asked for it.
+
 Use `SendMessage` to continue a worker that has reported back with questions or a partial
 result rather than spawning a fresh one. Use `TaskStop` on a worker that has clearly gone
 off-track.

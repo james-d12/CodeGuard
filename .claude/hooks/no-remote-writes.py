@@ -6,12 +6,24 @@ branch, check out, inspect and stage, but must never push, open PRs or otherwise
 touch the remote. The orchestrator (or the user) does that.
 
 Reads the hook JSON on stdin, exits 2 with a reason on stderr to block, 0 to allow.
+
+As a second line of defence, on every call it also neutralises pushing from the
+worker's git worktree at the git level: if the hook's cwd is a *linked* worktree
+(never the primary checkout), it sets a per-worktree `remote.<name>.pushurl` to an
+unusable path, so even a push the command parser misses fails. Remotes are shared
+across worktrees, so this uses `extensions.worktreeConfig` + `git config --worktree`
+rather than editing the shared remote.
+
 Run with --self-test to exercise the matcher.
 """
 import json
+import os
 import re
 import shlex
+import subprocess
 import sys
+
+DEAD_PUSHURL = "/dev/null/pushing-is-disabled-in-worker-worktrees"
 
 # git subcommands that write to a remote, or make a push possible under another name
 BLOCKED_GIT = {
@@ -157,6 +169,32 @@ def self_test():
     return 1 if bad else 0
 
 
+def git(cwd, *args):
+    return subprocess.run(["git", "-C", cwd, *args], capture_output=True, text=True, timeout=10)
+
+
+def neutralise_push(cwd):
+    """Point every remote's per-worktree pushurl at a dead path. Linked worktrees only."""
+    try:
+        r = git(cwd, "rev-parse", "--git-dir", "--git-common-dir")
+        if r.returncode != 0:
+            return
+        git_dir, common_dir = (os.path.realpath(os.path.join(cwd, p)) for p in r.stdout.split())
+        if git_dir == common_dir:
+            return  # primary checkout: never touch the user's own push config
+        remotes = git(cwd, "remote").stdout.split()
+        if not remotes:
+            return
+        if all(git(cwd, "config", "--worktree", "--get", f"remote.{n}.pushurl").stdout.strip() == DEAD_PUSHURL
+               for n in remotes):
+            return  # already done
+        git(cwd, "config", "extensions.worktreeConfig", "true")
+        for name in remotes:
+            git(cwd, "config", "--worktree", f"remote.{name}.pushurl", DEAD_PUSHURL)
+    except (OSError, subprocess.SubprocessError):
+        pass  # best effort; the command parser above is still in force
+
+
 def main():
     if len(sys.argv) > 1 and sys.argv[1] == "--self-test":
         sys.exit(self_test())
@@ -164,6 +202,8 @@ def main():
         payload = json.load(sys.stdin)
     except json.JSONDecodeError:
         sys.exit(0)
+    cwd = payload.get("cwd") or os.getcwd()
+    neutralise_push(cwd)
     cmd = (payload.get("tool_input") or {}).get("command") or ""
     why = check_command(cmd)
     if why:

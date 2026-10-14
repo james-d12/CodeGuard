@@ -36,8 +36,8 @@ coordinate other agents and you do not expand the task.
 6. **Commit.** Commit your work on your current branch with a clear message describing the
    change and why. Do not merge into any other branch and do not touch branches other than
    your own. You cannot push, open pull requests or change remotes: a hook rejects those
-   commands. Pushing and PRs are the orchestrator's (or the user's) job; your report gives
-   them the branch name.
+   commands, and your worktree's push URL is disabled at the git level as well. Pushing and
+   PRs are the orchestrator's (or the user's) job; your report gives them the branch name.
 7. **Report.** End with a structured report (see below). The orchestrator reads only this
    report, so it must stand alone.
 

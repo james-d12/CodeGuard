@@ -1,0 +1,54 @@
+{
+  "env": {
+    "DOTNET_CLI_TELEMETRY_OPTOUT": "1",
+    "DOTNET_NOLOGO": "1",
+    "EnableSourceControlManagerQueries": "false"
+  },
+  "sandbox": {
+    "enabled": true,
+    "allowUnsandboxedCommands": false,
+    "failIfUnavailable": true,
+    "excludedCommands": [
+      "git fetch *",
+      "git pull *",
+      "git push *",
+      "git ls-remote *",
+      "gh pr *",
+      "gh issue *",
+      "gh run *",
+      "gh api *",
+      "gh auth status"
+    ],
+    "network": {
+      "allowedDomains": [
+        "api.anthropic.com",
+        "github.com",
+        "api.github.com",
+        "*.nuget.org"
+      ],
+      "allowAllUnixSockets": true
+    },
+    "filesystem": {
+      "allowWrite": [
+        "/tmp",
+        "~/.nuget",
+        "~/.dotnet",
+        "~/.local/share/NuGet",
+        "~/.local/share/dotnet",
+        "~/.templateengine"
+      ],
+      "denyRead": [
+        "~/.ssh/id_*",
+        "~/.aws",
+        "~/.config/sops",
+        "~/.gnupg",
+        "/run/user",
+        "/run/dbus",
+        "/tmp/.X11-unix",
+        "/var/run/docker.sock",
+        "/run/docker.sock",
+        "/run/podman"
+      ]
+    }
+  }
+}
