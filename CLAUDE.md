@@ -231,6 +231,11 @@ outstanding work. Layout:
 - `docs/done/` — narrow, single-initiative plans, once genuinely finished (`RULE_COVERAGE_PLAN.md`,
   `RULES_TEST_DESIGN.md`, `RULE_VERSIONING_PLAN.md`, etc.). They stay cross-referenced from
   code/README after moving, so "done" means "archived design record," not "deleted."
+- `docs/orchestration/` — one chronological run log per `orchestrator` agent run
+  (`.claude/agents/orchestrator.md`): start time, requirement, tasks, outcome, and notes for the
+  next run. The orchestrator reads the latest logs before planning and is the only agent that
+  writes here (enforced by `.claude/hooks/orchestrator-write-guard.sh`). Format in
+  `docs/orchestration/README.md`. Never moved to `docs/done/`.
 - `docs/PRIMITIVES.md` and `docs/REFACTORING.md` stay at the `docs/` root (see below).
 
 New single-initiative plans start at the `docs/` root and move to `docs/done/` when shipped.
